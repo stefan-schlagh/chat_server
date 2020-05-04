@@ -9,8 +9,8 @@ const cors = require ('cors');
 const authenthification = require('./modules/authenthification');
 //const chatServer = new chat_server.chat_server(io);
 
-app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static('public'));
 app.use(cors());
 
@@ -36,7 +36,7 @@ con.connect(function(err) {
     if (err) throw err;
 });
 
-const chat_server = require('./modules/chat_server').createChatServer(http,con);
+const chat_server = require('./modules/chat_server').createChatServer(http,con,app);
 
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/html/index.html');

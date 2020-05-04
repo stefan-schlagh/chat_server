@@ -3,10 +3,12 @@ const chat = require('./chat');
 
 let chatServer;
 let con;
+let app;
 
-exports.createChatServer = function(http,con1){
-    chatServer = new ChatServer(http);
+exports.createChatServer = function(http,con1,app1){
     con = con1;
+    app = app1;
+    chatServer = new ChatServer(http);
     chat.Chat.con = con;
     chat.Chat.staticConstructor();
     return chatServer;
@@ -29,7 +31,6 @@ class ChatServer{
 
         this.io.on('connection', socket => {
 
-            this.initSocketIo();
             let user;
 
             socket.on('userInfo', userInfo => {
@@ -111,9 +112,6 @@ class ChatServer{
             });
         });
     }
-    initSocketIo(){
-
-    }
     /*
         nach user joined event
      */
@@ -123,6 +121,8 @@ class ChatServer{
             wenn user noch nicht existiert, wird er komplett neu angelegt
          */
         if(typeof(this.user[uid]) !== 'object') {
+            const user = new User(con, userInfo.uid, userInfo.username, socket, true);
+            user.loadChats();
             this.user[uid] = new User(con, userInfo.uid, userInfo.username, socket, true);
         }
         /*
@@ -132,6 +132,7 @@ class ChatServer{
             const user = this.user[uid];
             user.socket = socket;
             user.online = true;
+            user.loadChats();
         }
         return this.user[uid];
     }

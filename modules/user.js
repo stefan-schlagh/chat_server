@@ -41,65 +41,6 @@ class User{
         this.currentChat = null;
     }
 
-    get con() {
-        return this.#_con;
-    }
-
-    set con(value) {
-        this.#_con = value;
-    }
-
-    get uid() {
-        return this.#_uid;
-    }
-
-    set uid(value) {
-        this.#_uid = value;
-    }
-
-    get username() {
-        return this.#_username;
-    }
-
-    set username(value) {
-        this.#_username = value;
-    }
-
-    get socket() {
-        return this.#_socket;
-    }
-
-    set socket(value) {
-        this.#_socket = value;
-    }
-
-    get chats() {
-        return this.#_chats;
-    }
-
-    set chats(value) {
-        this.#_chats = value;
-    }
-
-    get online() {
-        return this.#_online;
-    }
-
-    set online(online){
-        this.#_online = online;
-        if(online){
-            this.loadChats();
-        }
-    }
-
-    get currentChat() {
-        return this.#_currentChat;
-    }
-
-    set currentChat(value) {
-        this.#_currentChat = value;
-    }
-
     /*
         Die chats des users werden geladen.
      */
@@ -124,6 +65,7 @@ class User{
                                 chat wird bei User angelegt
                              */
                             this.addLoadedChat(User.allNormalChats[result[i].ncid]);
+                            callBackFinished();
                         }
                         /*
                             wenn nicht, wird chat neu erstellt
@@ -158,15 +100,19 @@ class User{
                              */
                             this.addLoadedChat(newChat);
                             /*
+                                erste msg wird jeweils geladen
+                             */
+                            newChat.loadMessages(1,(resCount,reachedTop) => {
+                                callBackFinished();
+                            });
+                            /*
                                 chat wird bei array, das alle chats beinhaltet hinzugefügt
                              */
                             User.allNormalChats[result[i].ncid] = newChat;
                         }
                     }
                 }
-            callBacksFinished++;
-            if(callBacksFinished === 2)
-                sendChatsToClient();
+            callBackFinished();
         });
         /*
             groupchats werden geladen
@@ -179,11 +125,23 @@ class User{
 
                     }
                 }
-                callBacksFinished++;
-                if(callBacksFinished === 2)
-                    sendChatsToClient();
-            //TODO
+                callBackFinished();
         });
+        /*
+            es wird überprüft, ob bereits alle callbacks abgearbeitet wurden
+         */
+        const callBackFinished = () => {
+            callBacksFinished++;
+            /*
+                Anzahl der callbacks:
+                    2
+                 + normalchats.length
+                 +groupchats.length
+             */
+            if(callBacksFinished === (2 + this.chats.length)){
+                sendChatsToClient();
+            }
+        };
         /*
             user werden chats geschickt
          */
@@ -328,16 +286,89 @@ class User{
                 chatName = currentChat.chatName;
             }
             /*
+                firstmessage wird initialisiert
+             */
+            const firstMessage = currentChat.messages[currentChat.messages.length - 1];
+            let fm;
+            if(firstMessage)
+                fm = {
+                    uid: firstMessage.author.uid,
+                    mid: firstMessage.msgId,
+                    date: firstMessage.date,
+                    content: firstMessage.msg
+                };
+            else
+                fm = {
+                    empty: true
+                };
+            /*
                 Objekt wird erstellt und zum Array hinzugefügt
              */
             rc.push({
                 type:  currentChat.type,
                 id: chatId,
                 chatName: chatName,
-                members: members
+                members: members,
+                firstMessage: fm
             });
         }
         return rc;
     }
+    get con() {
+        return this.#_con;
+    }
+
+    set con(value) {
+        this.#_con = value;
+    }
+
+    get uid() {
+        return this.#_uid;
+    }
+
+    set uid(value) {
+        this.#_uid = value;
+    }
+
+    get username() {
+        return this.#_username;
+    }
+
+    set username(value) {
+        this.#_username = value;
+    }
+
+    get socket() {
+        return this.#_socket;
+    }
+
+    set socket(value) {
+        this.#_socket = value;
+    }
+
+    get chats() {
+        return this.#_chats;
+    }
+
+    set chats(value) {
+        this.#_chats = value;
+    }
+
+    get online() {
+        return this.#_online;
+    }
+
+    set online(online){
+        this.#_online = online;
+    }
+
+    get currentChat() {
+        return this.#_currentChat;
+    }
+
+    set currentChat(value) {
+        this.#_currentChat = value;
+    }
+
 }
 module.exports = User;
