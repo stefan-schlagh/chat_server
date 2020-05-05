@@ -245,17 +245,19 @@ class User{
                 /*
                     members werden angelegt
                  */
-                members = [{
-                    uid : currentChat.user1.uid,
-                    username: currentChat.user1.username,
-                    isOnline: currentChat.user1.online,
-                    isSelf: (this.uid === currentChat.user1.uid)
-                },{
-                    uid: currentChat.user2.uid,
-                    username:  currentChat.user2.username,
-                    isOnline: currentChat.user1.online,
-                    isSelf: (this.uid === currentChat.user2.uid)
-                }];
+                if(this.uid === currentChat.user1.uid){
+                    members = [{
+                        uid : currentChat.user2.uid,
+                        username: currentChat.user2.username,
+                        isOnline: currentChat.user2.online
+                    }];
+                }else{
+                    members = [{
+                        uid : currentChat.user1.uid,
+                        username: currentChat.user1.username,
+                        isOnline: currentChat.user1.online
+                    }];
+                }
                 /*
                     chatname wird ermittelt
                  */
@@ -270,15 +272,12 @@ class User{
                  */
                 const users = currentChat.users;
                 for(let j=0;j<users.length;j++){
-                    let isSelf = false;
-                    if(this.uid === users[j].uid)
-                        isSelf = true;
-                    members.push({
-                        uid: users[j].uid,
-                        username: users [j].username,
-                        isOnline: users[j].online,
-                        isSelf: isSelf
-                    });
+                    if(!this.uid === users[j].uid)
+                        members.push({
+                            uid: users[j].uid,
+                            username: users [j].username,
+                            isOnline: users[j].online
+                        });
                 }
                 /*
                     chatName wird initialisiert
