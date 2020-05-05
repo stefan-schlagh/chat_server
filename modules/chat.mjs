@@ -1,15 +1,8 @@
-const Message = require('./message');
+import Message from "./message.mjs";
+import {chatServer} from "./chat_server.mjs";
 
+export class Chat{
 
-class Chat{
-
-    static io;
-    static con;
-    static allUsers;
-
-    static staticConstructor(){
-        Message.con = Chat.con;
-    }
 
     #_type;
     #_messages = [];
@@ -20,7 +13,6 @@ class Chat{
     constructor(type,id) {
         this.type = type;
         this.chatId = id;
-
         this.initMessages();
     }
     /*
@@ -46,7 +38,7 @@ class Chat{
             es wird die in der DB gespeicherte Nachricht mit der höchsten messageId für diesen chat gesucht
          */
         const isGroupchat = this.type === 'groupChat';
-        Chat.con.query("SELECT max(mid) AS 'mid' FROM message ;"/*WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"';"*/,
+        chatServer.con.query("SELECT max(mid) AS 'mid' FROM message ;"/*WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"';"*/,
         (err,result,fields) => {
             if(result[0].mid !== null) {
                 this.maxMid = result[0].mid;
@@ -62,7 +54,7 @@ class Chat{
      */
     loadMessages(num,callback){
         const isGroupchat = this.type === 'groupChat';
-        Chat.con.query("SELECT * FROM message WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"' && mid < "+this.getLowestMsgId()+" ORDER BY mid DESC LIMIT "+num+";",
+        chatServer.con.query("SELECT * FROM message WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"' && mid < "+this.getLowestMsgId()+" ORDER BY mid DESC LIMIT "+num+";",
         (err,result,fields) => {
             /*
                 wenn weniger Ergebnisse bei SQL-query, wie num, ist das Ende des chats erreicht
@@ -75,7 +67,7 @@ class Chat{
                     /*
                         neue Message wird am start vom Array eingefügt
                      */
-                    const message = new Message(this, Chat.allUsers[result[i].uid], result[i].content, result[i].mid);
+                    const message = new Message(this, chatServer.user[result[i].uid], result[i].content, result[i].mid);
                     message.date = mysqlTimeStampToDate(result[i].date);
                     this.messages.unshift(message);
                 }
@@ -91,7 +83,6 @@ class Chat{
 
             /*
                 function parses mysql datetime string and returns javascript Date object
-
                 input has to be in this format: 2007-06-05 15:26:02
              */
             const regex=/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9]) (?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/;
@@ -237,7 +228,7 @@ class Chat{
     }
 }
 
-class NormalChat extends Chat{
+export class NormalChat extends Chat{
 
     #_user1;
     #_user2;
@@ -289,14 +280,14 @@ class NormalChat extends Chat{
                 es wird geschaut, ob Socket definiert ist
              */
             if(this.user2.socket != null)
-                Chat.io.to(this.user2.socket.id).emit(type,data);
+                chatServer.io.to(this.user2.socket.id).emit(type,data);
         }
         else {
             /*
                 es wird geschaut, ob Socket definiert ist
              */
             if(this.user1.socket != null)
-                Chat.io.to(this.user1.socket.id).emit(type,data);
+                chatServer.io.to(this.user1.socket.id).emit(type,data);
         }
     }
     isAnyoneOnline(){
@@ -315,7 +306,7 @@ class NormalChat extends Chat{
             wenn keine anderen Chats verhanden, wird user gelöscht
          */
         if(user.chats.length <= 1){
-            Chat.allUsers[user.uid] = undefined;
+            chatServer.user[user.uid] = undefined;
         }
         /*
             sonst wird chat entfernt
@@ -326,7 +317,7 @@ class NormalChat extends Chat{
     }
 }
 
-class GroupChat extends Chat{
+export class GroupChat extends Chat{
 
     #_users;
     #_chatName;
@@ -385,7 +376,7 @@ class GroupChat extends Chat{
                     wenn keine anderen Chats verhanden, wird user gelöscht
                  */
                 if (this.users[i].chats.length <= 1) {
-                    Chat.allUsers[this.users[i].uid] = undefined;
+                    chatServer.user[this.users[i].uid] = undefined;
                 }
                 /*
                     sonst wird chat entfernt
@@ -398,7 +389,6 @@ class GroupChat extends Chat{
     }
 }
 
-module.exports.Chat = Chat;
+/*module.exports.Chat = Chat;
 module.exports.NormalChat = NormalChat;
-module.exports.GroupChat = GroupChat;
-
+module.exports.GroupChat = GroupChat;*/

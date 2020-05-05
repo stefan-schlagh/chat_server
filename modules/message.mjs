@@ -1,6 +1,6 @@
-class Message{
+import {chatServer} from "./chat_server.mjs";
 
-    static con;
+export default class Message{
 
     #_msgId;
     #_chat;
@@ -22,12 +22,12 @@ class Message{
     saveInDB(callback){
         //const formattedDate = this.date.toISOString().slice(0, 19).replace('T', ' ');
         const isGroupchat = this.chat.type === 'groupChat';
-        Message.con.query("INSERT INTO message (content, date, isGroupChat, cid,uid) VALUES ('"+this.msg+"',CURRENT_TIMESTAMP(),'"+isGroupchat+"','"+this.chat.chatId+"','"+this.author.uid+"');",
+        chatServer.con.query("INSERT INTO message (content, date, isGroupChat, cid,uid) VALUES ('"+this.msg+"',CURRENT_TIMESTAMP(),'"+isGroupchat+"','"+this.chat.chatId+"','"+this.author.uid+"');",
         () => {
             /*
                 mid dieser msg wird selected
              */
-            Message.con.query("SELECT max(mid) AS 'mid' FROM message",(err,result,fields) => {
+            chatServer.con.query("SELECT max(mid) AS 'mid' FROM message",(err,result,fields) => {
                 this.msgId = result[0].mid;
                 callback(this.msgId);
             });
@@ -74,5 +74,3 @@ class Message{
         this.#_date = value;
     }
 }
-
-module.exports = Message;

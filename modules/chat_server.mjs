@@ -1,33 +1,32 @@
-const User = require('./user');
-const chat = require('./chat');
+import User from "./user.mjs";
+import socket from 'socket.io';
 
-let chatServer;
-let con;
+export let chatServer;
 let app;
 
-exports.createChatServer = function(http,con1,app1){
-    con = con1;
+export default function createChatServer (http,con,app1){
     app = app1;
-    chatServer = new ChatServer(http);
-    chat.Chat.con = con;
-    chat.Chat.staticConstructor();
+    chatServer = new ChatServer(http,con);
     return chatServer;
-};
+}
+//const require = createChatServer(import.meta.url);
 
 class ChatServer{
     #_http;
     #_io;
+    #_con;
     #_user = [];//user werden an der Stelle ihrer uid gespeichert
     #_normalChats = [];//chats werden an der Stelle ihrer chatid gespeichert
     #_groupChats = [];
 
-    constructor(http) {
+    constructor(http,con) {
 
-        this.io = require('socket.io')(http);
-        const io = this.io;
+        this.io = socket(http);
+        this.http = http;
 
-        User.setStaticFields(this.io,this.user,this.normalChats,this.groupChats);
-        chat.Chat.allUsers = this.user;
+        let port = 3002;
+        this.io.listen(port);
+        console.log('listening on port ', port);
 
         this.io.on('connection', socket => {
 
@@ -111,6 +110,7 @@ class ChatServer{
                 user.stoppedTyping();
             });
         });
+        this._con = con;
     }
     /*
         nach user joined event
@@ -121,9 +121,9 @@ class ChatServer{
             wenn user noch nicht existiert, wird er komplett neu angelegt
          */
         if(typeof(this.user[uid]) !== 'object') {
-            const user = new User(con, userInfo.uid, userInfo.username, socket, true);
+            const user = new User(this.con, userInfo.uid, userInfo.username, socket, true);
             user.loadChats();
-            this.user[uid] = new User(con, userInfo.uid, userInfo.username, socket, true);
+            this.user[uid] = new User(this.con, userInfo.uid, userInfo.username, socket, true);
         }
         /*
             wenn er bereits existiert, wird socket gespeichert, und online auf true gesetzt
@@ -140,7 +140,7 @@ class ChatServer{
         es wird nur username und uid hinzugefügt
     */
     addUser(userInfo){
-        this.user[userInfo.uid] = new User1(con,userInfo.uid,userInfo.username);
+        this.user[userInfo.uid] = new User(this.con,userInfo.uid,userInfo.username);
     }
     isUserOnline(uid){
         if(this.user[uid] === undefined) return false;
@@ -181,6 +181,14 @@ class ChatServer{
         this.#_io = value;
     }
 
+    get con() {
+        return this._con;
+    }
+
+    set con(value) {
+        this._con = value;
+    }
+
     get user() {
         return this.#_user;
     }
@@ -205,10 +213,3 @@ class ChatServer{
         this.#_groupChats = value;
     }
 }
-class User2{
-    constructor(username,isTyping) {
-        this.username = username;
-        this.isTyping = isTyping;
-    }
-}
-exports.chat_server = ChatServer;

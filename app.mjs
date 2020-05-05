@@ -1,12 +1,13 @@
-const express = require('express');
-const session = require('express-session');
+import express from 'express';
+import session from 'express-session';
 const app = express();
-const http = require('http').createServer(app);
-const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
+import http from 'http';
+const server = http.createServer(app);
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 //const io = require('socket.io')(http);
-const cors = require ('cors');
-const authenthification = require('./modules/authenthification');
+import cors from 'cors';
+import authenthification from './modules/authenthification.js';
 //const chatServer = new chat_server.chat_server(io);
 
 app.use(bodyParser.json());
@@ -24,7 +25,7 @@ app.use(session({
     saveUninitialized: true
 }));
 
-const mysql = require('mysql');
+import mysql from 'mysql';
 const con = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -36,13 +37,14 @@ con.connect(function(err) {
     if (err) throw err;
 });
 
-const chat_server = require('./modules/chat_server').createChatServer(http,con,app);
+import createChatServer from "./modules/chat_server.mjs";
+const chat_server = createChatServer(http,con,app);
 
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/html/index.html');
 });
 
-http.listen(3001,function () {
+server.listen(3001,function () {
     console.log('Example app listening on port 3001!');
 });
 

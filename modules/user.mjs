@@ -1,6 +1,7 @@
-const chat = require('./chat');
+import {chatServer} from "./chat_server.mjs";
+import {Chat,NormalChat,GroupChat} from "./chat.mjs";
 
-class User{
+export default class User{
     /*
         Reihenfolge egal, Sortierung macht client
      */
@@ -12,22 +13,6 @@ class User{
     #_con;
     #_currentChat;
 
-    /*
-        statische Felder
-     */
-    static allUsers;
-    static allNormalChats;
-    static allGroupChats;
-    static io;
-
-    static setStaticFields(io,users,normalChats,groupChats){
-        this.io = io;
-        this.allUsers = users;
-        this.allNormalChats = normalChats;
-        this.allGroupChats = groupChats;
-
-        chat.Chat.io = io;
-    }
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
      */
@@ -52,7 +37,7 @@ class User{
         /*
             normalchats werden geladen
          */
-        this.con.query("SELECT nc.ncid, nc.uid1, u1.username AS 'uname1', nc.uid2, u2.username AS 'uname2' FROM normalchat nc INNER JOIN user u1 ON nc.uid1 = u1.uid INNER JOIN user u2 ON nc.uid2 = u2.uid WHERE uid1 = '"+this.uid+"' OR uid2 = '"+this.uid+"';",
+        chatServer.con.query("SELECT nc.ncid, nc.uid1, u1.username AS 'uname1', nc.uid2, u2.username AS 'uname2' FROM normalchat nc INNER JOIN user u1 ON nc.uid1 = u1.uid INNER JOIN user u2 ON nc.uid2 = u2.uid WHERE uid1 = '"+this.uid+"' OR uid2 = '"+this.uid+"';",
             (err,result,fields) => {
                 if(result!==undefined) {
                     result = JSON.parse(JSON.stringify(result));
@@ -60,11 +45,11 @@ class User{
                         /*
                             es wird ermittelt, ob chat bereits existiert
                          */
-                        if(typeof(User.allNormalChats[result[i].ncid]) === 'object'){
+                        if(typeof(chatServer.normalChats[result[i].ncid]) === 'object'){
                             /*
                                 chat wird bei User angelegt
                              */
-                            this.addLoadedChat(User.allNormalChats[result[i].ncid]);
+                            this.addLoadedChat(chatServer.normalChats[result[i].ncid]);
                             callBackFinished();
                         }
                         /*
@@ -87,14 +72,14 @@ class User{
                                 wenn dieser undefined ist, wird er neu erstellt
                              */
                             let otherUser;
-                            if (User.allUsers[otherUid] === undefined || User.allUsers[otherUid] === null) {
+                            if (chatServer.user[otherUid] === undefined || chatServer.user[otherUid] === null) {
                                 otherUser = new User(this.con, otherUid, otherUsername);
-                                User.allUsers[otherUid] = otherUser;
+                                chatServer.user[otherUid] = otherUser;
                             }
                             /*
                                 neuer chat wird erstellt
                              */
-                            const newChat = new chat.NormalChat(result[i].ncid, this, otherUser);
+                            const newChat = new NormalChat(result[i].ncid, this, otherUser);
                             /*
                                 chat wird bei user hinzugefügt
                              */
@@ -108,7 +93,7 @@ class User{
                             /*
                                 chat wird bei array, das alle chats beinhaltet hinzugefügt
                              */
-                            User.allNormalChats[result[i].ncid] = newChat;
+                            chatServer.normalChats[result[i].ncid] = newChat;
                         }
                     }
                 }
@@ -117,7 +102,7 @@ class User{
         /*
             groupchats werden geladen
          */
-        this.con.query("SELECT * FROM groupchatmember gcm JOIN groupchat gc ON gcm.gcid = gc.gcid JOIN user u on gcm.uid = u.uid WHERE u.uid = ''"+this.uid+"';",
+        chatServer.con.query("SELECT * FROM groupchatmember gcm JOIN groupchat gc ON gcm.gcid = gc.gcid JOIN user u on gcm.uid = u.uid WHERE u.uid = ''"+this.uid+"';",
             function (err, result, fields) {
                 if(result!==undefined) {
                     result = JSON.parse(JSON.stringify(result));
@@ -170,14 +155,14 @@ class User{
                     alle Referenzen werden gelöscht
                  */
                 if(this.chats[i].type === 'normalChat') {
-                    const chat = User.allNormalChats[this.chats[i].chatId];
+                    const chat = chatServer.groupChats[this.chats[i].chatId];
                     chat.removeUsers(this.uid);
-                    User.allNormalChats[this.chats[i].chatId] = undefined;
+                    chatServer.normalChats[this.chats[i].chatId] = undefined;
                 }
                 else if(this.chats[i].type === 'groupChat') {
-                    const chat = User.allGroupChats[this.chats[i].chatId];
+                    const chat = chatServer.groupChats[this.chats[i].chatId];
                     chat.removeUsers(this.uid);
-                    User.allGroupChats[this.chats[i].chatId] = undefined;
+                    chatServer.groupChats[this.chats[i].chatId] = undefined;
                 }
                 this.chats[i] = undefined;
             }
@@ -370,4 +355,3 @@ class User{
     }
 
 }
-module.exports = User;
