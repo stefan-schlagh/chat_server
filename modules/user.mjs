@@ -87,7 +87,7 @@ export default class User{
                             /*
                                 erste msg wird jeweils geladen
                              */
-                            newChat.loadMessages(1,(resCount,reachedTop) => {
+                            newChat.initMessages(() => {
                                 callBackFinished();
                             });
                             /*

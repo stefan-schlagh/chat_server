@@ -13,7 +13,6 @@ export class Chat{
     constructor(type,id) {
         this.type = type;
         this.chatId = id;
-        this.initMessages();
     }
     /*
         neue Message wird zu message-array hinzugefügt
@@ -33,7 +32,7 @@ export class Chat{
     /*
         messages werden initialisiert
      */
-    initMessages(){
+    initMessages(callback){
         /*
             es wird die in der DB gespeicherte Nachricht mit der höchsten messageId für diesen chat gesucht
          */
@@ -42,7 +41,7 @@ export class Chat{
         (err,result,fields) => {
             if(result[0].mid !== null) {
                 this.maxMid = result[0].mid;
-                this.loadMessages(10,() => {});
+                this.loadMessages(10,callback);
             }
             else
                 this.maxMid = -1;
