@@ -1,11 +1,12 @@
 import {chatServer} from "./chat_server.mjs";
 import {Chat,NormalChat,GroupChat} from "./chat.mjs";
+import BinSearchArray from "./BinSearch.mjs";
 
 export default class User{
     /*
         Reihenfolge egal, Sortierung macht client
      */
-    #_chats = [];
+    #_chats;
     #_socket;
     #_uid;
     #_username;
@@ -19,7 +20,7 @@ export default class User{
     constructor(con,uid,username,socket = null,online = false) {
         this.con = con;
         this.uid = uid;
-        this.chats = [];
+        this.chats = new BinSearchArray();
         this.online = online;
         this.username = username;
         this.socket = socket;
@@ -45,11 +46,12 @@ export default class User{
                         /*
                             es wird ermittelt, ob chat bereits existiert
                          */
-                        if(typeof(chatServer.normalChats[result[i].ncid]) === 'object'){
+                        if(chatServer.normalChats.getIndex(result[i].ncid) !== -1){
                             /*
+                                wenn chat bereits existiert, wird dieser nur bei user hinzugefügt
                                 chat wird bei User angelegt
                              */
-                            this.addLoadedChat(chatServer.normalChats[result[i].ncid]);
+                            this.addLoadedChat(chatServer.normalChats.get(result[i].ncid));
                             callBackFinished();
                         }
                         /*
@@ -72,9 +74,9 @@ export default class User{
                                 wenn dieser undefined ist, wird er neu erstellt
                              */
                             let otherUser;
-                            if (chatServer.user[otherUid] === undefined || chatServer.user[otherUid] === null) {
+                            if (chatServer.user.getIndex(otherUid) === -1) {
                                 otherUser = new User(this.con, otherUid, otherUsername);
-                                chatServer.user[otherUid] = otherUser;
+                                chatServer.user.add(otherUid,otherUser);
                             }
                             /*
                                 neuer chat wird erstellt
@@ -82,8 +84,10 @@ export default class User{
                             const newChat = new NormalChat(result[i].ncid, this, otherUser);
                             /*
                                 chat wird bei user hinzugefügt
+                                "--" wird bei otherUser hinzugefügt
                              */
                             this.addLoadedChat(newChat);
+                            otherUser.addLoadedChat(newChat);
                             /*
                                 erste msg wird jeweils geladen
                              */
@@ -93,7 +97,7 @@ export default class User{
                             /*
                                 chat wird bei array, das alle chats beinhaltet hinzugefügt
                              */
-                            chatServer.normalChats[result[i].ncid] = newChat;
+                            chatServer.normalChats.add(result[i].ncid,newChat);
                         }
                     }
                 }
@@ -148,27 +152,28 @@ export default class User{
             /*
                 Wenn keiner online ist, wird chat gelöscht
              */
-            if(this.chats[i].isAnyoneOnline())
+            if(this.chats[i].value.isAnyoneOnline())
                 userInfoNeeded = true;
             else {
                 /*
-                    alle Referenzen werden gelöscht
+                    keiner online
+                        -> alle Referenzen in chatserver werden gelöscht
+                        -> alle Refernzen von chat auf User werden gelöscht
                  */
-                if(this.chats[i].type === 'normalChat') {
-                    const chat = chatServer.groupChats[this.chats[i].chatId];
+                if(this.chats[i].value.type === 'normalChat') {
+                    const chat = chatServer.normalChats.get(this.chats[i].value.chatId);
                     chat.removeUsers(this.uid);
-                    chatServer.normalChats[this.chats[i].chatId] = undefined;
+                    chatServer.normalChats.remove(this.chats[i].value.chatId);
                 }
-                else if(this.chats[i].type === 'groupChat') {
-                    const chat = chatServer.groupChats[this.chats[i].chatId];
+                else if(this.chats[i].value.type === 'groupChat') {
+                    const chat = chatServer.groupChats.get(this.chats[i].value.chatId);
                     chat.removeUsers(this.uid);
-                    chatServer.groupChats[this.chats[i].chatId] = undefined;
+                    chatServer.groupChats.remove(this.chats[i].value.chatId);
                 }
-                this.chats[i] = undefined;
+                //Referenz im eigenen chat-array wird gelöscht
+                this.chats.remove(this.chats[i].value.chatId);
             }
         }
-        //chats löschen
-        this.chats = [];
         return userInfoNeeded;
     }
     startedTyping(){
@@ -198,16 +203,19 @@ export default class User{
         wird aufgerufen, wenn chat geladen wurde und zum array hinzugefügt werden soll.
      */
     addLoadedChat(chat){
-        this.chats.push(chat);
+        this.chats.add(chat.chatId,chat);
     }
     /*
-        wird aufgerufen, wenn geladener chat gespeichert und aus server-speicher entfernt werden soll
+        wird aufgerufen, wenn geladener chat gespeichert
+        und aus server-speicher entfernt werden soll
+        aufgerufen in:
+            removeUsers:
+                Normalchat
+                Grpupchat
      */
     removeUnloadedChat(chat){
-        const index = this.chats.indexOf(chat);
-        if (index > -1) {
-            this.chats.splice(index, 1);
-        }
+        //Referenz im eigenen chat-array wird gelöscht
+        this.chats.remove(chat.chatId);
     }
     /*
         Es wird ein Objekt mit allen chats, in denen sich der user derzeit befindet zurückgegeben
@@ -215,7 +223,7 @@ export default class User{
     getChatJson(){
         let rc = [];
         for(let i=0;i<this.chats.length;i++){
-            const currentChat = this.chats[i];
+            const currentChat = this.chats[i].value;
             /*
                 members werden in Form eines Arrays mit allen uids der user gespeichert.
                 bei normalchat ist chatname name des gegenübers, bei groupchat der chatname
@@ -257,11 +265,11 @@ export default class User{
                  */
                 const users = currentChat.users;
                 for(let j=0;j<users.length;j++){
-                    if(!this.uid === users[j].uid)
+                    if(!this.uid === users[j].value.uid)
                         members.push({
-                            uid: users[j].uid,
-                            username: users [j].username,
-                            isOnline: users[j].online
+                            uid: users[j].value.uid,
+                            username: users[j].value.username,
+                            isOnline: users[j].value.online
                         });
                 }
                 /*

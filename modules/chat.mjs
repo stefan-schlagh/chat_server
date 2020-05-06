@@ -3,7 +3,6 @@ import {chatServer} from "./chat_server.mjs";
 
 export class Chat{
 
-
     #_type;
     #_messages = [];
     //wenn -1 --> noch keine Nachrichten im chat
@@ -37,7 +36,7 @@ export class Chat{
             es wird die in der DB gespeicherte Nachricht mit der höchsten messageId für diesen chat gesucht
          */
         const isGroupchat = this.type === 'groupChat';
-        chatServer.con.query("SELECT max(mid) AS 'mid' FROM message ;"/*WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"';"*/,
+        chatServer.con.query("SELECT max(mid) AS 'mid' FROM message WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"';",
         (err,result,fields) => {
             if(result[0].mid !== null) {
                 this.maxMid = result[0].mid;
@@ -66,7 +65,7 @@ export class Chat{
                     /*
                         neue Message wird am start vom Array eingefügt
                      */
-                    const message = new Message(this, chatServer.user[result[i].uid], result[i].content, result[i].mid);
+                    const message = new Message(this, chatServer.user.get(result[i].uid), result[i].content, result[i].mid);
                     message.date = mysqlTimeStampToDate(result[i].date);
                     this.messages.unshift(message);
                 }
@@ -305,7 +304,7 @@ export class NormalChat extends Chat{
             wenn keine anderen Chats verhanden, wird user gelöscht
          */
         if(user.chats.length <= 1){
-            chatServer.user[user.uid] = undefined;
+            chatServer.user.remove(user.uid);
         }
         /*
             sonst wird chat entfernt
@@ -318,6 +317,7 @@ export class NormalChat extends Chat{
 
 export class GroupChat extends Chat{
 
+    //BinSearchArray
     #_users;
     #_chatName;
     #_socketRoomName;
@@ -370,12 +370,12 @@ export class GroupChat extends Chat{
     }
     removeUsers(uid){
         for(let i=0;i<this.users.length;i++){
-            if(this.users[i].uid !== uid) {
+            if(this.users[i].value.uid !== uid) {
                 /*
                     wenn keine anderen Chats verhanden, wird user gelöscht
                  */
                 if (this.users[i].chats.length <= 1) {
-                    chatServer.user[this.users[i].uid] = undefined;
+                    chatServer.user.remove(this.users[i].uid);
                 }
                 /*
                     sonst wird chat entfernt
@@ -387,7 +387,3 @@ export class GroupChat extends Chat{
         }
     }
 }
-
-/*module.exports.Chat = Chat;
-module.exports.NormalChat = NormalChat;
-module.exports.GroupChat = GroupChat;*/

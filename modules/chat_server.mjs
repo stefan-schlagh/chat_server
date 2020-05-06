@@ -1,5 +1,6 @@
 import User from "./user.mjs";
 import socket from 'socket.io';
+import BinSearchArray from "./BinSearch.mjs";
 
 export let chatServer;
 let app;
@@ -15,9 +16,9 @@ class ChatServer{
     #_http;
     #_io;
     #_con;
-    #_user = [];//user werden an der Stelle ihrer uid gespeichert
-    #_normalChats = [];//chats werden an der Stelle ihrer chatid gespeichert
-    #_groupChats = [];
+    #_user = new BinSearchArray();//user werden an der Stelle ihrer uid gespeichert
+    #_normalChats = new BinSearchArray();//chats werden an der Stelle ihrer chatid gespeichert
+    #_groupChats = new BinSearchArray();
 
     constructor(http,con) {
 
@@ -48,9 +49,9 @@ class ChatServer{
                     chat wird ermittelt
                  */
                 if(chatInfo.type === 'normalChat'){
-                    newChat = this.normalChats[chatInfo.id];
+                    newChat = this.normalChats.get(chatInfo.id);
                 }else if(chatInfo.type === 'groupChat'){
-                    newChat = this.groupChats[chatInfo.id];
+                    newChat = this.groupChats.get(chatInfo.id);
                 }
                 this.changeCurrentChat(user,newChat);
             });
@@ -84,9 +85,9 @@ class ChatServer{
                 }*/
                 let chat;
                 if(data.chatType === 'normalChat')
-                    chat = this.normalChats[data.chatId];
+                    chat = this.normalChats.get(data.chatId);
                 else if(data.chatType === 'groupChat')
-                    chat = this.groupChats[data.chatId];
+                    chat = this.groupChats.get(data.chatId);
                 chat.getMessages(data.lastMsgId,data.num,data => {
                     /*
                         Daten werden zu client gesendet
@@ -98,7 +99,11 @@ class ChatServer{
                 wird aufgerufen, wenn client disconnected
              */
             socket.on('disconnect',() => {
-                if(user!==undefined) {
+                if(user !== undefined) {
+                    /*
+                        user wird gelöscht, sowie alle Referenzen,
+                        die nicht mehr gebraucht werden (chats etc...)
+                    */
                     this.unloadUser(user);
                     user = null;
                 }
@@ -120,40 +125,47 @@ class ChatServer{
         /*
             wenn user noch nicht existiert, wird er komplett neu angelegt
          */
-        if(typeof(this.user[uid]) !== 'object') {
+        if(this.user.getIndex(uid) === -1) {
             const user = new User(this.con, userInfo.uid, userInfo.username, socket, true);
             user.loadChats();
-            this.user[uid] = new User(this.con, userInfo.uid, userInfo.username, socket, true);
+            this.user.add(user.uid,user);
         }
         /*
             wenn er bereits existiert, wird socket gespeichert, und online auf true gesetzt
          */
         else{
-            const user = this.user[uid];
+            const user = this.user.get(uid);
             user.socket = socket;
             user.online = true;
             user.loadChats();
         }
-        return this.user[uid];
+        return this.user.get(uid);
     }
     /*
         es wird nur username und uid hinzugefügt
     */
     addUser(userInfo){
-        this.user[userInfo.uid] = new User(this.con,userInfo.uid,userInfo.username);
+        this.user.add(userInfo.uid,new User(this.con,userInfo.uid,userInfo.username));
     }
     isUserOnline(uid){
-        if(this.user[uid] === undefined) return false;
-        return this.user[uid].online;
+        if(this.user.getIndex(uid) === -1) return false;
+        return this.user.get(uid).online;
     }
     /*
         User wird offline gesetzt
      */
     unloadUser(user){
         user.online = false;
+        /*
+            user wird gelöscht, sowie alle Referenzen,
+            die nicht mehr gebraucht werden (chats etc...)
+        */
         let userInfoNeeded = user.saveAndDeleteChats();
         if(!userInfoNeeded) {
-            this.user[user.uid] = undefined;
+            /*
+                wenn userinfo in keinem chat mehr gebraucht wird, wird sie ganz gelöscht
+             */
+            this.user.remove(user.uid);
         }
     }
     changeCurrentChat(user,newChat){
