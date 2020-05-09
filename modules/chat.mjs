@@ -42,8 +42,13 @@ export class Chat{
                 this.maxMid = result[0].mid;
                 this.loadMessages(10,callback);
             }
-            else
+            /*
+                keine Nachricht gefunden
+             */
+            else {
                 this.maxMid = -1;
+                callback();
+            }
         });
     }
     /*
