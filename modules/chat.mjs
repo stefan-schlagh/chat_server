@@ -303,14 +303,16 @@ export class NormalChat extends Chat{
         /*
             wenn keine anderen Chats verhanden, wird user gelöscht
          */
-        if(user.chats.length <= 1){
-            chatServer.user.remove(user.uid);
-        }
-        /*
-            sonst wird chat entfernt
-         */
-        else{
-            user.removeUnloadedChat(this);
+        if(user !== undefined) {
+            if (user.chats.length <= 1) {
+                chatServer.user.remove(user.uid);
+            }
+            /*
+                sonst wird chat entfernt
+             */
+            else {
+                user.removeUnloadedChat(this);
+            }
         }
     }
 }

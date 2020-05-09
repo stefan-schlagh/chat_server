@@ -77,6 +77,8 @@ export default class User{
                             if (chatServer.user.getIndex(otherUid) === -1) {
                                 otherUser = new User(this.con, otherUid, otherUsername);
                                 chatServer.user.add(otherUid,otherUser);
+                            }else{
+                                otherUser = chatServer.user.get(otherUid);
                             }
                             /*
                                 neuer chat wird erstellt
@@ -162,13 +164,18 @@ export default class User{
                  */
                 if(this.chats[i].value.type === 'normalChat') {
                     const chat = chatServer.normalChats.get(this.chats[i].value.chatId);
-                    chat.removeUsers(this.uid);
-                    chatServer.normalChats.remove(this.chats[i].value.chatId);
+                    //should not be undefined
+                    if(chat !== undefined) {
+                        chat.removeUsers(this.uid);
+                        chatServer.normalChats.remove(this.chats[i].value.chatId);
+                    }
                 }
                 else if(this.chats[i].value.type === 'groupChat') {
                     const chat = chatServer.groupChats.get(this.chats[i].value.chatId);
-                    chat.removeUsers(this.uid);
-                    chatServer.groupChats.remove(this.chats[i].value.chatId);
+                    if(chat !== undefined) {
+                        chat.removeUsers(this.uid);
+                        chatServer.groupChats.remove(this.chats[i].value.chatId);
+                    }
                 }
                 //Referenz im eigenen chat-array wird gelöscht
                 this.chats.remove(this.chats[i].value.chatId);

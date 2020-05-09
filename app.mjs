@@ -9,6 +9,10 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import authenthification from './modules/authenthification.js';
 //const chatServer = new chat_server.chat_server(io);
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
