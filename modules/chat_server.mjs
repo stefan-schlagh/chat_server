@@ -77,12 +77,7 @@ class ChatServer{
                 wird aufgerufen, wenn Nachrichten geladen werden sollen
              */
             socket.on('load messages', data => {
-                /*console.log('load messages');
-                console.log(this.normalChats);
-                for(let i=0;i<=this.normalChats.length;i++){
-                    if(this.normalChats[i] !== undefined)
-                        console.log(this.normalChats[i].messages);
-                }*/
+
                 let chat;
                 if(data.chatType === 'normalChat')
                     chat = this.normalChats.get(data.chatId);
@@ -114,6 +109,7 @@ class ChatServer{
             socket.on('stopped typing',() => {
                 user.stoppedTyping();
             });
+            socket.on()
         });
         this._con = con;
     }
