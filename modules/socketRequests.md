@@ -41,7 +41,7 @@ The message is saved in the database and sent via the socket to all users of the
 
 #### parameters
 ````javascript
-message = "the received message"
+message = "the received message";
 callback = "see callback"
 ````
 
@@ -107,6 +107,19 @@ current chat of the user. [see stopped typing](#stopped-typing_c)
 #### parameters
 ````
 none
+````
+
+### getUsers-noChat
+
+#### info 
+Users, who have no chat with the requesting user get sent back
+
+####parameters
+````json
+{
+    "search": "the specified search",
+    "limit": "how many users should be selected"
+}
 ````
 
 ### disconnect
@@ -204,8 +217,7 @@ When a message got sent by another user.
 {
   "type": "type of the chat",
   "id": "id of the chat",
-  "uid":"id of the user",
-
+  "uid":"id of the user"
 }
 ````
 
@@ -237,6 +249,16 @@ gets emitted by the server when a member of a chat stops typing.
     "mid": "the message id",
     "content": "the content of the message"
 }
+````
+
+### users noChat
+
+#### info
+the users with no chat get returned. response to [getUsers-noChat](#getusers-nochat)
+
+#### parameters
+````json
+
 ````
 
 ### disconnect

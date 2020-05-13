@@ -1,6 +1,7 @@
 import User from "./user.mjs";
 import socket from 'socket.io';
 import BinSearchArray from "./BinSearch.mjs";
+import {selectUsersNoChat} from "./database/selectUsers.mjs";
 
 export let chatServer;
 let app;
@@ -90,6 +91,19 @@ class ChatServer{
                     socket.emit('messages',data);
                 });
             });
+            socket.on('started typing',() => {
+                user.startedTyping();
+            });
+            socket.on('stopped typing',() => {
+                user.stoppedTyping();
+            });
+            socket.on('getUsers-noChat',data => {
+                selectUsersNoChat(user.uid,data.search,data.limit).then(data => {
+                    socket.emit('users-noChat',data);
+                }).catch(err => {
+                    console.log(err);
+                })
+            });
             /*
                 wird aufgerufen, wenn client disconnected
              */
@@ -103,13 +117,6 @@ class ChatServer{
                     user = null;
                 }
             });
-            socket.on('started typing',() => {
-                user.startedTyping();
-            });
-            socket.on('stopped typing',() => {
-                user.stoppedTyping();
-            });
-            socket.on()
         });
         this._con = con;
     }
