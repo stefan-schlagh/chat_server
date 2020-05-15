@@ -1,6 +1,8 @@
 import User from "./user.mjs";
 import socket from 'socket.io';
 import BinSearchArray from "./BinSearch.mjs";
+import {getUser,selectUsersNoChat} from "./database/selectUsers.mjs";
+import {newNormalChat} from "./database/newChat.js";
 
 export let chatServer;
 let app;
@@ -48,7 +50,10 @@ class ChatServer{
                 /*
                     chat wird ermittelt
                  */
-                if(chatInfo.type === 'normalChat'){
+                if(chatInfo === null){
+                    //currentChat gets set to null
+                    newChat = null;
+                }else if(chatInfo.type === 'normalChat'){
                     newChat = this.normalChats.get(chatInfo.id);
                 }else if(chatInfo.type === 'groupChat'){
                     newChat = this.groupChats.get(chatInfo.id);
@@ -90,6 +95,37 @@ class ChatServer{
                     socket.emit('messages',data);
                 });
             });
+            socket.on('started typing',() => {
+                user.startedTyping();
+            });
+            socket.on('stopped typing',() => {
+                user.stoppedTyping();
+            });
+            socket.on('getUsers-noChat',data => {
+                selectUsersNoChat(user.uid,data.search,data.limit).then(data => {
+                    socket.emit('users-noChat',data);
+                }).catch(err => {
+                    console.log(err);
+                })
+            });
+            /*
+                userinfo gets requested for a specific user
+             */
+            socket.on('getUserInfo',(uid,callback) => {
+
+                getUser(user.uid,uid)
+                    .then(res => callback(res,false))
+                    .catch(err => callback(err,true))
+            });
+            /*
+                a new normal chat gets created
+             */
+            socket.on('new normalChat',(data,callback) => {
+
+                newNormalChat(user.uid,data.uid,data.username,data.message)
+                    .then(res => callback(res))
+                    .catch(err => console.log(err));
+            });
             /*
                 wird aufgerufen, wenn client disconnected
              */
@@ -103,13 +139,6 @@ class ChatServer{
                     user = null;
                 }
             });
-            socket.on('started typing',() => {
-                user.startedTyping();
-            });
-            socket.on('stopped typing',() => {
-                user.stoppedTyping();
-            });
-            socket.on()
         });
         this._con = con;
     }

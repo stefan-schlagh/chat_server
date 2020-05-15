@@ -1,13 +1,53 @@
-import {chatServer} from "../chat_server";
+import {chatServer} from "../chat_server.mjs";
 
-export function selectUser(uid){
+/*
+    A user gets requested
+        uidFrom --> uid of the requesting user
+        uidReq -->  uid that should be requested
+ */
+export async function getUser(uidFrom,uidReq){
 
+    return new Promise(function(resolve, reject) {
+
+        const query_str =
+            "SELECT username " +
+            "FROM user " +
+            "WHERE uid = " + uidReq + ";";
+
+        chatServer.con.query(query_str, function (err, rows, fields) {
+            // Call reject on error states,
+            // call resolve with results
+            if (err) {
+                reject(err);
+            }
+            
+            let username = '';
+            let userExists = false;
+            let blocked = false;
+            
+            if(rows.length > 0){
+
+                username = rows[0].username;
+                userExists = true;
+                blocked = false;
+            }
+            
+            const result = {
+                username: username,
+                blocked: blocked,
+                userExists: userExists
+            };
+            
+            resolve(result);
+        });
+
+    });
 }
 /*
     all Users where the specified user does not have a chat with get selected and returned
     search does have to be validated
  */
-export function selectUsersNoChat(uid,search){
+export async function selectUsersNoChat(uid,search,limit){
 
     return new Promise(function(resolve, reject) {
         // The Promise constructor should catch any errors thrown on
@@ -33,13 +73,13 @@ export function selectUsersNoChat(uid,search){
                 "(NOT uid = ANY (" +
                     "SELECT uid1 " +
                     "FROM normalchat " +
-                    "WHERE uid1 = "+uid+" OR uid2 = "+uid+"))" +
+                    "WHERE uid1 = " + uid+" OR uid2 = " + uid + " )) " +
             "AND (NOT uid = ANY (" +
-                    "SELECT uid2" +
-                    "FROM normalchat" +
-                    "WHERE uid1 = "+uid+" OR uid2 = "+uid+"))" +
-            "AND username LIKE '%"+search+"%'" +
-            "LIMIT 10";
+                    "SELECT uid2 " +
+                    "FROM normalchat " +
+                    "WHERE uid1 = " + uid + " OR uid2 = " + uid + " )) " +
+            "AND username LIKE '%" + search + "%' " +
+            "LIMIT " + limit + ";";
 
         chatServer.con.query(query_str, function (err, rows, fields) {
             // Call reject on error states,

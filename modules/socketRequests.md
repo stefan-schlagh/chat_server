@@ -41,7 +41,7 @@ The message is saved in the database and sent via the socket to all users of the
 
 #### parameters
 ````javascript
-message = "the received message"
+message = "the received message";
 callback = "see callback"
 ````
 
@@ -108,6 +108,59 @@ current chat of the user. [see stopped typing](#stopped-typing_c)
 ````
 none
 ````
+
+### getUsers-noChat
+
+#### info 
+Users, who have no chat with the requesting user get sent back
+
+####parameters
+````json
+{
+    "search": "the specified search",
+    "limit": "how many users should be selected"
+}
+````
+
+### getUserInfo
+
+#### info
+the user info of a specific user gets requested. the result is returned by a callback
+
+#### parameters
+````javascript
+uid = "the id of the requested user";
+callback = "the callback";
+````
+
+### new normalChat
+
+#### info
+a new normal chat gets created. This happens when a user writes a message 
+in a temporary chat.
+
+#### parameters
+````json
+{
+    "uid": "the id of the user who should be added",
+    "username": "the username of the user who should be added",
+    "message": "the message that should be added to the chat"
+}
+````
+
+#### callback
+Immediately after the message is saved in the database, the messageId of it is requested. 
+This information is then transmitted to the client by the callback
+
+##### parameters
+````json
+{
+    "ncid": "the id of the new chat",
+    "mid": "the id of the first message in the chat",
+    "online": "is the other user online"
+}
+````
+
 
 ### disconnect
 
@@ -204,8 +257,7 @@ When a message got sent by another user.
 {
   "type": "type of the chat",
   "id": "id of the chat",
-  "uid":"id of the user",
-
+  "uid":"id of the user"
 }
 ````
 
@@ -236,6 +288,57 @@ gets emitted by the server when a member of a chat stops typing.
     "uid":"id of the user",
     "mid": "the message id",
     "content": "the content of the message"
+}
+````
+
+### users noChat
+
+#### info
+the users with no chat get returned. response to [getUsers-noChat](#getusers-nochat)
+
+#### parameters
+````json
+[
+  {
+    "username": "username",
+    "uid": "uid"
+  },
+  {
+    "username": "username",
+    "uid": "uid"
+  }
+]
+````
+
+### new chat
+
+#### info
+gets emitted by the server if the user gets added to a new chat
+
+#### parameters
+````json
+{
+  "type": "type of the chat",
+  "id": "id of the chat",
+  "chatName": "chat name",
+  "members": [
+    {
+      "uid": "id of the user",
+      "username": "username",
+      "isOnline": "is the user online"
+    },
+    {
+      "uid": "id of the user",
+      "username": "username",
+      "isOnline": "is the user online"
+    }
+  ],
+  "firstMessage": {
+    "uid": "the uid from the author",
+    "mid": "the message id",
+    "date": "the date when the message was written",
+    "content": "the content of the message"
+  }
 }
 ````
 
