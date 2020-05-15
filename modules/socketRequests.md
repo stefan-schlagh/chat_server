@@ -122,6 +122,46 @@ Users, who have no chat with the requesting user get sent back
 }
 ````
 
+### getUserInfo
+
+#### info
+the user info of a specific user gets requested. the result is returned by a callback
+
+#### parameters
+````javascript
+uid = "the id of the requested user";
+callback = "the callback";
+````
+
+### new normalChat
+
+#### info
+a new normal chat gets created. This happens when a user writes a message 
+in a temporary chat.
+
+#### parameters
+````json
+{
+    "uid": "the id of the user who should be added",
+    "username": "the username of the user who should be added",
+    "message": "the message that should be added to the chat"
+}
+````
+
+#### callback
+Immediately after the message is saved in the database, the messageId of it is requested. 
+This information is then transmitted to the client by the callback
+
+##### parameters
+````json
+{
+    "ncid": "the id of the new chat",
+    "mid": "the id of the first message in the chat",
+    "online": "is the other user online"
+}
+````
+
+
 ### disconnect
 
 #### info

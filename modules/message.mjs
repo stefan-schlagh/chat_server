@@ -18,6 +18,7 @@ export default class Message{
     }
     /*
         msg wird in DB gespeichert
+        TODO: relocate to /database/newMessage
      */
     saveInDB(callback){
         //const formattedDate = this.date.toISOString().slice(0, 19).replace('T', ' ');
