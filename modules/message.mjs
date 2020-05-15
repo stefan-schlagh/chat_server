@@ -1,4 +1,5 @@
 import {chatServer} from "./chat_server.mjs";
+import {saveMessageInDB} from "./database/newMessage.js";
 
 export default class Message{
 
@@ -17,22 +18,14 @@ export default class Message{
         this.msgId = msgId;
     }
     /*
-        msg wird in DB gespeichert
-        TODO: relocate to /database/newMessage
+        message gets saved in the database
      */
     saveInDB(callback){
-        //const formattedDate = this.date.toISOString().slice(0, 19).replace('T', ' ');
-        const isGroupchat = this.chat.type === 'groupChat';
-        chatServer.con.query("INSERT INTO message (content, date, isGroupChat, cid,uid) VALUES ('"+this.msg+"',CURRENT_TIMESTAMP(),'"+isGroupchat+"','"+this.chat.chatId+"','"+this.author.uid+"');",
-        () => {
-            /*
-                mid dieser msg wird selected
-             */
-            chatServer.con.query("SELECT max(mid) AS 'mid' FROM message",(err,result,fields) => {
-                this.msgId = result[0].mid;
-                callback(this.msgId);
-            });
-        });
+
+        saveMessageInDB(this)
+            .then(mid => callback(mid))
+            .catch(err => console.log(err));
+
     }
 
     get msgId() {

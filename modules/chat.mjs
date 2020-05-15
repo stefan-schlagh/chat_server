@@ -1,5 +1,6 @@
 import Message from "./message.mjs";
 import {chatServer} from "./chat_server.mjs";
+import {getMaxMid,loadMessages} from "./database/existingChat.js";
 
 export class Chat{
 
@@ -33,52 +34,46 @@ export class Chat{
      */
     initMessages(callback){
         /*
-            es wird die in der DB gespeicherte Nachricht mit der höchsten messageId für diesen chat gesucht
+            the message in this chat with the highest messageId gets searched
          */
-        const isGroupchat = this.type === 'groupChat';
-        chatServer.con.query("SELECT max(mid) AS 'mid' FROM message WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"';",
-        (err,result,fields) => {
-            if(result[0].mid !== null) {
-                this.maxMid = result[0].mid;
-                this.loadMessages(10,callback);
-            }
-            /*
-                keine Nachricht gefunden
-             */
-            else {
-                this.maxMid = -1;
-                callback();
-            }
-        });
+        getMaxMid(this)
+            .then(messageFound => {
+                if(messageFound)
+                    this.loadMessages(10,callback);
+                else
+                    callback();
+            })
+            .catch(err => console.log(err));
     }
     /*
         Messages werden geladen
         @param num Anzahl der Nachrichten, die geladen werden sollen
      */
     loadMessages(num,callback){
-        const isGroupchat = this.type === 'groupChat';
-        chatServer.con.query("SELECT * FROM message WHERE isGroupChat = '"+isGroupchat+"' && cid = '"+this.chatId+"' && mid < "+this.getLowestMsgId()+" ORDER BY mid DESC LIMIT "+num+";",
-        (err,result,fields) => {
-            /*
-                wenn weniger Ergebnisse bei SQL-query, wie num, ist das Ende des chats erreicht
-                ,alle Nachrichten sind geladen
-             */
-            if (result !== undefined) {
-                const reachedTop = num > result.length;
-                const resCount = result.length;
-                for (let i = 0; i < result.length; i++) {
-                    /*
-                        neue Message wird am start vom Array eingefügt
-                     */
-                    const message = new Message(this, chatServer.user.get(result[i].uid), result[i].content, result[i].mid);
-                    message.date = mysqlTimeStampToDate(result[i].date);
-                    this.messages.unshift(message);
+
+        loadMessages(this,num)
+            .then(result => {
+                /*
+                    if results of SQL-query are less tham num
+                    --> end of chat reached, all messages loaded
+                 */
+                if (result !== undefined) {
+                    const reachedTop = num > result.length;
+                    const resCount = result.length;
+                    for (let i = 0; i < result.length; i++) {
+                        /*
+                            new messages are inserted at the start of the array
+                         */
+                        const message = new Message(this, chatServer.user.get(result[i].uid), result[i].content, result[i].mid);
+                        message.date = mysqlTimeStampToDate(result[i].date);
+                        this.messages.unshift(message);
+                    }
+                    callback(resCount, reachedTop);
+                }else{
+                    callback(0,true);
                 }
-                callback(resCount, reachedTop);
-            }else{
-                callback(0,true);
-            }
-        });
+            })
+            .catch(err => console.log(err));
         /*
             source: https://dzone.com/articles/convert-mysql-datetime-js-date
          */
