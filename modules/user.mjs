@@ -225,81 +225,18 @@ export default class User{
         this.chats.remove(chat.chatId);
     }
     /*
-        Es wird ein Objekt mit allen chats, in denen sich der user derzeit befindet zurückgegeben
+        A object with all chats where the user is in gets returned
      */
     getChatJson(){
         let rc = [];
         for(let i=0;i<this.chats.length;i++){
             const currentChat = this.chats[i].value;
-            /*
-                members werden in Form eines Arrays mit allen uids der user gespeichert.
-                bei normalchat ist chatname name des gegenübers, bei groupchat der chatname
-             */
-            let members = [];
-            let chatName;
-            /*
-                    chatId wird initialisiert
-                 */
+
             const chatId = currentChat.chatId;
-            if(currentChat.type === 'normalChat'){
-                /*
-                    members werden angelegt
-                 */
-                if(this.uid === currentChat.user1.uid){
-                    members = [{
-                        uid : currentChat.user2.uid,
-                        username: currentChat.user2.username,
-                        isOnline: currentChat.user2.online
-                    }];
-                }else{
-                    members = [{
-                        uid : currentChat.user1.uid,
-                        username: currentChat.user1.username,
-                        isOnline: currentChat.user1.online
-                    }];
-                }
-                /*
-                    chatname wird ermittelt
-                 */
-                if(currentChat.user1.uid === this.uid){
-                    chatName = currentChat.user2.username;
-                }else{
-                    chatName = currentChat.user1.username;
-                }
-            }else if(currentChat.type === 'groupChat'){
-                /*
-                    members werden initialisiert
-                 */
-                const users = currentChat.users;
-                for(let j=0;j<users.length;j++){
-                    if(!this.uid === users[j].value.uid)
-                        members.push({
-                            uid: users[j].value.uid,
-                            username: users[j].value.username,
-                            isOnline: users[j].value.online
-                        });
-                }
-                /*
-                    chatName wird initialisiert
-                 */
-                chatName = currentChat.chatName;
-            }
-            /*
-                firstmessage wird initialisiert
-             */
-            const firstMessage = currentChat.messages[currentChat.messages.length - 1];
-            let fm;
-            if(firstMessage)
-                fm = {
-                    uid: firstMessage.author.uid,
-                    mid: firstMessage.msgId,
-                    date: firstMessage.date,
-                    content: firstMessage.msg
-                };
-            else
-                fm = {
-                    empty: true
-                };
+
+            const members = currentChat.getMemberObject(this.uid);
+            const chatName = currentChat.getChatName(this.uid);
+            const fm = currentChat.getNewestMessageObject();
             /*
                 Objekt wird erstellt und zum Array hinzugefügt
              */
@@ -313,6 +250,28 @@ export default class User{
         }
         return rc;
     }
+    /*
+        a new chat gets added to the user
+        this also gets emitted to the client
+     */
+    addNewChat(chat){
+
+        if(this.socket !== null) {
+            /*
+                info gets emitted to the server
+             */
+            const data = {
+                type: chat.type,
+                id: chat.chatId,
+                chatName: chat.getChatName(this.uid),
+                members: chat.getMemberObject(this.uid),
+                firstMessage: chat.getNewestMessageObject()
+            };
+
+            this.socket.emit("new chat", data);
+        }
+    }
+
     get con() {
         return this.#_con;
     }

@@ -23,12 +23,11 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
     chatServer.normalChats.add(ncid,newChat);
 
     user1.chats.add(ncid,newChat);
+    user2.chats.add(ncid,newChat);
     /*
         if the other user is online, the chat gets added at him too
      */
     const online = user2.online;
-    //TODO method to send this data to user
-
     /*
         first message gets initialized
      */
@@ -38,6 +37,10 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
         message gets saved in the database
      */
     const mid = await saveMessageInDB(firstMessage);
+    /*
+        if the user is online, the data gets sent to it too
+     */
+    user2.addNewChat(newChat);
 
     return {
         ncid: ncid,

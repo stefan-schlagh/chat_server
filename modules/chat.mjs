@@ -192,6 +192,28 @@ export class Chat{
             });
         }
     }
+    /*
+        returns the newest message
+     */
+    getNewestMessageObject(){
+
+        const firstMessage = this.messages[this.messages.length - 1];
+        /*
+            does there exist a message?
+         */
+        if(firstMessage){
+            return {
+                uid: firstMessage.author.uid,
+                mid: firstMessage.msgId,
+                date: firstMessage.date,
+                content: firstMessage.msg
+            };
+        }else{
+            return {
+                empty: true
+            };
+        }
+    }
 
     get type() {
         return this.#_type;
@@ -315,6 +337,32 @@ export class NormalChat extends Chat{
             }
         }
     }
+    getChatName(uidSelf){
+        if(this.user1.uid === uidSelf){
+            return this.user2.username;
+        }else{
+            return  this.user1.username;
+        }
+    }
+    /*
+        all members of the chat get returned
+     */
+    getMemberObject(uidSelf){
+
+        if(uidSelf === this.user1.uid){
+            return [{
+                uid : this.user2.uid,
+                username: this.user2.username,
+                isOnline: this.user2.online
+            }];
+        }else{
+            return [{
+                uid : this.user1.uid,
+                username: this.user1.username,
+                isOnline: this.user1.online
+            }];
+        }
+    }
 }
 
 export class GroupChat extends Chat{
@@ -388,4 +436,25 @@ export class GroupChat extends Chat{
             }
         }
     }
+    getChatName(){
+        return this.chatName;
+    }
+    /*
+        all members of the chat get returned
+     */
+    getMemberObject(){
+
+        let members = [];
+
+        for(let j=0;j<this.users.length;j++){
+            if(!this.uid === this.users[j].value.uid)
+                members.push({
+                    uid: this.users[j].value.uid,
+                    username: this.users[j].value.username,
+                    isOnline: this.users[j].value.online
+                });
+        }
+        return members;
+    }
+
 }

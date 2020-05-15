@@ -298,7 +298,48 @@ the users with no chat get returned. response to [getUsers-noChat](#getusers-noc
 
 #### parameters
 ````json
+[
+  {
+    "username": "username",
+    "uid": "uid"
+  },
+  {
+    "username": "username",
+    "uid": "uid"
+  }
+]
+````
 
+### new chat
+
+#### info
+gets emitted by the server if the user gets added to a new chat
+
+#### parameters
+````json
+{
+  "type": "type of the chat",
+  "id": "id of the chat",
+  "chatName": "chat name",
+  "members": [
+    {
+      "uid": "id of the user",
+      "username": "username",
+      "isOnline": "is the user online"
+    },
+    {
+      "uid": "id of the user",
+      "username": "username",
+      "isOnline": "is the user online"
+    }
+  ],
+  "firstMessage": {
+    "uid": "the uid from the author",
+    "mid": "the message id",
+    "date": "the date when the message was written",
+    "content": "the content of the message"
+  }
+}
 ````
 
 ### disconnect
