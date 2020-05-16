@@ -7,10 +7,10 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 //const io = require('socket.io')(http);
 import cors from 'cors';
-import authenthification from './modules/authenthification.js';
 //const chatServer = new chat_server.chat_server(io);
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import {authenticationRequests} from "./modules/authentication/requests.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -41,7 +41,7 @@ con.connect(function(err) {
     if (err) throw err;
 });
 
-import createChatServer from "./modules/chat_server.mjs";
+import createChatServer from "./modules/chatServer/chat_server.js";
 const chat_server = createChatServer(http,con,app);
 
 app.get('/', function (req, res) {
@@ -52,59 +52,7 @@ server.listen(3001,function () {
     console.log('Example app listening on port 3001!');
 });
 
-app.post('/login', function (req, res) {
-    let username = req.body.username;
-    let password = req.body.password;
-
-    authenthification.login(username,password,con,chat_server,function(success,msg,uid){
-        res.send(msg);
-        if(success){
-            //cookie setzen
-            let sess = req.session;
-            sess.uid = uid;
-            sess.username = username;
-            sess.save(function(err) {
-                // session saved
-            })
-        }
-    });
-});
-
-app.post('/register', function (req, res) {
-    let username = req.body.username;
-    let password = req.body.password;
-
-    authenthification.register(username,password,con,function (success,msg,uid) {
-        res.send(msg);
-        if(success){
-            //cookie setzen
-            const sess = req.session;
-            sess.uid = uid;
-            sess.username = username;
-            sess.save(function(err) {
-                // session saved
-            })
-        }
-    });
-});
-
-app.post('/userInfo',function(req,res){
-    const sess = req.session;
-    const loggedIn = sess.uid !== undefined;
-    res.send(
-        {
-            loggedIn: loggedIn,
-            uid: sess.uid,
-            username:sess.username
-        }
-    );
-});
-
-app.post('/logout',function(req,res){
-    const sess = req.session;
-    sess.uid = undefined;
-    sess.username = undefined;
-    res.send({
-        success: true
-    });
-});
+/*
+    authenticationRequests get initialized
+ */
+authenticationRequests(app,con);

@@ -1,4 +1,4 @@
-import {chatServer} from "../chat_server.mjs";
+import {chatServer} from "../chat_server.js";
 
 /*
     the message in this chat with the highest messageId gets searched

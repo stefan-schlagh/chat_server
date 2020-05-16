@@ -1,6 +1,6 @@
-import {chatServer} from "./chat_server.mjs";
-import {Chat,NormalChat,GroupChat} from "./chat.mjs";
-import BinSearchArray from "./BinSearch.mjs";
+import {chatServer} from "./chat_server.js";
+import {Chat,NormalChat,GroupChat} from "./chat.js";
+import BinSearchArray from "../util/BinSearch.js";
 
 export default class User{
     /*

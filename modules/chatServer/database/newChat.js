@@ -1,7 +1,7 @@
-import {chatServer} from "../chat_server.mjs";
-import User from "../user.mjs";
-import {NormalChat} from "../chat.mjs";
-import Message from "../message.mjs";
+import {chatServer} from "../chat_server.js";
+import User from "../user.js";
+import {NormalChat} from "../chat.js";
+import Message from "../message.js";
 import {saveMessageInDB} from "./newMessage.js";
 
 export async function newNormalChat(uidSelf,uidOther,usernameOther,message){

@@ -1,4 +1,4 @@
-import {chatServer} from "../chat_server.mjs";
+import {chatServer} from "../chat_server.js";
 /*
     message gets saved in the Database
         param message:  Object of class Message

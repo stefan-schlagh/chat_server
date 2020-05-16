@@ -1,7 +1,7 @@
-import User from "./user.mjs";
+import User from "./user.js";
 import socket from 'socket.io';
-import BinSearchArray from "./BinSearch.mjs";
-import {getUser,selectUsersNoChat} from "./database/selectUsers.mjs";
+import BinSearchArray from "../util/BinSearch.js";
+import {getUser,selectUsersNoChat} from "./database/selectUsers.js";
 import {newNormalChat} from "./database/newChat.js";
 
 export let chatServer;
