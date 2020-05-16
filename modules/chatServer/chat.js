@@ -1,5 +1,5 @@
-import Message from "./message.mjs";
-import {chatServer} from "./chat_server.mjs";
+import Message from "./message.js";
+import {chatServer} from "./chat_server.js";
 import {getMaxMid,loadMessages} from "./database/existingChat.js";
 
 export class Chat{

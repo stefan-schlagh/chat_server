@@ -1,4 +1,3 @@
-import {chatServer} from "./chat_server.mjs";
 import {saveMessageInDB} from "./database/newMessage.js";
 
 export default class Message{
