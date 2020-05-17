@@ -82,18 +82,22 @@ class ChatServer{
                 wird aufgerufen, wenn Nachrichten geladen werden sollen
              */
             socket.on('load messages', data => {
-
-                let chat;
-                if(data.chatType === 'normalChat')
-                    chat = this.normalChats.get(data.chatId);
-                else if(data.chatType === 'groupChat')
-                    chat = this.groupChats.get(data.chatId);
-                chat.getMessages(data.lastMsgId,data.num,data => {
-                    /*
-                        Daten werden zu client gesendet
-                     */
-                    socket.emit('messages',data);
-                });
+                /*
+                    id cannot be 0
+                 */
+                if(data.chatId !== 0) {
+                    let chat;
+                    if (data.chatType === 'normalChat')
+                        chat = this.normalChats.get(data.chatId);
+                    else if (data.chatType === 'groupChat')
+                        chat = this.groupChats.get(data.chatId);
+                    chat.getMessages(data.lastMsgId, data.num, data => {
+                        /*
+                            Daten werden zu client gesendet
+                         */
+                        socket.emit('messages', data);
+                    });
+                }
             });
             socket.on('started typing',() => {
                 user.startedTyping();
