@@ -81,14 +81,18 @@ async function getUserInfo(username,con){
         const query_str =
             "SELECT uid " +
             "FROM user " +
-            "WHERE Username = '"+username+"';";
+            "WHERE Username = " + con.escape(username) + ";";
 
         con.query(query_str,function(err,result,fields){
 
             if (err)
                 reject(err);
 
-            if(result.length !== 0)
+            if(result === undefined){
+                resolve({
+                    exists: false
+                });
+            }else if(result.length !== 0)
                 resolve({
                     exists: true,
                     uid: result[0].uid
@@ -111,7 +115,7 @@ async function getPasswordHash(username,con){
         const query_str =
             "SELECT password " +
             "FROM user " +
-            "WHERE username = '" + username + "';";
+            "WHERE username = " + con.escape(username) + ";";
 
         con.query(query_str, function (err, result, fields) {
 
@@ -133,7 +137,7 @@ async function saveUser(username,hash,con){
         const query_str =
             "INSERT " +
             "INTO user(username,password,time) " +
-            "VALUES ('" + username + "','" + hash + "',CURRENT_TIMESTAMP());";
+            "VALUES (" + con.escape(username) + ",'" + hash + "',CURRENT_TIMESTAMP());";
 
         con.query(query_str, async function (err, result, fields) {
 

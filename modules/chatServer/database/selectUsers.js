@@ -78,7 +78,7 @@ export async function selectUsersNoChat(uid,search,limit){
                     "SELECT uid2 " +
                     "FROM normalchat " +
                     "WHERE uid1 = " + uid + " OR uid2 = " + uid + " )) " +
-            "AND username LIKE '%" + search + "%' " +
+            "AND username LIKE " + chatServer.con.escape('%' + search + '%') + " " +
             "LIMIT " + limit + ";";
 
         chatServer.con.query(query_str, function (err, rows, fields) {
