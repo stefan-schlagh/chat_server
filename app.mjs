@@ -35,7 +35,8 @@ const con = mysql.createConnection({
     user: "root",
     password: "",
     database: "chat",
-    dateStrings: 'date'
+    dateStrings: 'date',
+    charset : 'utf8mb4'
 });
 con.connect(function(err) {
     if (err) throw err;
