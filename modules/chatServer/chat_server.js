@@ -1,7 +1,7 @@
 import User from "./user.js";
 import socket from 'socket.io';
 import BinSearchArray from "../util/BinSearch.js";
-import {getUser,selectUsersNoChat} from "./database/selectUsers.js";
+import {getUser,selectUsersNoChat,selectAllUsers,getUserInfo} from "./database/selectUsers.js";
 import {newNormalChat} from "./database/newChat.js";
 
 export let chatServer;
@@ -105,13 +105,6 @@ class ChatServer{
             socket.on('stopped typing',() => {
                 user.stoppedTyping();
             });
-            socket.on('getUsers-noChat',data => {
-                selectUsersNoChat(user.uid,data.search,data.limit).then(data => {
-                    socket.emit('users-noChat',data);
-                }).catch(err => {
-                    console.log(err);
-                })
-            });
             /*
                 userinfo gets requested for a specific user
              */
@@ -144,6 +137,50 @@ class ChatServer{
                 }
             });
         });
+        /*
+            normalchats wher the user is not in get selected
+         */
+        app.post('/getUsers-noChat',(req,res) => {
+
+            const uidFrom = req.session.uid;
+            const search = req.body.search;
+            const limit = req.body.limit;
+            const start = req.body.start;
+
+            selectUsersNoChat(uidFrom,search,limit,start).then(data => {
+                res.send(data);
+            }).catch(err => {
+                console.log(err);
+            })
+        });
+        /*
+            all users are searched
+         */
+        app.post('/getAllUsers',(req,res) => {
+
+            const uidFrom = req.session.uid;
+            const search = req.body.search;
+            const limit = req.body.limit;
+            const start = req.body.start;
+
+            selectAllUsers(uidFrom,search,limit,start).then(data => {
+                res.send(data);
+            }).catch(err => {
+                console.log(err);
+            })
+        });
+        /*
+            userInfo is selected
+         */
+        app.post('/getUserInfo',(req,res) => {
+
+            const uidFrom = req.session.uid;
+            const uidReq = req.body.uid;
+
+            getUserInfo(uidFrom,uidReq)
+                .then(result => res.send(result));
+        });
+
         this._con = con;
     }
     /*

@@ -47,7 +47,7 @@ export async function getUser(uidFrom,uidReq){
     all Users where the specified user does not have a chat with get selected and returned
     search does have to be validated
  */
-export async function selectUsersNoChat(uid,search,limit){
+export async function selectUsersNoChat(uid,search,limit,start = 0){
 
     return new Promise(function(resolve, reject) {
         // The Promise constructor should catch any errors thrown on
@@ -79,7 +79,7 @@ export async function selectUsersNoChat(uid,search,limit){
                     "FROM normalchat " +
                     "WHERE uid1 = " + uid + " OR uid2 = " + uid + " )) " +
             "AND username LIKE " + chatServer.con.escape('%' + search + '%') + " " +
-            "LIMIT " + limit + ";";
+            "LIMIT " + start + "," + limit + ";";
 
         chatServer.con.query(query_str, function (err, rows, fields) {
             // Call reject on error states,
@@ -90,4 +90,40 @@ export async function selectUsersNoChat(uid,search,limit){
             resolve(rows);
         });
     });
+}
+/*
+    all users are selected
+ */
+export async function selectAllUsers(uid,search,limit,start = 0){
+
+    return new Promise(function(resolve, reject) {
+
+        const query_str =
+            "SELECT uid, username " +
+            "FROM user " +
+            "WHERE NOT uid = '" + uid + "' " +
+            "AND username LIKE " + chatServer.con.escape('%' + search + '%') + " " +
+            "LIMIT " + start + "," + limit + ";";
+
+        chatServer.con.query(query_str, function (err, rows, fields) {
+            // Call reject on error states,
+            // call resolve with results
+            if (err) {
+                return reject(err);
+            }
+            resolve(rows);
+        });
+    });
+}
+/*
+    get the info of a user
+ */
+export async function getUserInfo(uidFrom,uidReq){
+
+    const userInfo = await getUser(uidFrom,uidReq);
+
+    return {
+        ...userInfo,
+        abc: true
+    }
 }
