@@ -2,7 +2,7 @@ import User from "./user.js";
 import socket from 'socket.io';
 import BinSearchArray from "../util/BinSearch.js";
 import {getUser,selectUsersNoChat,selectAllUsers,getUserInfo} from "./database/selectUsers.js";
-import {newNormalChat} from "./database/newChat.js";
+import {newNormalChat,newGroupChat} from "./database/newChat.js";
 
 export let chatServer;
 let app;
@@ -179,6 +179,26 @@ class ChatServer{
 
             getUserInfo(uidFrom,uidReq)
                 .then(result => res.send(result));
+        });
+        /*
+            new group gets created
+         */
+        app.post('/createGroupChat',(req,res) => {
+
+            const userFrom = {
+                uid: req.session.uid,
+                username: req.session.username,
+                isAdmin: true
+            };
+            const data = req.body.data;
+            const users = req.body.users;
+
+            newGroupChat(userFrom, data, users)
+                .then(r  => res.send())
+                .catch(err => {
+                    console.log(err);
+                    res.send();
+                });
         });
 
         this._con = con;

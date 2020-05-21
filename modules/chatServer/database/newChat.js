@@ -86,3 +86,87 @@ async function saveNormalChatInDb(uid1,uid2) {
         })
     });
 }
+/*
+    new groupChat gets created
+ */
+export async function newGroupChat(userFrom,data,users){
+
+    for(let i=0;i<users.length;i++){
+
+        const user = users[i];
+        if(chatServer.user.getIndex(user.uid) === -1){
+
+            chatServer.user.add(user.uid,new User(chatServer.con,user.uid,user.username));
+        }
+    }
+    const gcid = await saveGroupChatInDB(data);
+    await saveGroupChatMembersInDB(gcid,users.concat(userFrom));
+
+}
+/*
+    groupChat is saved in database
+ */
+async function saveGroupChatInDB(data){
+
+    return new Promise(function(resolve,reject){
+
+        const con = chatServer.con;
+        const query_str1 =
+            "INSERT " +
+            "INTO groupchat (name,description,isPublic) " +
+            "VALUES (" + con.escape(data.name) + "," + con.escape(data.description) + "," + con.escape(data.isPublic) + ")";
+
+        con.query(query_str1,(err) => {
+            /*
+                if no error has occured, the chatID gets requested
+             */
+            if(err) {
+                reject(err);
+            }else{
+
+                const query_str2 =
+                    "SELECT max(gcid) AS 'gcid' " +
+                    "FROM groupchat;";
+
+                con.query(query_str2,(err,result,fields) => {
+
+                    if(err){
+                        reject(err);
+                    }else{
+
+                        resolve(result[0].gcid);
+                    }
+                });
+            }
+        });
+    });
+}
+/*
+    groupChatsMembers get saved in DB
+ */
+async function saveGroupChatMembersInDB(gcid,users){
+
+    for(let i=0;i<users.length;i++){
+        await saveGroupChatMemberInDB(gcid,users[i]);
+    }
+}
+/*
+    groupChatMember gets saved in DB
+ */
+async function saveGroupChatMemberInDB(gcid,user){
+
+    return new Promise(function(resolve,reject){
+
+        const con = chatServer.con;
+        const query_str =
+            "INSERT " +
+            "INTO groupchatmember(uid,gcid,isAdmin) " +
+            "VALUES (" + user.uid + ",'" + gcid + "'," + con.escape(user.isAdmin) + ");";
+
+        con.query(query_str,(err) => {
+            if(err)
+                reject(err);
+            resolve();
+        })
+    });
+}
