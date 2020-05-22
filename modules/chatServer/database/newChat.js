@@ -1,6 +1,6 @@
 import {chatServer} from "../chat_server.js";
 import User from "../user.js";
-import {NormalChat} from "../chat.js";
+import NormalChat from "../chat/normalChat.js";
 import Message from "../message.js";
 import {saveMessageInDB} from "./newMessage.js";
 
@@ -12,7 +12,7 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
     */
     if(chatServer.user.getIndex(uidOther) === -1){
 
-        chatServer.user.add(uidOther,new User(chatServer.con,uidOther,usernameOther));
+        chatServer.user.add(uidOther,new User(uidOther,usernameOther));
     }
 
     const ncid = await saveNormalChatInDb(uidSelf,uidOther);
@@ -96,7 +96,7 @@ export async function newGroupChat(userFrom,data,users){
         const user = users[i];
         if(chatServer.user.getIndex(user.uid) === -1){
 
-            chatServer.user.add(user.uid,new User(chatServer.con,user.uid,user.username));
+            chatServer.user.add(user.uid,new User(user.uid,user.username));
         }
     }
     const gcid = await saveGroupChatInDB(data);

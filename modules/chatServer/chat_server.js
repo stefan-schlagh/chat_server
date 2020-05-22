@@ -212,7 +212,7 @@ class ChatServer{
             wenn user noch nicht existiert, wird er komplett neu angelegt
          */
         if(this.user.getIndex(uid) === -1) {
-            const user = new User(this.con, userInfo.uid, userInfo.username, socket, true);
+            const user = new User(userInfo.uid, userInfo.username, socket, true);
             user.loadChats();
             this.user.add(user.uid,user);
         }
@@ -223,7 +223,7 @@ class ChatServer{
             const user = this.user.get(uid);
             user.socket = socket;
             user.online = true;
-            user.loadChats();
+            user.loadChats().then(r => {});
         }
         return this.user.get(uid);
     }
@@ -231,7 +231,7 @@ class ChatServer{
         es wird nur username und uid hinzugefügt
     */
     addUser(userInfo){
-        this.user.add(userInfo.uid,new User(this.con,userInfo.uid,userInfo.username));
+        this.user.add(userInfo.uid,new User(userInfo.uid,userInfo.username));
     }
     isUserOnline(uid){
         if(this.user.getIndex(uid) === -1) return false;
