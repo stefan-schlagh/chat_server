@@ -246,13 +246,15 @@ class ChatServer{
             user wird gelöscht, sowie alle Referenzen,
             die nicht mehr gebraucht werden (chats etc...)
         */
-        let userInfoNeeded = user.saveAndDeleteChats();
-        if(!userInfoNeeded) {
-            /*
-                wenn userinfo in keinem chat mehr gebraucht wird, wird sie ganz gelöscht
-             */
-            this.user.remove(user.uid);
-        }
+        user.saveAndDeleteChats()
+            .then(userInfoNeeded => {
+                if(!userInfoNeeded)
+                    /*
+                        if userInfo is not needed anywhere anymore, it gets deleted
+                     */
+                    this.user.remove(user.uid);
+            })
+            .catch(err => console.log(err));
     }
     changeCurrentChat(user,newChat){
         user.currentChat = newChat;

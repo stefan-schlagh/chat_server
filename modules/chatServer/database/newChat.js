@@ -22,8 +22,8 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
     const newChat = new NormalChat(ncid,user1,user2);
     chatServer.normalChats.add(ncid,newChat);
 
-    user1.chats.add(ncid,newChat);
-    user2.chats.add(ncid,newChat);
+    user1.chats.addChat(ncid,newChat);
+    user2.chats.addChat(ncid,newChat);
     /*
         if the other user is online, the chat gets added at him too
      */
@@ -101,6 +101,9 @@ export async function newGroupChat(userFrom,data,users){
     }
     const gcid = await saveGroupChatInDB(data);
     await saveGroupChatMembersInDB(gcid,users.concat(userFrom));
+    /*
+        TODO: create in server
+     */
 
 }
 /*

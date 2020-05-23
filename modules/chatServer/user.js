@@ -29,10 +29,6 @@ export default class User{
      */
     async loadChats(){
         /*
-            Die Anzahl der erledigten callbacks wird mitgezählt, da alle ausgeführt sein müssen
-         */
-        //let callBacksFinished = 0;
-        /*
             normalChats are loaded
          */
         await loadNormalChats(this);
@@ -48,44 +44,46 @@ export default class User{
     /*
         chats des users werden gespeichert und gelöscht
      */
-    saveAndDeleteChats(){
-        /*
-            es wird bei allen chats geschaut, ob noch wer online ist
-            wenn ein chat geladen bleibt, wird die userInfo weiterhin benötigt
-         */
-        let userInfoNeeded = false;
-        for(let i=0;i<this.chats.length;i++){
+    async saveAndDeleteChats(){
+
+        return new Promise(((resolve, reject) => {
             /*
-                Wenn keiner online ist, wird chat gelöscht
+                if someone in any chat where the user is, is online, the chat does not get deleted
              */
-            if(this.chats[i].value.isAnyoneOnline())
-                userInfoNeeded = true;
-            else {
+            let userInfoNeeded = false;
+            let i = 0;
+
+            this.chats.forEach((item,index,key,type) => {
+                i++;
                 /*
-                    keiner online
-                        -> alle Referenzen in chatserver werden gelöscht
-                        -> alle Refernzen von chat auf User werden gelöscht
+                    is there anyone online at the chat?
                  */
-                if(this.chats[i].value.type === 'normalChat') {
-                    const chat = chatServer.normalChats.get(this.chats[i].value.chatId);
-                    //should not be undefined
-                    if(chat !== undefined) {
-                        chat.removeUsers(this.uid);
-                        chatServer.normalChats.remove(this.chats[i].value.chatId);
+                if(item.isAnyoneOnline())
+                    userInfoNeeded = true;
+                else {
+                    /*
+                        chat is deleted
+                     */
+                    if (type === 'normalChat') {
+                        const chat = chatServer.normalChats.get(item.chatId);
+                        if (chat !== undefined) {
+                            chat.removeUsers(this.uid);
+                            chatServer.normalChats.remove(item.chatId);
+                        }
+                    } else if (type === 'groupChat') {
+                        const chat = chatServer.groupChats.get(item.chatId);
+                        if (chat !== undefined) {
+                            chat.removeUsers(this.uid);
+                            chatServer.groupChats.remove(item.chatId);
+                        }
                     }
                 }
-                else if(this.chats[i].value.type === 'groupChat') {
-                    const chat = chatServer.groupChats.get(this.chats[i].value.chatId);
-                    if(chat !== undefined) {
-                        chat.removeUsers(this.uid);
-                        chatServer.groupChats.remove(this.chats[i].value.chatId);
-                    }
-                }
-                //Referenz im eigenen chat-array wird gelöscht
-                this.chats.remove(this.chats[i].value.chatId);
-            }
-        }
-        return userInfoNeeded;
+                if (type === 'groupChat')
+                    item.leaveRoom(this);
+                if(i === this.chats.length())
+                    resolve(userInfoNeeded);
+            });
+        }));
     }
     startedTyping(){
 

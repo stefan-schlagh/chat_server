@@ -33,8 +33,18 @@ export default class ChatStorage{
     forEach(callback){
 
         for(let i=0;i<this.normal.length;i++){
-            callback(this.normal[i].value,i,this.normal[i].key);
+            const val = this.normal[i].value;
+            callback(val,i,this.normal[i].key,val.type);
         }
+        for(let i=0;i<this.group.length;i++){
+            const val = this.group[i].value;
+            callback(val,i,this.group[i].key,val.type);
+        }
+    }
+    /*
+        value, index , key
+     */
+    forEachGroup(callback){
         for(let i=0;i<this.group.length;i++){
             callback(this.group[i].value,i,this.group[i].key);
         }

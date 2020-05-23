@@ -138,12 +138,11 @@ export async function loadGroupChats(user) {
             }
 
             const isPublic = groupChatDB.isPublic === 1;
-            const newChat = new GroupChat(groupChatDB.gcid,members,groupChatDB.chatName,groupChatDB.description,isPublic);
+            const newChat = new GroupChat(groupChatDB.gcid,members,groupChatDB.name,groupChatDB.description,isPublic);
             /*
                 first message gets loaded
              */
             await newChat.loadFirstMessage();
-            console.log(newChat.messages.length);
             /*
                 chat gets added to the members
              */
@@ -156,6 +155,12 @@ export async function loadGroupChats(user) {
             chatServer.groupChats.add(newChat.chatId,newChat);
         }
     }
+    /*
+        subscribe to all socket-rooms in the chats
+    */
+    user.chats.forEachGroup((chat,index,key) => {
+        chat.subscribeToRoom(user);
+    });
 }
 async function selectGroupChats(uid){
 

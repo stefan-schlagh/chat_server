@@ -4,7 +4,7 @@ import BinSearchArray from "../../util/BinSearch.js";
 
 export class GroupChat extends Chat{
 
-    //BinSearchArray
+    //BinSearchArray - groupChatMembers
     #_members = new BinSearchArray();
     #_chatName;
     #_description;
@@ -17,39 +17,84 @@ export class GroupChat extends Chat{
         this.chatName = chatName;
         this.description = description;
         this.isPublic = isPublic;
+        this.socketRoomName = randomString(10);
+
+        this.initChat();
+    }
+    /*
+        chat gets initialized
+     */
+    initChat(){
+        /*
+            each users socket joins the roo,
+         */
+        for(let i=0;i<this.members.length;i++){
+            const user = this.members[i];
+            if(user.socket){
+                user.socket.join(this.socketRoomName);
+            }
+        }
     }
 
-    sendMessage(sentBy,msg) {
-        super.sendMessage(sentBy,msg);
-        //TODO
+    sendMessage(sentBy,msg,callback) {
+        super.sendMessage(sentBy,msg,msgId => {
+            /*
+                message is sent to everyone except the author
+             */
+            callback(msgId);
+            this.sendToAll(sentBy,'chat message',msg,msgId);
+        });
+
+    }
+    sendToAll(sentBy,type,content,mid = -1){
         /*
             msg gets emitted to all users
          */
+        const data = {
+            type: this.type,
+            id: this.chatId,
+            uid: sentBy.uid,
+            mid: mid,
+            content: content
+        };
+        sentBy.socket.to(this.socketRoomName).emit(type,data);
     }
-    sendToAll(sentBy,type,content){
-
+    /*
+        is called:
+            loadCHats.js ca. 150
+     */
+    subscribeToRoom(user){
+        user.socket.join(this.socketRoomName);
+    }
+    leaveRoom(user){
+        user.socket.leave(this.socketRoomName);
     }
     isAnyoneOnline(){
-        for(let i=0;i<this.users.length;i++){
-            if(this.users[i].online)
+        for(let i=0;i<this.members.length;i++){
+            if(this.members[i].online)
                 return true;
         }
         return false;
     }
     removeUsers(uid){
-        for(let i=0;i<this.users.length;i++){
-            if(this.users[i].value.uid !== uid) {
+        for(let i=0;i<this.members.length;i++){
+
+            const member = this.members[i].value.user;
+            /*
+                if the uid is not the one of the removing user
+             */
+            if(this.members[i].value.uid !== uid) {
                 /*
-                    wenn keine anderen Chats verhanden, wird user gelöscht
+                    if there are no other chats, the user gets deleted
                  */
-                if (this.users[i].chats.length <= 1) {
-                    chatServer.user.remove(this.users[i].uid);
+                if (member.chats.length() <= 1) {
+                    chatServer.user.remove(member.uid);
                 }
                 /*
-                    sonst wird chat entfernt
+                    chat is deleted
                  */
                 else {
-                    this.users[i].removeUnloadedChat(this);
+                    member.removeUnloadedChat(this);
                 }
             }
         }
@@ -115,5 +160,14 @@ export class GroupChat extends Chat{
     set socketRoomName(value) {
         this.#_socketRoomName = value;
     }
+}
 
+function randomString(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const  charactersLength = characters.length;
+    for ( let i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
 }
