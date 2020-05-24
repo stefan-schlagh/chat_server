@@ -29,7 +29,7 @@ export class GroupChat extends Chat{
             each users socket joins the roo,
          */
         for(let i=0;i<this.members.length;i++){
-            const user = this.members[i];
+            const user = this.members[i].value.user;
             if(user.socket){
                 user.socket.join(this.socketRoomName);
             }
@@ -64,7 +64,8 @@ export class GroupChat extends Chat{
             loadCHats.js ca. 150
      */
     subscribeToRoom(user){
-        user.socket.join(this.socketRoomName);
+        if(user.socket !== null)
+            user.socket.join(this.socketRoomName);
     }
     leaveRoom(user){
         user.socket.leave(this.socketRoomName);
@@ -120,6 +121,12 @@ export class GroupChat extends Chat{
                 });
         }
         return members;
+    }
+
+    forEachUser(callback){
+        for(let i=0;i<this.members.length;i++){
+            callback(this.members[i].value.user,i,this.members[i].key);
+        }
     }
 
     get members() {

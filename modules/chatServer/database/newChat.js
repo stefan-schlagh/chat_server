@@ -3,6 +3,9 @@ import User from "../user.js";
 import NormalChat from "../chat/normalChat.js";
 import Message from "../message.js";
 import {saveMessageInDB} from "./newMessage.js";
+import {GroupChat} from "../chat/groupChat.js";
+import GroupChatMember from "../groupChatMember.js";
+import BinSearchArray from "../../util/BinSearch.js";
 
 export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
 
@@ -102,9 +105,27 @@ export async function newGroupChat(userFrom,data,users){
     const gcid = await saveGroupChatInDB(data);
     await saveGroupChatMembersInDB(gcid,users.concat(userFrom));
     /*
-        TODO: create in server
+        groupChatMembers are created
      */
+    const groupChatMembers = new BinSearchArray();
+    groupChatMembers.add(userFrom.uid,new GroupChatMember(chatServer.user.get(userFrom.uid),userFrom.isAdmin));
 
+    for(let i=0;i<users.length;i++){
+
+        const user = chatServer.user.get(users[i].uid);
+        groupChatMembers.add(user.uid,new GroupChatMember(user,users[i].isAdmin));
+    }
+
+    const newChat = new GroupChat(gcid,groupChatMembers,data.name,data.description,data.isPublic);
+    chatServer.groupChats.add(newChat.chatId,newChat);
+    newChat.initMessages(() => {});
+    /*
+        chat gets added to the members
+     */
+    newChat.forEachUser((user,index,key) => {
+        user.addLoadedChat(newChat);
+        user.addNewChat(newChat);
+    });
 }
 /*
     groupChat is saved in database
