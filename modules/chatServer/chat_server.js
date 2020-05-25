@@ -1,8 +1,8 @@
 import User from "./user.js";
 import socket from 'socket.io';
 import BinSearchArray from "../util/BinSearch.js";
-import {getUser,selectUsersNoChat} from "./database/selectUsers.js";
-import {newNormalChat} from "./database/newChat.js";
+import {getUser,selectUsersNoChat,selectAllUsers,getUserInfo} from "./database/selectUsers.js";
+import {newNormalChat,newGroupChat} from "./database/newChat.js";
 
 export let chatServer;
 let app;
@@ -105,13 +105,6 @@ class ChatServer{
             socket.on('stopped typing',() => {
                 user.stoppedTyping();
             });
-            socket.on('getUsers-noChat',data => {
-                selectUsersNoChat(user.uid,data.search,data.limit).then(data => {
-                    socket.emit('users-noChat',data);
-                }).catch(err => {
-                    console.log(err);
-                })
-            });
             /*
                 userinfo gets requested for a specific user
              */
@@ -144,6 +137,70 @@ class ChatServer{
                 }
             });
         });
+        /*
+            normalchats wher the user is not in get selected
+         */
+        app.post('/getUsers-noChat',(req,res) => {
+
+            const uidFrom = req.session.uid;
+            const search = req.body.search;
+            const limit = req.body.limit;
+            const start = req.body.start;
+
+            selectUsersNoChat(uidFrom,search,limit,start).then(data => {
+                res.send(data);
+            }).catch(err => {
+                console.log(err);
+            })
+        });
+        /*
+            all users are searched
+         */
+        app.post('/getAllUsers',(req,res) => {
+
+            const uidFrom = req.session.uid;
+            const search = req.body.search;
+            const limit = req.body.limit;
+            const start = req.body.start;
+
+            selectAllUsers(uidFrom,search,limit,start).then(data => {
+                res.send(data);
+            }).catch(err => {
+                console.log(err);
+            })
+        });
+        /*
+            userInfo is selected
+         */
+        app.post('/getUserInfo',(req,res) => {
+
+            const uidFrom = req.session.uid;
+            const uidReq = req.body.uid;
+
+            getUserInfo(uidFrom,uidReq)
+                .then(result => res.send(result));
+        });
+        /*
+            new group gets created
+         */
+        app.post('/createGroupChat',(req,res) => {
+
+            const userFrom = {
+                uid: req.session.uid,
+                username: req.session.username,
+                isAdmin: true
+            };
+            const data = req.body.data;
+            const users = req.body.users;
+
+            newGroupChat(userFrom, data, users)
+                .then(r  => res.send())
+                .catch(err => {
+                    console.log(err);
+                    res.send();
+                });
+        });
+
         this._con = con;
     }
     /*
@@ -155,7 +212,7 @@ class ChatServer{
             wenn user noch nicht existiert, wird er komplett neu angelegt
          */
         if(this.user.getIndex(uid) === -1) {
-            const user = new User(this.con, userInfo.uid, userInfo.username, socket, true);
+            const user = new User(userInfo.uid, userInfo.username, socket, true);
             user.loadChats();
             this.user.add(user.uid,user);
         }
@@ -166,7 +223,7 @@ class ChatServer{
             const user = this.user.get(uid);
             user.socket = socket;
             user.online = true;
-            user.loadChats();
+            user.loadChats().then(r => {});
         }
         return this.user.get(uid);
     }
@@ -174,7 +231,7 @@ class ChatServer{
         es wird nur username und uid hinzugefügt
     */
     addUser(userInfo){
-        this.user.add(userInfo.uid,new User(this.con,userInfo.uid,userInfo.username));
+        this.user.add(userInfo.uid,new User(userInfo.uid,userInfo.username));
     }
     isUserOnline(uid){
         if(this.user.getIndex(uid) === -1) return false;
@@ -189,13 +246,15 @@ class ChatServer{
             user wird gelöscht, sowie alle Referenzen,
             die nicht mehr gebraucht werden (chats etc...)
         */
-        let userInfoNeeded = user.saveAndDeleteChats();
-        if(!userInfoNeeded) {
-            /*
-                wenn userinfo in keinem chat mehr gebraucht wird, wird sie ganz gelöscht
-             */
-            this.user.remove(user.uid);
-        }
+        user.saveAndDeleteChats()
+            .then(userInfoNeeded => {
+                if(!userInfoNeeded)
+                    /*
+                        if userInfo is not needed anywhere anymore, it gets deleted
+                     */
+                    this.user.remove(user.uid);
+            })
+            .catch(err => console.log(err));
     }
     changeCurrentChat(user,newChat){
         user.currentChat = newChat;

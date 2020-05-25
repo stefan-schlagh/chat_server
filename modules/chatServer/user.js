@@ -1,26 +1,23 @@
 import {chatServer} from "./chat_server.js";
-import {Chat,NormalChat,GroupChat} from "./chat.js";
-import BinSearchArray from "../util/BinSearch.js";
+import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
+import ChatStorage from "../util/chatStorage.js";
 
 export default class User{
     /*
         Reihenfolge egal, Sortierung macht client
      */
-    #_chats;
+    #_chats = new ChatStorage();
     #_socket;
     #_uid;
     #_username;
     #_online;
-    #_con;
     #_currentChat;
 
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
      */
-    constructor(con,uid,username,socket = null,online = false) {
-        this.con = con;
+    constructor(uid,username,socket = null,online = false) {
         this.uid = uid;
-        this.chats = new BinSearchArray();
         this.online = online;
         this.username = username;
         this.socket = socket;
@@ -30,158 +27,63 @@ export default class User{
     /*
         Die chats des users werden geladen.
      */
-    loadChats(){
+    async loadChats(){
         /*
-            Die Anzahl der erledigten callbacks wird mitgezählt, da alle ausgeführt sein müssen
+            normalChats are loaded
          */
-        let callBacksFinished = 0;
+        await loadNormalChats(this);
         /*
-            normalchats werden geladen
+            groupChats are loaded
          */
-        chatServer.con.query("SELECT nc.ncid, nc.uid1, u1.username AS 'uname1', nc.uid2, u2.username AS 'uname2' FROM normalchat nc INNER JOIN user u1 ON nc.uid1 = u1.uid INNER JOIN user u2 ON nc.uid2 = u2.uid WHERE uid1 = '"+this.uid+"' OR uid2 = '"+this.uid+"';",
-            (err,result,fields) => {
-                if(result!==undefined) {
-                    result = JSON.parse(JSON.stringify(result));
-                    for (let i = 0; i < result.length; i++) {
-                        /*
-                            es wird ermittelt, ob chat bereits existiert
-                         */
-                        if(chatServer.normalChats.getIndex(result[i].ncid) !== -1){
-                            /*
-                                wenn chat bereits existiert, wird dieser nur bei user hinzugefügt
-                                chat wird bei User angelegt
-                             */
-                            this.addLoadedChat(chatServer.normalChats.get(result[i].ncid));
-                            callBackFinished();
-                        }
-                        /*
-                            wenn nicht, wird chat neu erstellt
-                         */
-                        else {
-                            /*
-                                es wird der user ermittelt, der nicht der user selbst ist.
-                             */
-                            let otherUid;
-                            let otherUsername;
-                            if (result[i].uid1 === this.uid) {
-                                otherUid = result[i].uid2;
-                                otherUsername = result[i].uname2;
-                            } else {
-                                otherUid = result[i].uid1;
-                                otherUsername = result[i].uname1;
-                            }
-                            /*
-                                wenn dieser undefined ist, wird er neu erstellt
-                             */
-                            let otherUser;
-                            if (chatServer.user.getIndex(otherUid) === -1) {
-                                otherUser = new User(this.con, otherUid, otherUsername);
-                                chatServer.user.add(otherUid,otherUser);
-                            }else{
-                                otherUser = chatServer.user.get(otherUid);
-                            }
-                            /*
-                                neuer chat wird erstellt
-                             */
-                            const newChat = new NormalChat(result[i].ncid, this, otherUser);
-                            /*
-                                chat wird bei user hinzugefügt
-                                "--" wird bei otherUser hinzugefügt
-                             */
-                            this.addLoadedChat(newChat);
-                            otherUser.addLoadedChat(newChat);
-                            /*
-                                erste msg wird jeweils geladen
-                             */
-                            newChat.initMessages(() => {
-                                callBackFinished();
-                            });
-                            /*
-                                chat wird bei array, das alle chats beinhaltet hinzugefügt
-                             */
-                            chatServer.normalChats.add(result[i].ncid,newChat);
-                        }
-                    }
-                }
-            callBackFinished();
-        });
-        /*
-            groupchats werden geladen
-         */
-        chatServer.con.query("SELECT * FROM groupchatmember gcm JOIN groupchat gc ON gcm.gcid = gc.gcid JOIN user u on gcm.uid = u.uid WHERE u.uid = ''"+this.uid+"';",
-            function (err, result, fields) {
-                if(result!==undefined) {
-                    result = JSON.parse(JSON.stringify(result));
-                    for (let i = 0; i < result.size(); i++) {
+        await loadGroupChats(this);
 
-                    }
-                }
-                callBackFinished();
-        });
-        /*
-            es wird überprüft, ob bereits alle callbacks abgearbeitet wurden
-         */
-        const callBackFinished = () => {
-            callBacksFinished++;
-            /*
-                Anzahl der callbacks:
-                    2
-                 + normalchats.length
-                 +groupchats.length
-             */
-            if(callBacksFinished === (2 + this.chats.length)){
-                sendChatsToClient();
-            }
-        };
-        /*
-            user werden chats geschickt
-         */
-        const sendChatsToClient = () => {
-            const chats = this.getChatJson();
-            this.socket.emit('all chats', chats);
-        }
+        const chats = await this.getChatJson();
+        this.socket.emit('all chats', chats);
+
     }
     /*
         chats des users werden gespeichert und gelöscht
      */
-    saveAndDeleteChats(){
-        /*
-            es wird bei allen chats geschaut, ob noch wer online ist
-            wenn ein chat geladen bleibt, wird die userInfo weiterhin benötigt
-         */
-        let userInfoNeeded = false;
-        for(let i=0;i<this.chats.length;i++){
+    async saveAndDeleteChats(){
+
+        return new Promise(((resolve, reject) => {
             /*
-                Wenn keiner online ist, wird chat gelöscht
+                if someone in any chat where the user is, is online, the chat does not get deleted
              */
-            if(this.chats[i].value.isAnyoneOnline())
-                userInfoNeeded = true;
-            else {
+            let userInfoNeeded = false;
+            let i = 0;
+
+            this.chats.forEach((item,index,key,type) => {
+                i++;
                 /*
-                    keiner online
-                        -> alle Referenzen in chatserver werden gelöscht
-                        -> alle Refernzen von chat auf User werden gelöscht
+                    is there anyone online at the chat?
                  */
-                if(this.chats[i].value.type === 'normalChat') {
-                    const chat = chatServer.normalChats.get(this.chats[i].value.chatId);
-                    //should not be undefined
-                    if(chat !== undefined) {
-                        chat.removeUsers(this.uid);
-                        chatServer.normalChats.remove(this.chats[i].value.chatId);
+                if(item.isAnyoneOnline())
+                    userInfoNeeded = true;
+                else {
+                    /*
+                        chat is deleted
+                     */
+                    if (type === 'normalChat') {
+                        const chat = chatServer.normalChats.get(item.chatId);
+                        if (chat !== undefined) {
+                            chat.removeUsers(this.uid);
+                            chatServer.normalChats.remove(item.chatId);
+                        }
+                    } else if (type === 'groupChat') {
+                        const chat = chatServer.groupChats.get(item.chatId);
+                        if (chat !== undefined) {
+                            chat.removeUsers(this.uid);
+                            chatServer.groupChats.remove(item.chatId);
+                        }
                     }
                 }
-                else if(this.chats[i].value.type === 'groupChat') {
-                    const chat = chatServer.groupChats.get(this.chats[i].value.chatId);
-                    if(chat !== undefined) {
-                        chat.removeUsers(this.uid);
-                        chatServer.groupChats.remove(this.chats[i].value.chatId);
-                    }
-                }
-                //Referenz im eigenen chat-array wird gelöscht
-                this.chats.remove(this.chats[i].value.chatId);
-            }
-        }
-        return userInfoNeeded;
+                if (type === 'groupChat')
+                    item.leaveRoom(this);
+                if(i === this.chats.length())
+                    resolve(userInfoNeeded);
+            });
+        }));
     }
     startedTyping(){
 
@@ -210,7 +112,7 @@ export default class User{
         wird aufgerufen, wenn chat geladen wurde und zum array hinzugefügt werden soll.
      */
     addLoadedChat(chat){
-        this.chats.add(chat.chatId,chat);
+        this.chats.addChat(chat);
     }
     /*
         wird aufgerufen, wenn geladener chat gespeichert
@@ -222,33 +124,38 @@ export default class User{
      */
     removeUnloadedChat(chat){
         //Referenz im eigenen chat-array wird gelöscht
-        this.chats.remove(chat.chatId);
+        this.chats.removeChat(chat);
     }
     /*
         A object with all chats where the user is in gets returned
      */
-    getChatJson(){
-        let rc = [];
-        for(let i=0;i<this.chats.length;i++){
-            const currentChat = this.chats[i].value;
+    async getChatJson(){
 
-            const chatId = currentChat.chatId;
+        return new Promise(((resolve, reject) => {
 
-            const members = currentChat.getMemberObject(this.uid);
-            const chatName = currentChat.getChatName(this.uid);
-            const fm = currentChat.getNewestMessageObject();
-            /*
-                Objekt wird erstellt und zum Array hinzugefügt
-             */
-            rc.push({
-                type:  currentChat.type,
-                id: chatId,
-                chatName: chatName,
-                members: members,
-                firstMessage: fm
+            let rc = [];
+
+            this.chats.forEach((chat,index,key) => {
+
+                const members = chat.getMemberObject(this.uid);
+                const chatName = chat.getChatName(this.uid);
+                const fm = chat.getNewestMessageObject();
+                /*
+                    Objekt wird erstellt und zum Array hinzugefügt
+                 */
+                rc.push({
+                    type:  chat.type,
+                    id: key,
+                    chatName: chatName,
+                    members: members,
+                    firstMessage: fm
+                });
+
+                if(rc.length === this.chats.length())
+                    resolve(rc);
+
             });
-        }
-        return rc;
+        }));
     }
     /*
         a new chat gets added to the user
@@ -270,14 +177,6 @@ export default class User{
 
             this.socket.emit("new chat", data);
         }
-    }
-
-    get con() {
-        return this.#_con;
-    }
-
-    set con(value) {
-        this.#_con = value;
     }
 
     get uid() {

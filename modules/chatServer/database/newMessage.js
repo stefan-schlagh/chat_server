@@ -7,7 +7,7 @@ export async function saveMessageInDB(message){
 
     return(new Promise(function(resolve, reject){
 
-        const isGroupChat = message.chat.type === 'groupChat';
+        const isGroupChat = message.chat.type === 'groupChat' ? 1 : 0;
         const content = chatServer.con.escape(message.msg);
 
         const query_str1 =

@@ -7,7 +7,7 @@ export async function getMaxMid(chat){
 
     return new Promise(function(resolve,reject){
 
-        const isGroupChat = chat.type === 'groupChat';
+        const isGroupChat = chat.type === 'groupChat' ? 1 : 0;
 
         const query_str =
             "SELECT max(mid) " +
@@ -47,7 +47,7 @@ export async function loadMessages(chat,num){
 
     return new Promise(function(resolve,reject){
 
-        const isGroupChat = chat.type === 'groupChat';
+        const isGroupChat = chat.type === 'groupChat' ? 1 : 0;
 
         const query_str =
             "SELECT * " +
