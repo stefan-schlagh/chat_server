@@ -1,5 +1,5 @@
 import {login,register} from "./authentication.js";
-import {chatServer} from "../chatServer/chat_server.js";
+import {chatServer} from "../chatData/chat_server.js";
 
 export function authenticationRequests(app,con){
 

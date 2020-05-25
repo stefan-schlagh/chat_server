@@ -49,6 +49,29 @@ export default class ChatStorage{
             callback(this.group[i].value,i,this.group[i].key);
         }
     }
+    /*
+        the requested chat gets returned
+            type: the type of the chat
+            id: the id of the chat
+     */
+    getChat(type,id){
+        /*
+            is the chat a normalchat?
+         */
+        if(type === 'normalChat'){
+            const chat = this.normal.get(id);
+            if(chat)
+                return chat;
+            /*
+                is the chat a groupChat?
+             */
+        }else if(type === 'groupChat'){
+            const chat = this.group.get(id)
+            if(chat)
+                return chat;
+        }
+        return null;
+    }
 
     get normal() {
         return this.#_normal;

@@ -42,7 +42,7 @@ con.connect(function(err) {
     if (err) throw err;
 });
 
-import createChatServer from "./modules/chatServer/chat_server.js";
+import createChatServer from "./modules/chatData/chat_server.js";
 const chat_server = createChatServer(http,con,app);
 
 app.get('/', function (req, res) {
