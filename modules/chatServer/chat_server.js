@@ -1,6 +1,6 @@
 import User from "./user.js";
 import socket from 'socket.io';
-import BinSearchArray from "../util/BinSearch.js";
+import BinSearchArray from "binsearcharray";
 import {getUser,selectUsersNoChat,selectAllUsers,getUserInfo} from "./database/selectUsers.js";
 import {newNormalChat,newGroupChat} from "./database/newChat.js";
 

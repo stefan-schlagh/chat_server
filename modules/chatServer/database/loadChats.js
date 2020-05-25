@@ -1,7 +1,7 @@
 import {chatServer} from "../chat_server.js";
 import NormalChat from "../chat/normalChat.js";
 import User from "../user.js";
-import BinSearchArray from "../../util/BinSearch.js";
+import BinSearchArray from "binsearcharray";
 import GroupChatMember from "../groupChatMember.js";
 import {GroupChat} from "../chat/groupChat.js";
 

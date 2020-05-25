@@ -1,6 +1,6 @@
 import {Chat} from "../chat/chat.js";
 import {chatServer} from "../chat_server.js";
-import BinSearchArray from "../../util/BinSearch.js";
+import BinSearchArray from "binsearcharray";
 
 export class GroupChat extends Chat{
 

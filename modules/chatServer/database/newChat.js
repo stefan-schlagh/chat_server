@@ -5,7 +5,7 @@ import Message from "../message.js";
 import {saveMessageInDB} from "./newMessage.js";
 import {GroupChat} from "../chat/groupChat.js";
 import GroupChatMember from "../groupChatMember.js";
-import BinSearchArray from "../../util/BinSearch.js";
+import BinSearchArray from "binsearcharray";
 
 export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
 

@@ -1,4 +1,4 @@
-import BinSearchArray from "./BinSearch.js";
+import BinSearchArray from "binsearcharray";
 
 export default class ChatStorage{
 
