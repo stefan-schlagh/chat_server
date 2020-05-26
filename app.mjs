@@ -1,3 +1,9 @@
+/*
+    environment variables are loaded
+ */
+import dotEnv from 'dotenv';
+dotEnv.config();
+
 import express from 'express';
 import session from 'express-session';
 const app = express();
@@ -31,10 +37,10 @@ app.use(session({
 
 import mysql from 'mysql';
 const con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "chat",
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: '',
+    database: process.env.DB_DATABASE,
     dateStrings: 'date',
     charset : 'utf8mb4'
 });
