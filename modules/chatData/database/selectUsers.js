@@ -1,4 +1,4 @@
-import {chatServer} from "../chat_server.js";
+import {chatServer} from "../../chatServer.js";
 
 /*
     A user gets requested

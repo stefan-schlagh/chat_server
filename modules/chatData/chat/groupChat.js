@@ -1,5 +1,6 @@
 import {Chat} from "../chat/chat.js";
-import {chatServer} from "../chat_server.js";
+import {chatServer} from "../../chatServer.js";
+import chatData from "../chatData.js";
 import BinSearchArray from "binsearcharray";
 
 export class GroupChat extends Chat{
@@ -89,7 +90,7 @@ export class GroupChat extends Chat{
                     if there are no other chats, the user gets deleted
                  */
                 if (member.chats.length() <= 1) {
-                    chatServer.user.remove(member.uid);
+                    chatData.user.remove(member.uid);
                 }
                 /*
                     chat is deleted

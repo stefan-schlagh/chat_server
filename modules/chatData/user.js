@@ -1,4 +1,5 @@
-import {chatServer} from "./chat_server.js";
+import {chatServer} from "../chatServer.js";
+import chatData from "./chatData.js";
 import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
 import ChatStorage from "../util/chatStorage.js";
 
@@ -63,18 +64,19 @@ export default class User{
                 else {
                     /*
                         chat is deleted
+                        //TODO: getchat
                      */
                     if (type === 'normalChat') {
-                        const chat = chatServer.normalChats.get(item.chatId);
+                        const chat = chatData.chats.normal.get(item.chatId);
                         if (chat !== undefined) {
                             chat.removeUsers(this.uid);
-                            chatServer.normalChats.remove(item.chatId);
+                            chatData.chats.normal.remove(item.chatId);
                         }
                     } else if (type === 'groupChat') {
-                        const chat = chatServer.groupChats.get(item.chatId);
+                        const chat = chatData.chats.group.get(item.chatId);
                         if (chat !== undefined) {
                             chat.removeUsers(this.uid);
-                            chatServer.groupChats.remove(item.chatId);
+                            chatData.chats.group.remove(item.chatId);
                         }
                     }
                 }

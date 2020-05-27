@@ -1,4 +1,5 @@
-import {chatServer} from "../chat_server.js";
+import {chatServer} from "../../chatServer.js";
+import chatData from "../chatData.js";
 import User from "../user.js";
 import NormalChat from "../chat/normalChat.js";
 import Message from "../message.js";
@@ -13,17 +14,17 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
         does user already exist in server?
             if not --> gets created
     */
-    if(chatServer.user.getIndex(uidOther) === -1){
+    if(chatData.user.getIndex(uidOther) === -1){
 
-        chatServer.user.add(uidOther,new User(uidOther,usernameOther));
+        chatData.user.add(uidOther,new User(uidOther,usernameOther));
     }
 
     const ncid = await saveNormalChatInDb(uidSelf,uidOther);
-    const user1 = chatServer.user.get(uidSelf);
-    const user2 = chatServer.user.get(uidOther);
+    const user1 = chatData.user.get(uidSelf);
+    const user2 = chatData.user.get(uidOther);
 
     const newChat = new NormalChat(ncid,user1,user2);
-    chatServer.normalChats.add(ncid,newChat);
+    chatData.chats.normal.add(ncid,newChat);
 
     user1.chats.addChat(ncid,newChat);
     user2.chats.addChat(ncid,newChat);
@@ -97,9 +98,9 @@ export async function newGroupChat(userFrom,data,users){
     for(let i=0;i<users.length;i++){
 
         const user = users[i];
-        if(chatServer.user.getIndex(user.uid) === -1){
+        if(chatData.user.getIndex(user.uid) === -1){
 
-            chatServer.user.add(user.uid,new User(user.uid,user.username));
+            chatData.user.add(user.uid,new User(user.uid,user.username));
         }
     }
     const gcid = await saveGroupChatInDB(data);
@@ -108,16 +109,16 @@ export async function newGroupChat(userFrom,data,users){
         groupChatMembers are created
      */
     const groupChatMembers = new BinSearchArray();
-    groupChatMembers.add(userFrom.uid,new GroupChatMember(chatServer.user.get(userFrom.uid),userFrom.isAdmin));
+    groupChatMembers.add(userFrom.uid,new GroupChatMember(chatData.user.get(userFrom.uid),userFrom.isAdmin));
 
     for(let i=0;i<users.length;i++){
 
-        const user = chatServer.user.get(users[i].uid);
+        const user = chatData.user.get(users[i].uid);
         groupChatMembers.add(user.uid,new GroupChatMember(user,users[i].isAdmin));
     }
 
     const newChat = new GroupChat(gcid,groupChatMembers,data.name,data.description,data.isPublic);
-    chatServer.groupChats.add(newChat.chatId,newChat);
+    chatData.chats.group.add(newChat.chatId,newChat);
     newChat.initMessages(() => {});
     /*
         chat gets added to the members
