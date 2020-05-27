@@ -1,7 +1,7 @@
 import {Chat} from "../chat/chat.js";
-import {chatServer} from "../../chatServer.js";
 import chatData from "../chatData.js";
 import BinSearchArray from "binsearcharray";
+import {randomString} from "../../util/random.js";
 
 export class GroupChat extends Chat{
 
@@ -168,14 +168,4 @@ export class GroupChat extends Chat{
     set socketRoomName(value) {
         this.#_socketRoomName = value;
     }
-}
-
-function randomString(length) {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const  charactersLength = characters.length;
-    for ( let i = 0; i < length; i++ ) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
 }

@@ -66,7 +66,7 @@ export default class ChatStorage{
                 is the chat a groupChat?
              */
         }else if(type === 'groupChat'){
-            const chat = this.group.get(id)
+            const chat = this.group.get(id);
             if(chat)
                 return chat;
         }

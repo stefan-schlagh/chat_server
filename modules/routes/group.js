@@ -43,13 +43,13 @@ router.put('/',(req,res) => {
 /*
     route for deleting a groupChat
  */
-router.delete('/',(req,res) => {
+router.delete('/:gcid',(req,res) => {
 
 });
 /*
     route for getting the info of a groupChat
  */
-router.get('/info/:gcid',(req,res) => {
+router.get('/:gcid',(req,res) => {
 
 });
 /*

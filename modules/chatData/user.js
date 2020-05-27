@@ -64,21 +64,10 @@ export default class User{
                 else {
                     /*
                         chat is deleted
-                        //TODO: getchat
                      */
-                    if (type === 'normalChat') {
-                        const chat = chatData.chats.normal.get(item.chatId);
-                        if (chat !== undefined) {
-                            chat.removeUsers(this.uid);
-                            chatData.chats.normal.remove(item.chatId);
-                        }
-                    } else if (type === 'groupChat') {
-                        const chat = chatData.chats.group.get(item.chatId);
-                        if (chat !== undefined) {
-                            chat.removeUsers(this.uid);
-                            chatData.chats.group.remove(item.chatId);
-                        }
-                    }
+                    const chat = chatData.chats.getChat(type,key);
+                    chat.removeUsers(this.uid);
+                    chatData.chats.removeChat(chat);
                 }
                 if (type === 'groupChat')
                     item.leaveRoom(this);
