@@ -1,6 +1,7 @@
 import express from 'express';
 import {setUser,reqAuth} from "../authentication.js";
 import {newGroupChat} from "../chatData/database/newChat.js";
+import {getGroupChatInfo} from "../chatData/chat/groupChatInfo.js";
 
 const router = express.Router();
 
@@ -51,6 +52,18 @@ router.delete('/:gcid',(req,res) => {
  */
 router.get('/:gcid',(req,res) => {
 
+    const gcid = req.params.gcid;
+    const uidReq = req.user.uid;
+
+    getGroupChatInfo(uidReq,gcid)
+        .then(data => {
+            res.send(data);
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500);
+            res.send();
+        });
 });
 /*
     route for adding a user to a groupChat

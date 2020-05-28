@@ -183,9 +183,68 @@ async function selectGroupChats(uid){
     });
 }
 /*
+    a specific groupChat is loaded
+ */
+export async function selectGroupChat(gcid){
+
+    return new Promise(((resolve, reject) => {
+
+        const con = chatServer.con;
+        const query_str =
+            "SELECT  * " +
+            "FROM groupchat " +
+            "WHERE gcid = " + con.escape(gcid) + ";";
+
+        con.query(query_str,(err,result,fields) => {
+            if(err)
+                reject(err);
+            else if(!result)
+                resolve({exists: false});
+            else if(result.length === 0)
+                resolve({exists: false});
+            else
+                resolve({
+                    exists: true,
+                    name: result[0].name,
+                    description: result[0].description,
+                    public: (result[0].isPublic !== 0)
+                })
+        })
+
+    }));
+}
+/*
+    returns true, if the user with this uid is part of the groupChat
+ */
+export async function isUserPartOfGroup(uid,gcid){
+
+    return new Promise(((resolve, reject) => {
+
+        const con = chatServer.con;
+        const query__str =
+            "SELECT * " +
+            "FROM groupchatmember gcm " +
+            "JOIN groupchat gc " +
+            "ON gcm.gcid = gc.gcid " +
+            "WHERE gcm.uid = " + con.escape(uid) + " " +
+            "AND gcm.gcid = " + con.escape(gcid) + ";";
+
+        con.query(query__str,(err,result,fields) => {
+           if(err)
+               reject(err);
+           else if(!result)
+                resolve(false);
+           else if(result.length === 0)
+                resolve(false);
+           else
+               resolve(true);
+        });
+    }));
+}
+/*
     all users in the specified groupchat get selected
  */
-async function selectUsers(gcid){
+export async function selectUsers(gcid){
 
     return new Promise((resolve, reject) => {
 
