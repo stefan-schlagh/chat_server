@@ -125,6 +125,11 @@ export default class User{
         return new Promise(((resolve, reject) => {
 
             let rc = [];
+            /*
+                if length is 0, empty array gets returned
+             */
+            if(this.chats.length() === 0)
+                resolve(rc);
 
             this.chats.forEach((chat,index,key) => {
 

@@ -123,9 +123,11 @@ class ChatData{
         /*
             if user does not exist -> is created new
          */
-        if(chatData.user.getIndex(uid) === -1) {
+        if(this.user.getIndex(uid) === -1) {
             const user = new User(uid, username, socket, true);
-            user.loadChats().then(r => {});
+            user.loadChats()
+                .then(r => {})
+                .catch(err => console.error(err));
             this.user.add(user.uid,user);
         }
         /*

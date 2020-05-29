@@ -44,6 +44,7 @@ router.post('/register',(req,res) => {
     let username = req.body.username;
     let password = req.body.password;
 
+    const con = chatServer.con;
     register(username,password,con)
         .then(result => {
             if(result.success){
