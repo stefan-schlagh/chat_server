@@ -1,5 +1,6 @@
 import Message from "../message.js";
-import {chatServer} from "../chat_server.js";
+import {chatServer} from "../../chatServer.js";
+import chatData from "../chatData.js";
 import {getMaxMid,loadMessages} from "../database/existingChat.js";
 
 export class Chat{
@@ -76,7 +77,7 @@ export class Chat{
                         /*
                             new messages are inserted at the start of the array
                          */
-                        const message = new Message(this, chatServer.user.get(result[i].uid), result[i].content, result[i].mid);
+                        const message = new Message(this, chatData.user.get(result[i].uid), result[i].content, result[i].mid);
                         message.date = mysqlTimeStampToDate(result[i].date);
                         this.messages.unshift(message);
                     }

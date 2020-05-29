@@ -1,5 +1,6 @@
 import {Chat} from "../chat/chat.js";
-import {chatServer} from "../chat_server.js";
+import {chatServer} from "../../chatServer.js";
+import chatData from "../chatData.js";
 
 export default class NormalChat extends Chat{
 
@@ -80,7 +81,7 @@ export default class NormalChat extends Chat{
          */
         if(user !== undefined) {
             if (user.chats.length <= 1) {
-                chatServer.user.remove(user.uid);
+                chatData.user.remove(user.uid);
             }
             /*
                 sonst wird chat entfernt

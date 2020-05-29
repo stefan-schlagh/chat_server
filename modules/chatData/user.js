@@ -1,4 +1,5 @@
-import {chatServer} from "./chat_server.js";
+import {chatServer} from "../chatServer.js";
+import chatData from "./chatData.js";
 import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
 import ChatStorage from "../util/chatStorage.js";
 
@@ -64,19 +65,9 @@ export default class User{
                     /*
                         chat is deleted
                      */
-                    if (type === 'normalChat') {
-                        const chat = chatServer.normalChats.get(item.chatId);
-                        if (chat !== undefined) {
-                            chat.removeUsers(this.uid);
-                            chatServer.normalChats.remove(item.chatId);
-                        }
-                    } else if (type === 'groupChat') {
-                        const chat = chatServer.groupChats.get(item.chatId);
-                        if (chat !== undefined) {
-                            chat.removeUsers(this.uid);
-                            chatServer.groupChats.remove(item.chatId);
-                        }
-                    }
+                    const chat = chatData.chats.getChat(type,key);
+                    chat.removeUsers(this.uid);
+                    chatData.chats.removeChat(chat);
                 }
                 if (type === 'groupChat')
                     item.leaveRoom(this);
@@ -134,6 +125,11 @@ export default class User{
         return new Promise(((resolve, reject) => {
 
             let rc = [];
+            /*
+                if length is 0, empty array gets returned
+             */
+            if(this.chats.length() === 0)
+                resolve(rc);
 
             this.chats.forEach((chat,index,key) => {
 

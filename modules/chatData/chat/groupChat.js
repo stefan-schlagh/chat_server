@@ -1,6 +1,7 @@
 import {Chat} from "../chat/chat.js";
-import {chatServer} from "../chat_server.js";
-import BinSearchArray from "../../util/BinSearch.js";
+import chatData from "../chatData.js";
+import BinSearchArray from "binsearcharray";
+import {randomString} from "../../util/random.js";
 
 export class GroupChat extends Chat{
 
@@ -89,7 +90,7 @@ export class GroupChat extends Chat{
                     if there are no other chats, the user gets deleted
                  */
                 if (member.chats.length() <= 1) {
-                    chatServer.user.remove(member.uid);
+                    chatData.user.remove(member.uid);
                 }
                 /*
                     chat is deleted
@@ -167,14 +168,4 @@ export class GroupChat extends Chat{
     set socketRoomName(value) {
         this.#_socketRoomName = value;
     }
-}
-
-function randomString(length) {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const  charactersLength = characters.length;
-    for ( let i = 0; i < length; i++ ) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
 }

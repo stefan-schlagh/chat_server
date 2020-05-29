@@ -1,7 +1,8 @@
-import {chatServer} from "../chat_server.js";
+import {chatServer} from "../../chatServer.js";
+import chatData from "../chatData.js";
 import NormalChat from "../chat/normalChat.js";
 import User from "../user.js";
-import BinSearchArray from "../../util/BinSearch.js";
+import BinSearchArray from "binsearcharray";
 import GroupChatMember from "../groupChatMember.js";
 import {GroupChat} from "../chat/groupChat.js";
 
@@ -15,11 +16,11 @@ export async function loadNormalChats(user) {
         /*
             is the chat already loaded?
          */
-        if(chatServer.normalChats.getIndex(normalChatDB.ncid) !== -1){
+        if(chatData.chats.normal.getIndex(normalChatDB.ncid) !== -1){
             /*
                 if chat is already loaded, it gets added to user
              */
-            user.addLoadedChat(chatServer.normalChats.get(normalChatDB.ncid));
+            user.addLoadedChat(chatData.chats.normal.get(normalChatDB.ncid));
         }
         /*
             if not, it gets created
@@ -41,11 +42,11 @@ export async function loadNormalChats(user) {
                 wenn dieser undefined ist, wird er neu erstellt
              */
             let otherUser;
-            if (chatServer.user.getIndex(otherUid) === -1) {
+            if (chatData.user.getIndex(otherUid) === -1) {
                 otherUser = new User(otherUid, otherUsername);
-                chatServer.user.add(otherUid,otherUser);
+                chatData.user.add(otherUid,otherUser);
             }else{
-                otherUser = chatServer.user.get(otherUid);
+                otherUser = chatData.user.get(otherUid);
             }
             /*
                 neuer chat wird erstellt
@@ -63,7 +64,7 @@ export async function loadNormalChats(user) {
             /*
                 chat wird bei array, das alle chats beinhaltet hinzugefügt
              */
-            chatServer.normalChats.add(normalChatDB.ncid,newChat);
+            chatData.chats.normal.add(normalChatDB.ncid,newChat);
         }
 
     }
@@ -100,11 +101,11 @@ export async function loadGroupChats(user) {
         /*
             is chat already loaded?
          */
-        if(chatServer.groupChats.getIndex(groupChatDB.gcid) !== -1){
+        if(chatData.chats.group.getIndex(groupChatDB.gcid) !== -1){
             /*
                 if chat is already loaded, it gets added to user
              */
-            user.addLoadedChat(chatServer.groupChats.get(groupChatDB.gcid));
+            user.addLoadedChat(chatData.chats.group.get(groupChatDB.gcid));
         }
         /*
             chat is not already loaded, a new one is created
@@ -124,15 +125,15 @@ export async function loadGroupChats(user) {
                 /*
                     does user already exist?
                  */
-                if(chatServer.user.getIndex(userChatDB.uid) === -1){
+                if(chatData.user.getIndex(userChatDB.uid) === -1){
                     /*
                         new user gets created
                      */
                     const newUser = new User(userChatDB.uid,userChatDB.username);
-                    chatServer.user.add(newUser.uid,newUser);
+                    chatData.user.add(newUser.uid,newUser);
                 }
 
-                const newUser = chatServer.user.get(userChatDB.uid);
+                const newUser = chatData.user.get(userChatDB.uid);
                 const groupChatMember = new GroupChatMember(newUser,isAdmin);
                 members.add(newUser.uid,groupChatMember);
             }
@@ -150,9 +151,9 @@ export async function loadGroupChats(user) {
                 members[j].value.user.addLoadedChat(newChat);
             }
             /*
-                chat gets added in chatServer
+                chat gets added in chatData
              */
-            chatServer.groupChats.add(newChat.chatId,newChat);
+            chatData.chats.group.add(newChat.chatId,newChat);
         }
     }
     /*
@@ -182,9 +183,68 @@ async function selectGroupChats(uid){
     });
 }
 /*
+    a specific groupChat is loaded
+ */
+export async function selectGroupChat(gcid){
+
+    return new Promise(((resolve, reject) => {
+
+        const con = chatServer.con;
+        const query_str =
+            "SELECT  * " +
+            "FROM groupchat " +
+            "WHERE gcid = " + con.escape(gcid) + ";";
+
+        con.query(query_str,(err,result,fields) => {
+            if(err)
+                reject(err);
+            else if(!result)
+                resolve({exists: false});
+            else if(result.length === 0)
+                resolve({exists: false});
+            else
+                resolve({
+                    exists: true,
+                    name: result[0].name,
+                    description: result[0].description,
+                    public: (result[0].isPublic !== 0)
+                })
+        })
+
+    }));
+}
+/*
+    returns true, if the user with this uid is part of the groupChat
+ */
+export async function isUserPartOfGroup(uid,gcid){
+
+    return new Promise(((resolve, reject) => {
+
+        const con = chatServer.con;
+        const query__str =
+            "SELECT * " +
+            "FROM groupchatmember gcm " +
+            "JOIN groupchat gc " +
+            "ON gcm.gcid = gc.gcid " +
+            "WHERE gcm.uid = " + con.escape(uid) + " " +
+            "AND gcm.gcid = " + con.escape(gcid) + ";";
+
+        con.query(query__str,(err,result,fields) => {
+           if(err)
+               reject(err);
+           else if(!result)
+                resolve(false);
+           else if(result.length === 0)
+                resolve(false);
+           else
+               resolve(true);
+        });
+    }));
+}
+/*
     all users in the specified groupchat get selected
  */
-async function selectUsers(gcid){
+export async function selectUsers(gcid){
 
     return new Promise((resolve, reject) => {
 
