@@ -71,6 +71,10 @@ createChatServer(http,con,app);
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/html/index.html');
 });
+
+app.get('/IP',function(req,res){
+   res.send(process.env.NODE_SERVER_IP);
+});
 /*
     express-server is initialized
  */
