@@ -6,6 +6,7 @@ dotEnv.config();
 
 import express from 'express';
 import session from 'express-session';
+import helmet from 'helmet';
 const app = express();
 import http from 'http';
 const server = http.createServer(app);
@@ -28,6 +29,8 @@ import groupRouter from './modules/routes/group.js';
 /*
     various middleware for express
  */
+app.use(helmet());
+app.use(express.static('build'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static('public'));
@@ -69,7 +72,15 @@ import {createChatServer} from './modules/chatServer.js';
 createChatServer(http,con,app);
 
 app.get('/', function (req, res) {
-    res.sendFile(__dirname + '/html/index.html');
+    res.sendFile(__dirname + '/build/index.html');
+});
+
+app.get('/IP',function(req,res){
+   res.send(process.env.NODE_SERVER_IP);
+});
+
+app.get('*', function (req, res) {
+    res.sendFile(__dirname + '/build/index.html');
 });
 /*
     express-server is initialized
