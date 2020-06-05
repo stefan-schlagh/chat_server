@@ -37,15 +37,11 @@ export class GroupChat extends Chat{
         }
     }
 
-    sendMessage(sentBy,msg,callback) {
-        super.sendMessage(sentBy,msg,msgId => {
-            /*
-                message is sent to everyone except the author
-             */
-            callback(msgId);
-            this.sendToAll(sentBy,'chat message',msg,msgId);
-        });
+    async sendMessage(sentBy,msg) {
 
+        const mid = await super.sendMessage(sentBy,msg);
+        this.sendToAll(sentBy,'chat message',msg,mid);
+        return mid;
     }
     sendToAll(sentBy,type,content,mid = -1){
         /*

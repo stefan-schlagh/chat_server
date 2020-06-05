@@ -35,8 +35,11 @@ class ChatData{
     /*
         a message is sent
      */
-    sendMessage(user,msg,callback){
-        user.sendMessage(msg,callback);
+    async sendMessage(user,msg){
+        /*
+            mid is returned
+         */
+        return await user.sendMessage(msg);
     }
     /*
         messages get loaded

@@ -19,12 +19,9 @@ export default class Message{
     /*
         message gets saved in the database
      */
-    saveInDB(callback){
+    async saveInDB(){
 
-        saveMessageInDB(this)
-            .then(mid => callback(mid))
-            .catch(err => console.log(err));
-
+        return await saveMessageInDB(this);
     }
 
     get msgId() {

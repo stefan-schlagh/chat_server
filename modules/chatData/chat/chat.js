@@ -19,16 +19,16 @@ export class Chat{
         neue Message wird zu message-array hinzugefügt
         im Callback wird die msgId zurückgegeben
      */
-    sendMessage(author,msg,callback){
+    async sendMessage(author,msg){
         const newMsg = new Message(this,author,msg);
-        newMsg.saveInDB(msgId => {
-            /*
-                neue msg, daher ist maxMid auch höher
-             */
-            this.maxMid = msgId;
-            callback(msgId);
-        });
+        /*
+            mid gets returned
+         */
+        const mid = await newMsg.saveInDB();
+        this.maxMid;
         this.messages.push(newMsg);
+
+        return mid;
     }
     async loadFirstMessage(){
 

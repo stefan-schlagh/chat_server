@@ -4,21 +4,21 @@
 import dotEnv from 'dotenv';
 dotEnv.config();
 
+import http from 'http';
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
-const app = express();
-import http from 'http';
-const server = http.createServer(app);
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
-//const io = require('socket.io')(http);
 import cors from 'cors';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const app = express();
+const server = http.createServer(app);
 /*
     dirname is initialized
  */
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /*
     routers are imported
@@ -26,6 +26,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import authRouter from './modules/routes/auth.js';
 import userRouter from './modules/routes/user.js';
 import groupRouter from './modules/routes/group.js';
+import chatRouter from './modules/routes/chats.js';
+import messageRouter from './modules/routes/message.js';
 /*
     various middleware for express
  */
@@ -50,6 +52,8 @@ app.use(session({
 app.use('/auth',authRouter);
 app.use('/user',userRouter);
 app.use('/group',groupRouter);
+app.use('/chats',chatRouter);
+app.use('/message',messageRouter);
 /*
     mysql connection is established
  */

@@ -69,15 +69,6 @@ class ChatServer{
                     chatData.changeChat(user,data.type,data.id);
             });
             /*
-                Wird aufgerufen, wenn Nachricht gesendet wurde
-             */
-            socket.on('chat message', (msg,callback) => {
-                /*
-                    TODO: callback as async/await
-                 */
-                chatData.sendMessage(user,msg,callback);
-            });
-            /*
                 Wird aufgerufen, wenn einem chat beigetreten wird
              */
             socket.on('join chat', chat => {
@@ -88,20 +79,6 @@ class ChatServer{
              */
             socket.on('leave chat', chat => {
 
-            });
-            /*
-                wird aufgerufen, wenn Nachrichten geladen werden sollen
-             */
-            socket.on('load messages', data => {
-
-                chatData.loadMessages(user,data.chatType,data.chatId,data.lastMsgId,data.num)
-                    .then(data => {
-                        /*
-                            data is sent to client
-                        */
-                        socket.emit('messages', data);
-                    })
-                    .catch(err => console.log(err));
             });
             socket.on('started typing',() => {
                 /*
@@ -114,15 +91,6 @@ class ChatServer{
                     user stopped typing
                  */
                 user.stoppedTyping();
-            });
-            /*
-                userInfo gets requested for a specific user
-             */
-            socket.on('getUserInfo',(uid,callback) => {
-
-                getUser(user.uid,uid)
-                    .then(res => callback(res,false))
-                    .catch(err => callback(err,true))
             });
             /*
                 a new normal chat gets created

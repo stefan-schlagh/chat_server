@@ -91,12 +91,17 @@ export default class User{
         if(this.currentChat !== null)
             this.currentChat.sendToAll(this,'stopped typing',this.uid);
     }
-    sendMessage(msg,callback){
+    async sendMessage(msg){
         /*
-            nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
+            only when a chat is selected it can be sent
          */
         if(this.currentChat !== null) {
-            this.currentChat.sendMessage(this,msg,callback);
+            /*
+                mid is returned
+             */
+            return this.currentChat.sendMessage(this,msg);
+        }else{
+            throw new Error('no chat selected')
         }
     }
     /*

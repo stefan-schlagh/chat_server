@@ -26,17 +26,13 @@ export default class NormalChat extends Chat{
         this.#_user2 = user2;
     }
 
-    sendMessage(sentBy,msg,callback) {
-        super.sendMessage(sentBy,msg,msgId => {
-            /*
-                Nachricht wird an den user geschickt, der nicht der Author ist
-                callback wird mit msgId aufgerufen
-                chatID, msgId und content wird mitgeliefert
-            */
-            callback(msgId);
-            this.sendToAll(sentBy,'chat message',msg,msgId);
-        });
+    async sendMessage(sentBy,msg) {
+
+        const mid = await super.sendMessage(sentBy,msg);
+        this.sendToAll(sentBy,'chat message',msg,mid);
+        return mid;
     }
+
     sendToAll(sentBy,type,content,mid = -1){
         const data = {
             type: this.type,
