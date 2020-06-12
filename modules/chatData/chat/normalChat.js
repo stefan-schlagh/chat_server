@@ -102,14 +102,12 @@ export default class NormalChat extends Chat{
         if(uidSelf === this.user1.uid){
             return [{
                 uid : this.user2.uid,
-                username: this.user2.username,
-                isOnline: this.user2.online
+                username: this.user2.username
             }];
         }else{
             return [{
                 uid : this.user1.uid,
-                username: this.user1.username,
-                isOnline: this.user1.online
+                username: this.user1.username
             }];
         }
     }

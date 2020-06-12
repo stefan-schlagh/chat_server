@@ -1,7 +1,5 @@
 import socket from 'socket.io';
-import {getUser} from "./chatData/database/selectUsers.js";
 import {newNormalChat} from "./chatData/database/newChat.js";
-import User from "./chatData/user.js";
 import chatData from "./chatData/chatData.js";
 
 export let chatServer;

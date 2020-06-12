@@ -113,8 +113,7 @@ export class GroupChat extends Chat{
             if(!(uid === member.uid))
                 members.push({
                     uid: member.uid,
-                    username: member.username,
-                    isOnline: member.online
+                    username: member.username
                 });
         }
         return members;
