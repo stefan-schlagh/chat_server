@@ -3,8 +3,15 @@
  */
 import dotEnv from 'dotenv';
 dotEnv.config();
+/*
+    SSL-cert
+ */
+import fs from 'fs';
 
-import http from 'http';
+const key = fs.readFileSync(process.env.KEY_PATH);
+const cert = fs.readFileSync(process.env.CERT_PATH);
+
+import https from 'https';
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
@@ -15,7 +22,11 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
-const server = http.createServer(app);
+const server = https.createServer(
+    {
+        key: key,
+        cert: cert
+    },app);
 /*
     dirname is initialized
  */
@@ -73,14 +84,10 @@ con.connect(function(err) {
     chatServer is created
  */
 import {createChatServer} from './modules/chatServer.js';
-createChatServer(http,con,app);
+createChatServer(server,con,app);
 
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/build/index.html');
-});
-
-app.get('/IP',function(req,res){
-   res.send(process.env.NODE_SERVER_IP);
 });
 
 app.get('*', function (req, res) {

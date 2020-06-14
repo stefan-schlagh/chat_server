@@ -77,7 +77,11 @@ export class Chat{
                         /*
                             new messages are inserted at the start of the array
                          */
-                        const message = new Message(this, chatData.user.get(result[i].uid), result[i].content, result[i].mid);
+                        const user = chatData.user.get(result[i].uid);
+                        if(!user) {
+                            console.log('user undefined');
+                        }
+                        const message = new Message(this, user, result[i].content, result[i].mid);
                         message.date = mysqlTimeStampToDate(result[i].date);
                         this.messages.unshift(message);
                     }

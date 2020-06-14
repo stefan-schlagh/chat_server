@@ -3,42 +3,26 @@ import {newNormalChat} from "./chatData/database/newChat.js";
 import chatData from "./chatData/chatData.js";
 
 export let chatServer;
-export function createChatServer(http,con,app){
-    chatServer = new ChatServer(http,con,app);
+export function createChatServer(server,con,app){
+    chatServer = new ChatServer(server,con,app);
 }
 /*
     The socket that is communicating with the server
  */
 class ChatServer{
 
-    #_http;
+    #_server;
     #_con;
     #_app;
     #_io;
 
-    constructor(http,con,app) {
+    constructor(server,con,app) {
 
-        this.http = http;
+        this.server = server;
         this.con = con;
         this.app = app;
 
-        this.io = socket(http, {
-            origins: '*:*',
-            handlePreflightRequest: (req, res) => {
-                const headers = {
-                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                    "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
-                    "Access-Control-Allow-Credentials": true
-                };
-                res.writeHead(200, headers);
-                res.end();
-            }
-        });
-
-
-        let port = 3002;
-        this.io.listen(port);
-        console.log('listening on port ', port);
+        this.io = socket(server);
 
         /*
             gets called when a connection is established
@@ -52,7 +36,17 @@ class ChatServer{
                 TODO: socket-auth
              */
             socket.on('auth',(uid,username) => {
-                user = chatData.initUserSocket(uid,username,socket);
+                chatData.initUserSocket(uid,username,socket)
+                    .then(_user => {
+                        user = _user;
+                        /*
+                            info that user is initialized is emitted to client
+                         */
+                        socket.emit('initialized');
+                    })
+                    .catch(err => {
+                        console.error(err);
+                    });
             });
             /*
                 wird aufgerufen, wenn chat gewechselt wird
@@ -115,12 +109,12 @@ class ChatServer{
         return chatData.isUserOnline(uid);
     }
 
-    get http() {
-        return this.#_http;
+    get server() {
+        return this._server;
     }
 
-    set http(value) {
-        this.#_http = value;
+    set server(value) {
+        this._server = value;
     }
 
     get con() {

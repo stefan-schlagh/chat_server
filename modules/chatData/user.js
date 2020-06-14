@@ -51,8 +51,6 @@ export default class User{
 
         this.eventEmitter.emit('chats loaded', chats);
 
-        //this.socket.emit('all chats', chats);
-
     }
     /*
         chats des users werden gespeichert und gelöscht

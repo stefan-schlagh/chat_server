@@ -122,15 +122,16 @@ class ChatData{
     /*
         the socket of a user is initialized
      */
-    initUserSocket(uid,username,socket){
+    async initUserSocket(uid,username,socket){
         /*
             if user does not exist -> is created new
          */
         if(this.user.getIndex(uid) === -1) {
             const user = new User(uid, username, socket, true);
-            user.loadChats()
-                .then(r => {})
-                .catch(err => console.error(err));
+            /*
+                chats are loaded
+             */
+            await user.loadChats();
             this.user.add(user.uid,user);
         }
         /*
@@ -142,7 +143,10 @@ class ChatData{
             const user = this.user.get(uid);
             user.socket = socket;
             user.online = true;
-            user.loadChats().then(r => {});
+            /*
+                chats are loaded
+             */
+            await user.loadChats();
         }
         return this.user.get(uid);
     }
