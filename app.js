@@ -11,6 +11,8 @@ import fs from 'fs';
 const key = fs.readFileSync(process.env.KEY_PATH);
 const cert = fs.readFileSync(process.env.CERT_PATH);
 
+import http from 'http';
+import express_enforces_ssl from 'express-enforces-ssl';
 import https from 'https';
 import express from 'express';
 import session from 'express-session';
@@ -43,6 +45,7 @@ import messageRouter from './modules/routes/message.js';
     various middleware for express
  */
 app.use(helmet());
+app.use(express_enforces_ssl());
 app.use(express.static('build'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -96,6 +99,12 @@ app.get('*', function (req, res) {
 /*
     express-server is initialized
  */
-server.listen(3001,function () {
-    console.log('Example app listening on port 3001!');
+const httpPort = process.env.NODE_HTTP_PORT;
+const httpsPort = process.env.NODE_HTTPS_PORT;
+
+http.createServer(app).listen(httpPort,function(){
+    console.log('Express http server listening on port ' + httpPort);
+});
+server.listen(httpsPort,function () {
+    console.log('Express https server listening on port ' + httpsPort);
 });

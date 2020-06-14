@@ -15,7 +15,6 @@ router.get('/',(req,res) => {
     /*
         are the chats already loaded?
      */
-    console.log(user);
     if(user.chatsLoaded){
         user.getChatJson()
             .then(chats => {
@@ -29,8 +28,7 @@ router.get('/',(req,res) => {
     }else{
 
         function chatsLoaded(chats){
-            console.log('loaded');
-            console.log(chats);
+
             res.send(chats);
         }
 

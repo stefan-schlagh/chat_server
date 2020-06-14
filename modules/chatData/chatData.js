@@ -129,10 +129,13 @@ class ChatData{
         if(this.user.getIndex(uid) === -1) {
             const user = new User(uid, username, socket, true);
             /*
+                user is added to array
+             */
+            this.user.add(user.uid,user);
+            /*
                 chats are loaded
              */
             await user.loadChats();
-            this.user.add(user.uid,user);
         }
         /*
             if user exists

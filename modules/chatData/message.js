@@ -13,9 +13,6 @@ export default class Message{
         //aktuelles Datum
         this.date = new Date(Date.now());
         this.author = author;
-        if(!author) {
-            console.log('author undefined');
-        }
         this.msg = msg;
         this.msgId = msgId;
     }
