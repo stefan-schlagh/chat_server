@@ -1,18 +1,25 @@
-import {chatServer} from "../chatServer.js";
+import EventEmitter from 'events';
 import chatData from "./chatData.js";
 import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
 import ChatStorage from "../util/chatStorage.js";
 
+class Emitter extends EventEmitter {}
+
 export default class User{
     /*
-        Reihenfolge egal, Sortierung macht client
+        eventEmitter
      */
+    #_eventEmitter = new Emitter();
     #_chats = new ChatStorage();
     #_socket;
     #_uid;
     #_username;
     #_online;
     #_currentChat;
+    /*
+        are the chats of this user loaded?
+     */
+    #_chatsLoaded = false;
 
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
@@ -39,13 +46,18 @@ export default class User{
         await loadGroupChats(this);
 
         const chats = await this.getChatJson();
-        this.socket.emit('all chats', chats);
+
+        this.chatsLoaded = true;
+
+        this.eventEmitter.emit('chats loaded', chats);
 
     }
     /*
         chats des users werden gespeichert und gelöscht
      */
     async saveAndDeleteChats(){
+
+        this.chatsLoaded = false;
 
         return new Promise(((resolve, reject) => {
             /*
@@ -91,12 +103,17 @@ export default class User{
         if(this.currentChat !== null)
             this.currentChat.sendToAll(this,'stopped typing',this.uid);
     }
-    sendMessage(msg,callback){
+    async sendMessage(msg){
         /*
-            nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
+            only when a chat is selected it can be sent
          */
         if(this.currentChat !== null) {
-            this.currentChat.sendMessage(this,msg,callback);
+            /*
+                mid is returned
+             */
+            return this.currentChat.sendMessage(this,msg);
+        }else{
+            throw new Error('no chat selected')
         }
     }
     /*
@@ -175,6 +192,14 @@ export default class User{
         }
     }
 
+    get eventEmitter() {
+        return this.#_eventEmitter;
+    }
+
+    set eventEmitter(value) {
+        this.#_eventEmitter = value;
+    }
+
     get uid() {
         return this.#_uid;
     }
@@ -223,4 +248,11 @@ export default class User{
         this.#_currentChat = value;
     }
 
+    get chatsLoaded() {
+        return this.#_chatsLoaded;
+    }
+
+    set chatsLoaded(value) {
+        this.#_chatsLoaded = value;
+    }
 }

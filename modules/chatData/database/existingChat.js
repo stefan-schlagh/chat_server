@@ -60,8 +60,9 @@ export async function loadMessages(chat,num){
 
             if(err)
                 reject(err);
-            else
+            else {
                 resolve(result);
+            }
         });
     });
 }

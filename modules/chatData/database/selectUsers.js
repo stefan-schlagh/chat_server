@@ -120,10 +120,5 @@ export async function selectAllUsers(uid,search,limit,start = 0){
  */
 export async function getUserInfo(uidFrom,uidReq){
 
-    const userInfo = await getUser(uidFrom,uidReq);
-
-    return {
-        ...userInfo,
-        abc: true
-    }
+    return await getUser(uidFrom, uidReq);
 }
