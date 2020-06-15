@@ -130,85 +130,84 @@ export class Chat{
         msgIdStart: wenn -1, wird mit der letzten Nachricht angefangen
         num: Anzahl der msg, die geladen werden sollen
      */
-    getMessages(msgIdStart,num,callback){
-        let indexOfMsgId;
-        /*
-            bei client noch keine Nachrichten vorhanden
-         */
-        if(msgIdStart === -1) {
-            //wenn maxMid -1 --> noch keine Nachrichten vorhanden
-            if(this.maxMid === -1){
-                /*
-                    leeres Array wird zurückgegeben, noch keine Nachrichten vorhanden
-                */
-                callback({
-                    chatType: this.type,
-                    chatId: this.chatId,
-                    status: 'no msg found',
-                    messages: []
-                });
-            }
-            indexOfMsgId = this.messages.length;
-        }
-        else
-            indexOfMsgId = this.getIndexOfMsgId(msgIdStart);
+    getMessages(msgIdStart,num){
 
-        if(indexOfMsgId !== -1){
+        return new Promise(((resolve, reject) => {
+
+            let indexOfMsgId;
             /*
-                es wird der Bereich ausgegeben
+                bei client noch keine Nachrichten vorhanden
              */
-            const loopResult = (indexStart,iNum,reachedTop) => {
-                const arr = new Array(iNum);
-                for(let i=indexStart,j=iNum-1;i>indexStart-iNum && j>=0;i--,j--){
+            if(msgIdStart === -1) {
+                //wenn maxMid -1 --> noch keine Nachrichten vorhanden
+                if(this.maxMid === -1){
                     /*
-                        msg-Objekt wird erstellt
-                     */
-                    arr[j] = {
-                        uid: this.messages[i].author.uid,
-                        mid: this.messages[i].msgId,
-                        date: this.messages[i].date,
-                        content: this.messages[i].msg
-                    };
+                        leeres Array wird zurückgegeben, noch keine Nachrichten vorhanden
+                    */
+                    resolve({
+                        chatType: this.type,
+                        chatId: this.chatId,
+                        status: 'no msg found',
+                        messages: []
+                    });
                 }
-                callback({
-                    chatType: this.type,
-                    chatId: this.chatId,
-                    status: reachedTop?'reached top':'success',
-                    messages: arr
-                });
-            };
-            /*
-                es wird geschaut, ob die messages auch im Server existieren. Wenn nicht, werden sie aus der DB geladen
-             */
-            if(indexOfMsgId<num)
-                /*
-                    messages werden geladen
-                    num - msgIdStart --> Anzahl der zu ladenden Nachrichten
-                    callback:
-                            rNum: Anzahl der tatsächlich geladenen
-                            reachedTop: wurden bereits alle Nachrichten geladen?
-                 */
-                this.loadMessages(num-indexOfMsgId,(rNum,reachedTop) => {
-                    /*
-                        num: Zahl der messages, die geladen werden sollte
-                            - Zahl der messages die aus DB geladen werden sollen
-                            + Zahl der messages die tatsächlich aus DB geladen wurde
-                     */
-                    loopResult(indexOfMsgId-1+rNum,num-(num-indexOfMsgId)+rNum,reachedTop);
-                });
+                indexOfMsgId = this.messages.length;
+            }
             else
-                loopResult(indexOfMsgId-1,num,false);
-        }else{
-            /*
-                leeres Array wird zurückgegeben
-             */
-            callback({
-                chatType: this.type,
-                chatId: this.chatId,
-                status: 'error',
-                messages: []
-            });
-        }
+                indexOfMsgId = this.getIndexOfMsgId(msgIdStart);
+
+            if(indexOfMsgId !== -1){
+                /*
+                    es wird der Bereich ausgegeben
+                 */
+                const loopResult = (indexStart,iNum,reachedTop) => {
+                    const arr = new Array(iNum);
+                    for(let i=indexStart,j=iNum-1;i>indexStart-iNum && j>=0;i--,j--){
+                        /*
+                            msg-Objekt wird erstellt
+                         */
+                        arr[j] = {
+                            uid: this.messages[i].author.uid,
+                            mid: this.messages[i].msgId,
+                            date: this.messages[i].date,
+                            content: this.messages[i].msg
+                        };
+                    }
+                    resolve({
+                        chatType: this.type,
+                        chatId: this.chatId,
+                        status: reachedTop?'reached top':'success',
+                        messages: arr
+                    });
+                };
+                /*
+                    es wird geschaut, ob die messages auch im Server existieren. Wenn nicht, werden sie aus der DB geladen
+                 */
+                if(indexOfMsgId<num)
+                    /*
+                        messages werden geladen
+                        num - msgIdStart --> Anzahl der zu ladenden Nachrichten
+                        callback:
+                                rNum: Anzahl der tatsächlich geladenen
+                                reachedTop: wurden bereits alle Nachrichten geladen?
+                     */
+                    this.loadMessages(num-indexOfMsgId,(rNum,reachedTop) => {
+                        /*
+                            num: Zahl der messages, die geladen werden sollte
+                                - Zahl der messages die aus DB geladen werden sollen
+                                + Zahl der messages die tatsächlich aus DB geladen wurde
+                         */
+                        loopResult(indexOfMsgId-1+rNum,num-(num-indexOfMsgId)+rNum,reachedTop);
+                    });
+                else
+                    loopResult(indexOfMsgId-1,num,false);
+            }else{
+                /*
+                    leeres Array wird zurückgegeben
+                 */
+                reject(new Error('error: message loading'));
+            }
+        }));
     }
     /*
         returns the newest message

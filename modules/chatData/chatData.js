@@ -53,25 +53,20 @@ class ChatData{
      */
     async loadMessages(user,type,id,lastMsgId,num){
         /*
-            TODO: chat.getMessages async/await
+            does the chat exist?
          */
-        return new Promise(((resolve, reject) => {
-
-            const chat = this.chats.getChat(type,id);
-            if(chat)
-                /*
-                    messages in this chat are loaded
-                 */
-                chat.getMessages(lastMsgId,num,data => {
-                    resolve(data);
-                });
-            else{
-                /*
-                    chat not found, Promise rejected with error
-                 */
-                reject(new Error('chat not found'));
-            }
-        }));
+        const chat = this.chats.getChat(type,id);
+        if(chat)
+            /*
+                messages in this chat are loaded
+             */
+            return await chat.getMessages(lastMsgId,num);
+        else{
+            /*
+                chat not found, Promise rejected with error
+             */
+            throw new Error('chat not found');
+        }
     }
     /*
         user is unloaded. this happens when the client disconnects
