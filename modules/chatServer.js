@@ -85,15 +85,6 @@ class ChatServer{
                 user.stoppedTyping();
             });
             /*
-                a new normal chat gets created
-             */
-            socket.on('new normalChat',(data,callback) => {
-
-                newNormalChat(user.uid,data.uid,data.username,data.message)
-                    .then(res => callback(res))
-                    .catch(err => console.log(err));
-            });
-            /*
                 is called after client disconnected
              */
             socket.on('disconnect',() => {
