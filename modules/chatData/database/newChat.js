@@ -29,10 +29,6 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
     user1.chats.addChat(ncid,newChat);
     user2.chats.addChat(ncid,newChat);
     /*
-        if the other user is online, the chat gets added at him too
-     */
-    const online = user2.online;
-    /*
         first message gets initialized
      */
     const firstMessage = new Message(newChat,user1,message);
@@ -48,9 +44,7 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
 
     return {
         ncid: ncid,
-        mid: mid,
-        //is the other user online
-        online: online
+        mid: mid
     }
 }
 /*
