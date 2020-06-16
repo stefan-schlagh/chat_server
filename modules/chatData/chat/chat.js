@@ -11,6 +11,14 @@ export class Chat{
     #_chatId;
 
     constructor(type,id) {
+
+        if (new.target === Chat)
+            throw new TypeError("Cannot construct Abstract instances directly");
+        if(this.incrementUnreadMessages === undefined)
+            throw new TypeError("Must override function incrementUnreadMessages");
+        if(this.getUnreadMessages === undefined)
+            throw new TypeError("Must override function getUnreadMessages");
+
         this.type = type;
         this.chatId = id;
     }
@@ -26,6 +34,10 @@ export class Chat{
         const mid = await newMsg.saveInDB();
         this.maxMid;
         this.messages.push(newMsg);
+        /*
+            new messages are incremented
+         */
+        this.incrementUnreadMessages(1);
 
         return mid;
     }

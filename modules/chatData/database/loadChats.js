@@ -29,34 +29,45 @@ export async function loadNormalChats(user) {
             /*
                 es wird der user ermittelt, der nicht der user selbst ist.
              */
-            let otherUid;
-            let otherUsername;
+            let user1;
+            let user2;
+
+            function getOtherUser(uid,username){
+                /*
+                    does the user already exist at the server?
+                 */
+                if (chatData.user.getIndex(uid) === -1) {
+                    const newUser =  new User(uid, username);
+                    chatData.user.add(uid,newUser);
+                    return newUser;
+                }else{
+                    return chatData.user.get(uid);
+                }
+            }
+
             if (normalChatDB.uid1 === user.uid) {
-                otherUid = normalChatDB.uid2;
-                otherUsername = normalChatDB.uname2;
+                user1 = user;
+                user2 = getOtherUser(normalChatDB.uid2,normalChatDB.uname2);
             } else {
-                otherUid = normalChatDB.uid1;
-                otherUsername = normalChatDB.uname1;
+                user1 = getOtherUser(normalChatDB.uid1,normalChatDB.uname1);
+                user2 = user;
             }
             /*
-                wenn dieser undefined ist, wird er neu erstellt
+                new chat is created
              */
-            let otherUser;
-            if (chatData.user.getIndex(otherUid) === -1) {
-                otherUser = new User(otherUid, otherUsername);
-                chatData.user.add(otherUid,otherUser);
-            }else{
-                otherUser = chatData.user.get(otherUid);
-            }
-            /*
-                neuer chat wird erstellt
-             */
-            const newChat = new NormalChat(normalChatDB.ncid, user, otherUser);
+            const newChat =
+                new NormalChat(
+                    normalChatDB.ncid,
+                    user1,
+                    user2,
+                    normalChatDB.unreadMessages1,
+                    normalChatDB.unreadMessages2
+                );
             /*
                 chat gets added to user and otherUser
              */
-            user.addLoadedChat(newChat);
-            otherUser.addLoadedChat(newChat);
+            user1.addLoadedChat(newChat);
+            user2.addLoadedChat(newChat);
             /*
                 first message gets loaded
              */
@@ -75,7 +86,13 @@ async function selectNormalChats(uid){
 
         const con = chatServer.con;
         const query_str =
-            "SELECT nc.ncid, nc.uid1, u1.username AS 'uname1', nc.uid2, u2.username AS 'uname2' " +
+            "SELECT nc.ncid, " +
+                "nc.uid1, " +
+                "u1.username AS 'uname1', " +
+                "nc.unreadMessages1, " +
+                "nc.uid2, " +
+                "u2.username AS 'uname2', " +
+                "nc.unreadMessages2 " +
             "FROM normalchat nc " +
             "INNER JOIN user u1 " +
             "ON nc.uid1 = u1.uid " +
@@ -115,6 +132,14 @@ export async function loadGroupChats(user) {
                 users are requested from DB
              */
             const usersChatDB = await selectUsers(groupChatDB.gcid);
+
+            const isPublic = groupChatDB.isPublic === 1;
+            const newChat = new GroupChat(
+                groupChatDB.gcid,
+                groupChatDB.name,
+                groupChatDB.description,
+                isPublic
+            );
             /*
                 loop through users, if not exists --> gets created
              */
@@ -122,6 +147,7 @@ export async function loadGroupChats(user) {
 
                 const userChatDB = usersChatDB[j];
                 const isAdmin = userChatDB.isAdmin === 1;
+                const unreadMessages = userChatDB.unreadMessages;
                 /*
                     does user already exist?
                  */
@@ -134,12 +160,17 @@ export async function loadGroupChats(user) {
                 }
 
                 const newUser = chatData.user.get(userChatDB.uid);
-                const groupChatMember = new GroupChatMember(newUser,isAdmin);
+                const groupChatMember =
+                    new GroupChatMember(
+                        userChatDB.gcmid,
+                        newChat,
+                        newUser,
+                        isAdmin,
+                        unreadMessages
+                    );
                 members.add(newUser.uid,groupChatMember);
             }
-
-            const isPublic = groupChatDB.isPublic === 1;
-            const newChat = new GroupChat(groupChatDB.gcid,members,groupChatDB.name,groupChatDB.description,isPublic);
+            newChat.members = members;
             /*
                 first message gets loaded
              */
@@ -250,7 +281,11 @@ export async function selectUsers(gcid){
 
         const con = chatServer.con;
         const query_str =
-            "SELECT u.uid, u.username, gcm.isAdmin " +
+            "SELECT u.uid, " +
+                "u.username, " +
+                "gcm.isAdmin, " +
+                "gcm.gcmid, " +
+                "gcm.unreadMessages " +
             "FROM user u " +
             "JOIN groupchatmember gcm " +
             "ON u.uid = gcm.uid " +

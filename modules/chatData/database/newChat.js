@@ -20,10 +20,11 @@ export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
     }
 
     const ncid = await saveNormalChatInDb(uidSelf,uidOther);
+
     const user1 = chatData.user.get(uidSelf);
     const user2 = chatData.user.get(uidOther);
 
-    const newChat = new NormalChat(ncid,user1,user2);
+    const newChat = new NormalChat(ncid,user1,user2,0,0);
     chatData.chats.normal.add(ncid,newChat);
 
     user1.chats.addChat(ncid,newChat);
@@ -97,21 +98,53 @@ export async function newGroupChat(userFrom,data,users){
             chatData.user.add(user.uid,new User(user.uid,user.username));
         }
     }
+    /*
+        groupChat is saved
+     */
     const gcid = await saveGroupChatInDB(data);
-    await saveGroupChatMembersInDB(gcid,users.concat(userFrom));
+    /*
+        the userFrom is saved
+     */
+    const gcmidFrom = await saveGroupChatMemberInDB(gcid,userFrom);
+    /*
+        the chat is created
+     */
+    const newChat = new GroupChat(gcid,data.name,data.description,data.isPublic);
     /*
         groupChatMembers are created
      */
-    const groupChatMembers = new BinSearchArray();
-    groupChatMembers.add(userFrom.uid,new GroupChatMember(chatData.user.get(userFrom.uid),userFrom.isAdmin));
+    const members = new BinSearchArray();
+    /*
+        the userFrom is added
+     */
+    members.add(
+        userFrom.uid,
+        new GroupChatMember(
+            gcmidFrom,
+            newChat,
+            chatData.user.get(userFrom.uid),
+            userFrom.isAdmin,
+            0
+        ));
 
     for(let i=0;i<users.length;i++){
-
+        /*
+            user is saved, created
+            groupChatMember is created
+         */
+        const gcmid = await saveGroupChatMemberInDB(gcid,users[i]);
         const user = chatData.user.get(users[i].uid);
-        groupChatMembers.add(user.uid,new GroupChatMember(user,users[i].isAdmin));
+        members.add(
+            user.uid,
+            new GroupChatMember(
+                gcmid,
+                newChat,
+                user,
+                users[i].isAdmin,
+                0
+            ));
     }
-
-    const newChat = new GroupChat(gcid,groupChatMembers,data.name,data.description,data.isPublic);
+    newChat.members = members;
     chatData.chats.group.add(newChat.chatId,newChat);
     newChat.initMessages(() => {});
     /*
@@ -161,15 +194,6 @@ async function saveGroupChatInDB(data){
     });
 }
 /*
-    groupChatsMembers get saved in DB
- */
-async function saveGroupChatMembersInDB(gcid,users){
-
-    for(let i=0;i<users.length;i++){
-        await saveGroupChatMemberInDB(gcid,users[i]);
-    }
-}
-/*
     groupChatMember gets saved in DB
  */
 async function saveGroupChatMemberInDB(gcid,user){
@@ -177,15 +201,29 @@ async function saveGroupChatMemberInDB(gcid,user){
     return new Promise(function(resolve,reject){
 
         const con = chatServer.con;
-        const query_str =
+        const query_str1 =
             "INSERT " +
             "INTO groupchatmember(uid,gcid,isAdmin) " +
             "VALUES (" + user.uid + ",'" + gcid + "'," + con.escape(user.isAdmin) + ");";
 
-        con.query(query_str,(err) => {
+        con.query(query_str1,(err) => {
             if(err)
                 reject(err);
-            resolve();
+            else {
+                /*
+                    the gcmid is selected
+                 */
+                const query_str2 =
+                    "SELECT max(gcmid) " +
+                    "AS 'gcmid' " +
+                    "FROM groupchatmember";
+                con.query(query_str2,(err,result,fields) => {
+                    if(err)
+                        reject(err);
+                    else
+                        resolve(result[0].gcmid)
+                })
+            }
         })
     });
 }

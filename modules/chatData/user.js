@@ -157,11 +157,12 @@ export default class User{
                     Objekt wird erstellt und zum Array hinzugefügt
                  */
                 rc.push({
-                    type:  chat.type,
+                    type: chat.type,
                     id: key,
                     chatName: chatName,
                     members: members,
-                    firstMessage: fm
+                    firstMessage: fm,
+                    unreadMessages: chat.getUnreadMessages(this.uid)
                 });
 
                 if(rc.length === this.chats.length())
@@ -190,6 +191,15 @@ export default class User{
 
             this.socket.emit("new chat", data);
         }
+    }
+    /*
+        is the chat the currentChat of the user?
+     */
+    isCurrentChat(chat){
+        if(!this.currentChat)
+            return false;
+        return this.currentChat.type === chat.type
+            && this.currentChat.chatId === chat.chatId;
     }
 
     get eventEmitter() {
@@ -246,6 +256,13 @@ export default class User{
 
     set currentChat(value) {
         this.#_currentChat = value;
+        /*
+            unreadMessages at currentChat are set to 0
+         */
+        if(value) {
+
+            value.setUnreadMessages(this.uid,0);
+        }
     }
 
     get chatsLoaded() {

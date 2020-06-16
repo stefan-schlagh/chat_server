@@ -12,9 +12,8 @@ export class GroupChat extends Chat{
     #_isPublic;
     #_socketRoomName;
 
-    constructor(chatId, members, chatName, description, isPublic) {
+    constructor(chatId, chatName, description, isPublic) {
         super('groupChat',chatId);
-        this.members = members;
         this.chatName = chatName;
         this.description = description;
         this.isPublic = isPublic;
@@ -43,6 +42,58 @@ export class GroupChat extends Chat{
         this.sendToAll(sentBy,'chat message',msg,mid);
         return mid;
     }
+    /*
+        unreadMessages of the user with this uid are set
+     */
+    setUnreadMessages(uid,unreadMessages){
+        /*
+            is the groupChatMember defined?
+         */
+        const groupChatMember = this.members.get(uid);
+
+        if(groupChatMember)
+            groupChatMember.setUnreadMessages(unreadMessages);
+
+    }
+    /*
+        unreadMessages are incremented at all users
+            TODO: where this chat is not currentChat
+     */
+    incrementUnreadMessages(num){
+
+        for(let i=0;i<this.members.length;i++){
+
+            this.members[i].value.incrementUnreadMessages(num);
+        }
+    }
+    /*
+        unreadMessages are increment at the user with this uid
+     */
+    incrementUnreadMessagesAt(uid,num){
+        /*
+            is the groupChatMember defined?
+         */
+        const groupChatMember = this.members.get(uid);
+
+        if(groupChatMember) {
+            groupChatMember.incrementUnreadMessages(num);
+        }
+    }
+    /*
+        unread Messages of the user with this uid are returned
+     */
+    getUnreadMessages(uid){
+        /*
+            is the groupChatMember defined?
+         */
+        const groupChatMember = this.members.get(uid);
+
+        if(groupChatMember) {
+            return groupChatMember.unreadMessages;
+        }
+        return 0;
+    }
+
     sendToAll(sentBy,type,content,mid = -1){
         /*
             msg gets emitted to all users
