@@ -1,4 +1,4 @@
-import {chatServer} from "../chatServer.js";
+import {chatServer} from "../../chatServer.js";
 
 export default class GroupChatMember{
 

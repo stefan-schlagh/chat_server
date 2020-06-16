@@ -3,7 +3,7 @@ import chatData from "../chatData.js";
 import NormalChat from "../chat/normalChat.js";
 import User from "../user.js";
 import BinSearchArray from "binsearcharray";
-import GroupChatMember from "../groupChatMember.js";
+import GroupChatMember from "../chat/groupChatMember.js";
 import {GroupChat} from "../chat/groupChat.js";
 
 export async function loadNormalChats(user) {

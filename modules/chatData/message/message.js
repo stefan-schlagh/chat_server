@@ -1,4 +1,4 @@
-import {saveMessageInDB} from "./database/newMessage.js";
+import {saveMessageInDB} from "../database/newMessage.js";
 
 export default class Message{
 

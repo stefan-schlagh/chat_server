@@ -1,4 +1,4 @@
-import Message from "../message.js";
+import Message from "../message/message.js";
 import chatData from "../chatData.js";
 import {getMaxMid,loadMessages} from "../database/existingChat.js";
 

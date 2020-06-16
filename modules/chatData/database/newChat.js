@@ -2,10 +2,10 @@ import {chatServer} from "../../chatServer.js";
 import chatData from "../chatData.js";
 import User from "../user.js";
 import NormalChat from "../chat/normalChat.js";
-import Message from "../message.js";
+import Message from "../message/message.js";
 import {saveMessageInDB} from "./newMessage.js";
 import {GroupChat} from "../chat/groupChat.js";
-import GroupChatMember from "../groupChatMember.js";
+import GroupChatMember from "../chat/groupChatMember.js";
 import BinSearchArray from "binsearcharray";
 
 export async function newNormalChat(uidSelf,uidOther,usernameOther,message){
