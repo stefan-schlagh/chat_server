@@ -1,7 +1,13 @@
 import {saveMessageInDB} from "../database/newMessage.js";
 
+export const messageTypes = {
+    normalMessage: 0,
+    statusMessage: 1
+};
+
 export default class Message{
 
+    #_mid;
     #_msgId;
     #_chat;
     #_author;
@@ -15,6 +21,13 @@ export default class Message{
         this.author = author;
         this.msg = msg;
         this.msgId = msgId;
+        this.mid = msgId;
+    }
+    /*
+        an object containing this message is returned
+     */
+    getMessageObject(){
+
     }
     /*
         message gets saved in the database
@@ -22,6 +35,14 @@ export default class Message{
     async saveInDB(){
 
         return await saveMessageInDB(this);
+    }
+
+    get mid() {
+        return this.#_mid;
+    }
+
+    set mid(value) {
+        this.#_mid = value;
     }
 
     get msgId() {

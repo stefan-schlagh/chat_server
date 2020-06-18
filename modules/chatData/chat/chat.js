@@ -1,11 +1,13 @@
 import Message from "../message/message.js";
 import chatData from "../chatData.js";
 import {getMaxMid,loadMessages} from "../database/existingChat.js";
+import MessageStorage from "../message/messageStorage.js";
 
 export class Chat{
 
     #_type;
     #_messages = [];
+    #_messageStorage;
     //wenn -1 --> noch keine Nachrichten im chat
     #_maxMid;
     #_chatId;
@@ -21,6 +23,8 @@ export class Chat{
 
         this.type = type;
         this.chatId = id;
+
+        this.messageStorage = new MessageStorage(this,type,id);
     }
     /*
         neue Message wird zu message-array hinzugefügt
@@ -34,6 +38,10 @@ export class Chat{
         const mid = await newMsg.saveInDB();
         this.maxMid;
         this.messages.push(newMsg);
+        /*
+            TODO: differentiate between status/normalMessage
+         */
+        this.messageStorage.addNewMessage(newMsg);
         /*
             new messages are incremented
          */
@@ -258,6 +266,14 @@ export class Chat{
 
     set messages(value) {
         this.#_messages = value;
+    }
+
+    get messageStorage() {
+        return this.#_messageStorage;
+    }
+
+    set messageStorage(value) {
+        this.#_messageStorage = value;
     }
 
     get maxMid() {
