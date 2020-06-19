@@ -214,17 +214,19 @@ messages are loaded
       "uid": "the uid from the author",
       "mid": "the message id",
       "date": "the date when the message was written",
-      "content": "the content of the message"
+      "content": "see content"
     },
     {
       "uid": "the uid from the author",
       "mid": "the message id",
       "date": "the date when the message was written",
-      "content": "the content of the message"
+      "content": "see content"
     }
   ]
 }
 ````
+[content](#message-content)
+
 ##### status
 * success
 ⋅⋅* Everything ok 
@@ -241,9 +243,12 @@ a new message is sent to the server
 #### params-in
 ````json
 {
-    "msg": "the message"
+    "type": "the type of the message",
+    "content": "see content"
 }
 ````
+[content](#message-content)
+
 #### params-out
 ````json
 {
@@ -351,5 +356,29 @@ a new normalChat is created
     "ncid": "the id of the new chat",
     "mid": "the id of the first message in the chat",
     "online": "is the other user online"
+}
+````
+
+### message content
+
+if normalMessage:
+````json
+{
+    "text": "the text of the message",
+    "mentions": [
+        {
+            "uid":"the uid of the mentioned user", 
+            "textColumn": "hte column in the text where the user is mentioned"
+        }
+    ],
+    "media": []
+}
+````
+
+if statusMessage:
+````json
+{
+    "type": "the type of the statusMessage",
+    "passiveUsers": ["the uids of the passive users mentioned in this statusMessage"]
 }
 ````

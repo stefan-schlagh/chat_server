@@ -9,8 +9,6 @@ Gets emitted by the client after the connection is established.
 When it is called, this user gets initialized.
 The user object will then be stored in the connection callback on the server
 
-When all chats and the first messages are loaded, these get emitted to the client. [see all chats](#all-chats)
-
 #### parameters
 ````json
 {
@@ -94,9 +92,12 @@ When a message got sent by another user.
 {
   "type": "type of the chat",
   "id": "id of the chat",
-  "uid":"id of the user"
+  "uid":"id of the user",
+  "mid": "the id of the message",
+  "content": "see content"
 }
 ````
+[content](#message-content)
 
 ### started typing_c
 
@@ -165,3 +166,26 @@ gets emitted by the server if the user gets added to a new chat
 #### info
 Gets emitted if the socket disconnects. An alert to reload the page is shown
 
+### message content
+
+if normalMessage:
+````json
+{
+    "text": "the text of the message",
+    "mentions": [
+        {
+            "uid":"the uid of the mentioned user", 
+            "textColumn": "hte column in the text where the user is mentioned"
+        }
+    ],
+    "media": []
+}
+````
+
+if statusMessage:
+````json
+{
+    "type": "the type of the statusMessage",
+    "passiveUsers": ["the uids of the passive users mentioned in this statusMessage"]
+}
+````
