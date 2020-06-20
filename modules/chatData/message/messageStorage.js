@@ -3,6 +3,7 @@ import chatData from "../chatData.js";
 import StatusMessage from "./statusMessage.js";
 import NormalMessage from "./normalMessage.js";
 import BinSearchArray from 'binsearcharray';
+import {messageTypes} from "./message.js";
 
 export default class MessageStorage {
     /*
@@ -78,8 +79,12 @@ export default class MessageStorage {
                      */
                     iMessage = this.messages.getIndex(emid);
                 }
-                rMessages.unshift(this[iMessage].value);
+                rMessages.unshift(this.messages[iMessage].value.getMessageObject());
             }
+            /*
+                messages are returned
+             */
+            return rMessages;
         }
     }
     /*
@@ -134,17 +139,23 @@ export default class MessageStorage {
                         else:
                             new NormalMessage
                  */
-                const isStatusMessage = result[i].isStatusMessage === 1;
+                const messageType = result[i].messageType;
                 const mid = result[i].mid;
                 this.minMid = mid;
                 /*
                     message is created and loaded
                  */
                 let message;
-                if(isStatusMessage){
-                    message = new StatusMessage(this,user,mid);
-                }else{
-                    message = new NormalMessage(this,user,mid);
+                switch(messageType){
+
+                    case messageTypes.normalMessage: {
+                        message = new NormalMessage(this,user,mid);
+                        break;
+                    }
+                    case messageTypes.statusMessage: {
+                        message = new StatusMessage(this,user,mid);
+                        break;
+                    }
                 }
                 message.date = mysqlTimeStampToDate(result[i].date);
                 await message.loadMessage();
@@ -263,7 +274,50 @@ export default class MessageStorage {
         the earliest loaded message is returned
      */
     getEarliestMessage(){
-        return this[0].value;
+        return this.messages[0].value;
+    }
+    /*
+        an object containing the newest message is returned
+     */
+    getNewestMessageObject(){
+
+        const newestMsg = this.messages[this.messages.length - 1];
+        /*
+            does there exist a message?
+         */
+        if(newestMsg){
+            return newestMsg.value.getMessageObject();
+        }else{
+            return {
+                empty: true
+            };
+        }
+    }
+    /*
+        the mid below the given is returned
+     */
+    async getMidBelow(mid){
+
+        const index = this.messages.getIndex(mid);
+
+        if(index === -1)
+            throw new Error('mid does not exist');
+        else{
+            /*
+                is there no message below --> 1 message is loaded
+             */
+            if(index === 0) {
+                /*
+                    are messages loaded
+                        if not --> returns -1
+                        else --> key from messages(0) is returned
+                 */
+                if (await this.loadMessages(1) === 0)
+                    return -1;
+                return this.messages[0].key;
+            }else
+                return this.messages[index - 1].key;
+        }
     }
 
     get loadedAllMessages() {

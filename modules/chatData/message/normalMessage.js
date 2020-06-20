@@ -1,7 +1,8 @@
-import Message from "./message.js";
+import Message,{messageTypes} from "./message.js";
 import {chatServer} from "../../chatServer.js";
 import Mention from "./mention.js";
 import Media from "./media.js";
+import chatData from "../chatData.js";
 
 export default class NormalMessage extends Message {
 
@@ -10,7 +11,7 @@ export default class NormalMessage extends Message {
     #_mentions = [];
     #_media = [];
 
-    constructor(chat,author,mid) {
+    constructor(chat,author,mid = -1) {
         super(
             chat,
             author,
@@ -108,6 +109,10 @@ export default class NormalMessage extends Message {
         normalMessage is initialized
      */
     async initNewMessage(text,mentions,media){
+        /*
+            message gets saved
+         */
+        await super.initNewMessage();
 
         this.text = text;
         /*
@@ -115,8 +120,8 @@ export default class NormalMessage extends Message {
                 text
                 mentions are saved
                     mentions: [
-                        {user, textColumn},
-                        {user, textColumn}
+                        {uid, textColumn},
+                        {uid, textColumn}
                     ]
                 media is saved
                     media: [
@@ -173,11 +178,18 @@ export default class NormalMessage extends Message {
 
         for(let i=0;i<mentions.length;i++){
             /*
+                user is searched
+             */
+            const uid = mentions[i].uid;
+            const user = chatData.user.get(uid);
+            if(!user)
+                throw new Error('user not defined');
+            /*
                 mention - object is created
                     - gets saved in the Database
              */
             const mention = new Mention(-1,-1,mentions[i].textColumn);
-            mention.user = mentions[i].user;
+            mention.user = user;
             await mention.saveMentionInDB(this.nmid);
             /*
                 mention is added to the array
@@ -189,11 +201,53 @@ export default class NormalMessage extends Message {
     /*
         media is saved in the database
      */
-    async saveMediaInDB(){
+    async saveMediaInDB(media){
         /*
             TODO
          */
     }
+    /*
+        an object containing this message is returned
+     */
+    getMessageObject(){
+
+        const msg = super.getMessageObject();
+
+        msg.type = messageTypes.normalMessage;
+        msg.content = {
+            text: this.text,
+            mentions: this.getMentionsArray(),
+            media: this.getMediaArray()
+        };
+        return msg;
+    }
+    /*
+        a array with the mentions is returned
+     */
+    getMentionsArray(){
+
+        const rc = new Array(this.mentions.length);
+        for(let i=0;i<this.mentions.length;i++){
+
+            rc[i] = {
+                uid: this.mentions[i].user.uid,
+                textColumn: this.mentions[i].textColumn
+            }
+        }
+        return rc;
+    }
+    /*
+        a array with the media is returned
+     */
+    getMediaArray(){
+
+        const rc = new Array(this.media.length);
+        for(let i=0;i<this.media.length;i++){
+
+        }
+        return rc;
+    }
+
 
     get nmid() {
         return this.#_nmid;

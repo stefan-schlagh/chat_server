@@ -79,7 +79,8 @@ returns all chats of the requesting user
       "uid": "the uid from the author",
       "mid": "the message id",
       "date": "the date when the message was written",
-      "content": "the content of the message"
+      "type": "the type of the message",
+      "content": "see content"
     }      
   },
   {
@@ -91,6 +92,7 @@ returns all chats of the requesting user
   } 
 ]
 ````
+[content](#message-content)
 
 ## group
 
@@ -190,7 +192,7 @@ a group chat will be deleted
 
 ### GET
 
-### POST /load/message
+### POST /message/load
 
 messages are loaded 
 
@@ -206,8 +208,6 @@ messages are loaded
 #### params-out
 ````json
 {
-  "chatType": "type of the chat",
-  "chatId": "id of the chat",
   "status": "status",
   "messages": [
     {

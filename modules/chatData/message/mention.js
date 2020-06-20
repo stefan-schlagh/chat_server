@@ -33,17 +33,21 @@ export default class Mention {
     /*
         mention is saved in the Database
      */
-    async saveMentionInDB(nmid){
+    async saveMentionInDB(nmid) {
 
         return new Promise((resolve, reject) => {
 
             const query_str1 =
                 "INSERT " +
                 "INTO mentioneduser (ncmid,uid,textColumn)" +
-                "VALUES (" + nmid + "," + this.user.uid + "," + this.textColumn + ");"
+                "VALUES (" +
+                    nmid + "," +
+                    this.user.uid + "," +
+                    this.textColumn +
+                ");";
 
-            chatServer.con.query(query_str1,(err) => {
-                if(err)
+            chatServer.con.query(query_str1, (err) => {
+                if (err)
                     reject(err);
                 /*
                     the muid of this mention is selected
@@ -52,7 +56,7 @@ export default class Mention {
                     "SELECT max(muid) AS 'muid'" +
                     "FROM mentioneduser;";
 
-                chatServer.con.query(query_str1,(err,result) => {
+                chatServer.con.query(query_str2, (err, result) => {
                     if (err)
                         reject(err);
                     try {

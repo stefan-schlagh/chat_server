@@ -1,0 +1,6 @@
+{
+  "messageTypes": {
+    "normalMessage": 0,
+    "statusMessage": 1
+  }
+}

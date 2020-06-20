@@ -1,5 +1,8 @@
 import {chatServer} from "../../chatServer.js";
 /*
+    TODO: deleteFile
+ */
+/*
     message gets saved in the Database
         param message:  Object of class Message
  */

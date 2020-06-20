@@ -103,7 +103,7 @@ export default class User{
         if(this.currentChat !== null)
             this.currentChat.sendToAll(this,'stopped typing',this.uid);
     }
-    async sendMessage(msg){
+    async sendMessage(data){
         /*
             only when a chat is selected it can be sent
          */
@@ -111,7 +111,7 @@ export default class User{
             /*
                 mid is returned
              */
-            return this.currentChat.sendMessage(this,msg);
+            return this.currentChat.sendMessage(this,data);
         }else{
             throw new Error('no chat selected')
         }
@@ -139,7 +139,7 @@ export default class User{
      */
     async getChatJson(){
 
-        return new Promise(((resolve, reject) => {
+        return new Promise((resolve, reject) => {
 
             let rc = [];
             /*
@@ -152,7 +152,7 @@ export default class User{
 
                 const members = chat.getMemberObject(this.uid);
                 const chatName = chat.getChatName(this.uid);
-                const fm = chat.getNewestMessageObject();
+                const fm = chat.messageStorage.getNewestMessageObject();
                 /*
                     Objekt wird erstellt und zum Array hinzugefügt
                  */
@@ -169,7 +169,7 @@ export default class User{
                     resolve(rc);
 
             });
-        }));
+        });
     }
     /*
         a new chat gets added to the user

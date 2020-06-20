@@ -35,11 +35,13 @@ export class GroupChat extends Chat{
             }
         }
     }
+    /*
+        message is sent
+     */
+    async sendMessage(sentBy,data) {
 
-    async sendMessage(sentBy,msg) {
-
-        const mid = await super.sendMessage(sentBy,msg);
-        this.sendToAll(sentBy,'chat message',msg,mid);
+        const mid = await super.sendMessage(sentBy,data);
+        this.sendToAll(sentBy,'chat message',data,mid);
         return mid;
     }
     /*
@@ -57,7 +59,6 @@ export class GroupChat extends Chat{
     }
     /*
         unreadMessages are incremented at all users
-            TODO: where this chat is not currentChat
      */
     incrementUnreadMessages(num){
 

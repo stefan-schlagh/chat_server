@@ -1,4 +1,5 @@
 import {saveMessageInDB} from "../database/newMessage.js";
+import {chatServer} from "../../chatServer.js";
 
 export const messageTypes = {
     normalMessage: 0,
@@ -28,6 +29,11 @@ export default class Message{
      */
     getMessageObject(){
 
+        return({
+            uid: this.author.uid,
+            mid: this.mid,
+            date: this.date
+        });
     }
     /*
         message gets saved in the database
@@ -35,6 +41,48 @@ export default class Message{
     async saveInDB(){
 
         return await saveMessageInDB(this);
+    }
+    /*
+        message gets saved in the database
+     */
+    async initNewMessage(){
+
+        return(new Promise((resolve, reject) => {
+
+            const isGroupChat = this.chat.type === 'groupChat' ? 1 : 0;
+
+            const query_str1 =
+                "INSERT " +
+                "INTO message (date, isGroupChat, cid,uid) " +
+                "VALUES (" +
+                    "CURRENT_TIMESTAMP(),'" +
+                    isGroupChat +"','" +
+                    this.chat.chatId + "','" +
+                    this.author.uid +
+                "');";
+
+            chatServer.con.query(query_str1, err => {
+                if(err){
+                    reject(err);
+                }else {
+                    /*
+                        mid dieser msg wird selected
+                     */
+                    const query_str2 =
+                        "SELECT max(mid) " +
+                        "AS 'mid' FROM message";
+
+                    chatServer.con.query(query_str2, (err, result, fields) => {
+                        if(err){
+                            reject(err);
+                        }else {
+                            this.mid = result[0].mid;
+                            resolve();
+                        }
+                    });
+                }
+            });
+        }));
     }
 
     get mid() {

@@ -27,15 +27,15 @@ export default class NormalChat extends Chat{
         this.unreadMessages2 = unreadMessages2;
     }
 
-    async sendMessage(sentBy,msg) {
+    async sendMessage(sentBy,data) {
         /*
             message is saved
          */
-        const mid = await super.sendMessage(sentBy,msg);
+        const mid = await super.sendMessage(sentBy,data);
         /*
             message gets sent to all users
          */
-        this.sendToAll(sentBy,'chat message',msg,mid);
+        this.sendToAll(sentBy,'chat message',data,mid);
         /*
             messageId is returned
          */

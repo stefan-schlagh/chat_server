@@ -69,10 +69,6 @@ export async function loadNormalChats(user) {
             user1.addLoadedChat(newChat);
             user2.addLoadedChat(newChat);
             /*
-                first message gets loaded
-             */
-            await newChat.loadFirstMessage();
-            /*
                 chat wird bei array, das alle chats beinhaltet hinzugefügt
              */
             chatData.chats.normal.add(normalChatDB.ncid,newChat);
@@ -171,10 +167,6 @@ export async function loadGroupChats(user) {
                 members.add(newUser.uid,groupChatMember);
             }
             newChat.members = members;
-            /*
-                first message gets loaded
-             */
-            await newChat.loadFirstMessage();
             /*
                 chat gets added to the members
              */

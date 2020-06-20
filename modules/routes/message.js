@@ -15,6 +15,8 @@ router.put('/',(req,res) => {
     const user = req.user;
     const msg = req.body.msg;
 
+    const data = req.body;
+
     /*
         message is sent
      */
