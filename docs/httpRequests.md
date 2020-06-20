@@ -346,16 +346,19 @@ a new normalChat is created
 {
     "uid": "the id of the user who should be added",
     "username": "the username of the user who should be added",
-    "message": "the message that should be added to the chat"
+    "message": {
+        "type": "the type of the message",
+        "content": "see content"
+    }
 }
 ````
+[content](#message-content)
 
 ### params-out
 ````json
 {
     "ncid": "the id of the new chat",
-    "mid": "the id of the first message in the chat",
-    "online": "is the other user online"
+    "mid": "the id of the first message in the chat"
 }
 ````
 

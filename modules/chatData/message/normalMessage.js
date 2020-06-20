@@ -2,7 +2,7 @@ import Message,{messageTypes} from "./message.js";
 import {chatServer} from "../../chatServer.js";
 import Mention from "./mention.js";
 import Media from "./media.js";
-import chatData from "../chatData.js";
+import {chatData} from "../data.js";
 
 export default class NormalMessage extends Message {
 
@@ -15,7 +15,6 @@ export default class NormalMessage extends Message {
         super(
             chat,
             author,
-            '',
             mid
         );
     }

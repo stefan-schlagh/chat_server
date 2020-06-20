@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import chatData from "./chatData.js";
 import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
-import ChatStorage from "../util/chatStorage.js";
+import ChatStorage from "./chat/chatStorage.js";
 
 class Emitter extends EventEmitter {}
 
@@ -194,7 +194,7 @@ export default class User{
                 id: chat.chatId,
                 chatName: chat.getChatName(this.uid),
                 members: chat.getMemberObject(this.uid),
-                firstMessage: chat.getNewestMessageObject()
+                firstMessage: chat.messageStorage.getNewestMessageObject()
             };
 
             this.socket.emit("new chat", data);

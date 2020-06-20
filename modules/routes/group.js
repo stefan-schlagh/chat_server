@@ -1,7 +1,7 @@
 import express from 'express';
 import {setUser,reqAuth} from "../authentication.js";
-import {newGroupChat} from "../chatData/database/newChat.js";
 import {getGroupChatInfo} from "../chatData/chat/groupChatInfo.js";
+import {chatData} from "../chatData/data.js";
 
 const router = express.Router();
 
@@ -41,7 +41,7 @@ router.put('/',(req,res) => {
     const data = req.body.data;
     const users = req.body.users;
 
-    newGroupChat(userFrom, data, users)
+    chatData.newGroupChat(userFrom, data, users)
         .then(r  => res.send())
         .catch(err => {
             console.error(err);

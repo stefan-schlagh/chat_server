@@ -19,7 +19,7 @@ export default class GroupChatMember{
     #_unreadMessages;
 
     constructor(
-        gcmid,
+        gcmid = -1,
         chat,
         user,
         isAdmin,
@@ -31,6 +31,46 @@ export default class GroupChatMember{
         this.user = user;
         this.isAdmin = isAdmin;
         this.unreadMessages = unreadMessages
+    }
+    /*
+        groupChatMember is saved in the database
+     */
+    async saveGroupChatMemberInDB(){
+
+        return new Promise((resolve,reject) => {
+
+            const con = chatServer.con;
+            const query_str1 =
+                "INSERT " +
+                "INTO groupchatmember(uid,gcid,isAdmin) " +
+                "VALUES (" +
+                    this.user.uid + ",'" +
+                    this.chat.chatId + "'," +
+                    con.escape(this.isAdmin) +
+                ");";
+
+            con.query(query_str1,(err) => {
+                if(err)
+                    reject(err);
+                else {
+                    /*
+                        the gcmid is selected
+                     */
+                    const query_str2 =
+                        "SELECT max(gcmid) " +
+                        "AS 'gcmid' " +
+                        "FROM groupchatmember";
+                    con.query(query_str2,(err,result,fields) => {
+                        if(err)
+                            reject(err);
+                        else {
+                            this.gcmid = result[0].gcmid;
+                            resolve(this.gcmid)
+                        }
+                    })
+                }
+            })
+        });
     }
     /*
         unread messages are updated in the Database

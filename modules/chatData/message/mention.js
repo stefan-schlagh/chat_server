@@ -1,4 +1,4 @@
-import chatData from "../chatData.js";
+import {chatData} from "../data.js";
 import {chatServer} from "../../chatServer.js";
 
 export default class Mention {

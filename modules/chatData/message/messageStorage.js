@@ -1,5 +1,5 @@
 import {chatServer} from "../../chatServer.js";
-import chatData from "../chatData.js";
+import {chatData} from "../data.js";
 import StatusMessage from "./statusMessage.js";
 import NormalMessage from "./normalMessage.js";
 import BinSearchArray from 'binsearcharray';

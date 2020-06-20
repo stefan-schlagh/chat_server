@@ -2,7 +2,7 @@ import express from 'express';
 import {setUser,reqAuth} from "../authentication.js";
 import {selectUsersNoChat} from "../chatData/database/selectUsers.js";
 import {getUserInfo, selectAllUsers} from "../chatData/database/selectUsers.js";
-import {newNormalChat} from "../chatData/database/newChat.js";
+import {chatData} from "../chatData/data.js";
 
 const router = express.Router();
 
@@ -81,12 +81,12 @@ router.get('/:uid',(req,res) => {
  */
 router.put('/chat',(req,res) => {
 
-    const uidSelf = req.user.uid;
+    const userSelf = req.user;
     const uidOther = req.body.uid;
     const usernameOther = req.body.username;
     const message = req.body.message;
 
-    newNormalChat(uidSelf,uidOther,usernameOther,message)
+    chatData.newNormalChat(userSelf,uidOther,usernameOther,message)
         .then(result => {
             res.send(result)
         })

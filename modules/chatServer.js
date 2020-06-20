@@ -1,6 +1,5 @@
 import socket from 'socket.io';
-import {newNormalChat} from "./chatData/database/newChat.js";
-import chatData from "./chatData/chatData.js";
+import {chatData} from "./chatData/data.js";
 
 export let chatServer;
 export function createChatServer(server,con,app){

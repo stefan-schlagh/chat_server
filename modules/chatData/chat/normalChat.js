@@ -1,4 +1,4 @@
-import {Chat} from "../chat/chat.js";
+import {Chat} from "./chat.js";
 import {chatServer} from "../../chatServer.js";
 import chatData from "../chatData.js";
 
@@ -14,7 +14,7 @@ export default class NormalChat extends Chat{
     #_unreadMessages2;
 
     constructor(
-        chatId,
+        chatId = -1,
         user1,
         user2,
         unreadMessages1 = 0,
@@ -26,7 +26,49 @@ export default class NormalChat extends Chat{
         this.unreadMessages1 = unreadMessages1;
         this.unreadMessages2 = unreadMessages2;
     }
+    /*
+        chat is saved in the database
+     */
+    async saveChatInDB(){
 
+        return new Promise((resolve,reject) => {
+
+            const query_str1 =
+                "INSERT " +
+                "INTO normalchat(uid1,uid2)" +
+                "VALUES('" +
+                    this.user1.uid + "','" +
+                    this.user2.uid +
+                "');";
+
+            chatServer.con.query(query_str1,(err) => {
+                /*
+                    if no error has occured, the chatID gets requested
+                 */
+                if(err) {
+                    reject(err);
+                }else{
+
+                    const query_str2 =
+                        "SELECT max(ncid) AS 'ncid' " +
+                        "FROM normalchat;";
+
+                    chatServer.con.query(query_str2,(err,result,fields) => {
+
+                        if(err){
+                            reject(err);
+                        }else{
+                            this.chatId = result[0].ncid;
+                            resolve(this.chatId);
+                        }
+                    });
+                }
+            })
+        });
+    }
+    /*
+        event is emitted to all participants of the chat
+     */
     sendToAll(sentBy,emitName,rest){
         const data = {
             chat: {

@@ -30,6 +30,25 @@ export class Chat{
      */
     async sendMessage(author,data){
         /*
+            a new message is added to the chat
+         */
+        const message = await this.addMessage(author,data);
+        /*
+            message gets sent to all users
+         */
+        this.sendToAll(
+            author,
+            'chat message',
+            message.getMessageObject()
+        );
+
+        return message.mid;
+    }
+    /*
+        a new message is added to the chat
+     */
+    async addMessage(author,data){
+        /*
             message is created & initialized
          */
         let message;
@@ -61,22 +80,16 @@ export class Chat{
                 break;
             }
         }
-
+        /*
+            message is added to messageStorage
+         */
         this.messageStorage.addNewMessage(message);
         /*
             new messages are incremented
          */
         this.incrementUnreadMessages(1);
-        /*
-            message gets sent to all users
-         */
-        this.sendToAll(
-            author,
-            'chat message',
-            message.getMessageObject()
-        );
 
-        return message.mid;
+        return message;
     }
     /*
         indexes werden vom Arrayende angegeben
@@ -113,24 +126,6 @@ export class Chat{
                         : 'success',
                 messages: messages
             });
-        }
-    }
-    /*
-        returns the newest message
-     */
-    getNewestMessageObject(){
-
-        const firstMessage = this.messages[this.messages.length - 1];
-        /*
-            does there exist a message?
-         */
-        if(firstMessage){
-
-            return firstMessage.getMessageObject();
-        }else{
-            return {
-                empty: true
-            };
         }
     }
 

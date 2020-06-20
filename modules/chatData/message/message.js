@@ -8,20 +8,20 @@ export const messageTypes = {
 export default class Message{
 
     #_mid;
-    #_msgId;
     #_chat;
     #_author;
-    #_msg;
     #_date;
 
-    constructor(chat,author,msg,msgId = -1) {
+    constructor(chat,author,mid = -1) {
+
+        if (new.target === Message)
+            throw new TypeError("Cannot construct Abstract instances directly");
+
         this.chat = chat;
         //aktuelles Datum
         this.date = new Date(Date.now());
         this.author = author;
-        this.msg = msg;
-        this.msgId = msgId;
-        this.mid = msgId;
+        this.mid = mid;
     }
     /*
         an object containing this message is returned
@@ -85,14 +85,6 @@ export default class Message{
         this.#_mid = value;
     }
 
-    get msgId() {
-        return this.#_msgId;
-    }
-
-    set msgId(value) {
-        this.#_msgId = value;
-    }
-
     get chat() {
         return this.#_chat;
     }
@@ -107,14 +99,6 @@ export default class Message{
 
     set author(value) {
         this.#_author = value;
-    }
-
-    get msg() {
-        return this.#_msg;
-    }
-
-    set msg(value) {
-        this.#_msg = value;
     }
 
     get date() {

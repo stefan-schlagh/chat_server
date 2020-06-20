@@ -1,6 +1,7 @@
 import BinSearchArray from 'binsearcharray';
-import ChatStorage from "../util/chatStorage.js";
+import ChatStorage from "./chat/chatStorage.js";
 import User from "./user.js";
+import {setChatData} from "./data.js";
 
 class ChatData{
 
@@ -148,6 +149,41 @@ class ChatData{
         }
         return this.user.get(uid);
     }
+    /*
+         a new normalChat is created
+     */
+    async newNormalChat(userSelf,uidOther,usernameOther,message){
+        /*
+            does user already exist in server?
+                if not --> gets created
+        */
+        let otherUser = this.user.get(uidOther);
+        if(!otherUser){
+            /*
+                user gets created
+             */
+            otherUser = new User(uidOther,usernameOther);
+            chatData.user.add(uidOther,otherUser);
+        }
+        return await this.chats.newNormalChat(userSelf,otherUser,message);
+    }
+    /*
+        a new groupChat is created
+     */
+    async newGroupChat(userFrom,data,users){
+        /*
+            not saved users are created
+         */
+        for(let i=0;i<users.length;i++){
+
+            const user = users[i];
+            if(chatData.user.getIndex(user.uid) === -1){
+
+                chatData.user.add(user.uid,new User(user.uid,user.username));
+            }
+        }
+        return await this.chats.newGroupChat(userFrom,data,users);
+    }
 
     get chats() {
         return this.#_chats;
@@ -167,5 +203,7 @@ class ChatData{
 }
 
 const chatData = new ChatData();
+
+setChatData(chatData);
 
 export default chatData;

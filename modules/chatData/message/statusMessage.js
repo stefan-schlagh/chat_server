@@ -1,6 +1,6 @@
 import Message,{messageTypes} from "./message.js";
 import {chatServer} from "../../chatServer.js";
-import chatData from "../chatData.js";
+import {chatData} from "../data.js";
 
 export const statusMessageTypes = {
     chatCreated: 0,
@@ -20,7 +20,6 @@ export default class StatusMessage extends Message {
         super(
             chat,
             author,
-            '',
             mid
         );
     }

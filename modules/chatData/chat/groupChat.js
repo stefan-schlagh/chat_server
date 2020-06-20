@@ -1,7 +1,8 @@
-import {Chat} from "../chat/chat.js";
+import {Chat} from "./chat.js";
 import chatData from "../chatData.js";
 import BinSearchArray from "binsearcharray";
 import {randomString} from "../../util/random.js";
+import {chatServer} from "../../chatServer.js";
 
 export class GroupChat extends Chat{
 
@@ -12,7 +13,7 @@ export class GroupChat extends Chat{
     #_isPublic;
     #_socketRoomName;
 
-    constructor(chatId, chatName, description, isPublic) {
+    constructor(chatId = -1, chatName, description, isPublic) {
         super('groupChat',chatId);
         this.chatName = chatName;
         this.description = description;
@@ -34,6 +35,48 @@ export class GroupChat extends Chat{
                 user.socket.join(this.socketRoomName);
             }
         }
+    }
+    /*
+        chat is saved in the database
+     */
+    async saveChatInDB(){
+
+        return new Promise((resolve,reject) => {
+
+            const con = chatServer.con;
+            const query_str1 =
+                "INSERT " +
+                "INTO groupchat (name,description,isPublic) " +
+                "VALUES (" +
+                    con.escape(this.chatName) + "," +
+                    con.escape(this.description) + "," +
+                    con.escape(this.isPublic) +
+                ")";
+
+            con.query(query_str1,(err) => {
+                /*
+                    if no error has occured, the chatID gets requested
+                 */
+                if(err) {
+                    reject(err);
+                }else{
+
+                    const query_str2 =
+                        "SELECT max(gcid) AS 'gcid' " +
+                        "FROM groupchat;";
+
+                    con.query(query_str2,(err,result,fields) => {
+
+                        if(err){
+                            reject(err);
+                        }else{
+                            this.chatId = result[0].gcid;
+                            resolve(this.chatId);
+                        }
+                    });
+                }
+            });
+        });
     }
     /*
         unreadMessages of the user with this uid are set
