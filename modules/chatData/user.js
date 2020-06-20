@@ -94,14 +94,22 @@ export default class User{
             nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
          */
         if(this.currentChat !== null)
-            this.currentChat.sendToAll(this,'started typing',this.uid);
+            this.currentChat.sendToAll(
+                this,
+                'started typing',
+                {uid: this.uid}
+            );
     }
     stoppedTyping(){
         /*
             nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
          */
         if(this.currentChat !== null)
-            this.currentChat.sendToAll(this,'stopped typing',this.uid);
+            this.currentChat.sendToAll(
+                this,
+                'stopped typing',
+                {uid: this.uid}
+            );
     }
     async sendMessage(data){
         /*

@@ -1,4 +1,3 @@
-import {saveMessageInDB} from "../database/newMessage.js";
 import {chatServer} from "../../chatServer.js";
 
 export const messageTypes = {
@@ -34,13 +33,6 @@ export default class Message{
             mid: this.mid,
             date: this.date
         });
-    }
-    /*
-        message gets saved in the database
-     */
-    async saveInDB(){
-
-        return await saveMessageInDB(this);
     }
     /*
         message gets saved in the database

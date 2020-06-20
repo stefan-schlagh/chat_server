@@ -13,14 +13,11 @@ router.use(reqAuth);
 router.put('/',(req,res) => {
 
     const user = req.user;
-    const msg = req.body.msg;
-
     const data = req.body;
-
     /*
         message is sent
      */
-    chatData.sendMessage(user,msg)
+    chatData.sendMessage(user,data)
         .then(mid => {
             res.send({
                 mid: mid

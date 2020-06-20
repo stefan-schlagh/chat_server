@@ -36,15 +36,6 @@ export class GroupChat extends Chat{
         }
     }
     /*
-        message is sent
-     */
-    async sendMessage(sentBy,data) {
-
-        const mid = await super.sendMessage(sentBy,data);
-        this.sendToAll(sentBy,'chat message',data,mid);
-        return mid;
-    }
-    /*
         unreadMessages of the user with this uid are set
      */
     setUnreadMessages(uid,unreadMessages){
@@ -94,19 +85,21 @@ export class GroupChat extends Chat{
         }
         return 0;
     }
-
-    sendToAll(sentBy,type,content,mid = -1){
+    /*
+        event is emitted to all participants of the chat
+     */
+    sendToAll(sentBy,emitName,rest){
         /*
             msg gets emitted to all users
          */
         const data = {
-            type: this.type,
-            id: this.chatId,
-            uid: sentBy.uid,
-            mid: mid,
-            content: content
+            chat: {
+                type: this.type,
+                id: this.chatId
+            },
+            ...rest
         };
-        sentBy.socket.to(this.socketRoomName).emit(type,data);
+        sentBy.socket.to(this.socketRoomName).emit(emitName,data);
     }
     /*
         is called:

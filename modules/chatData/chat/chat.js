@@ -29,13 +29,6 @@ export class Chat{
         im Callback wird die msgId zurückgegeben
      */
     async sendMessage(author,data){
-        /*const newMsg = new Message(this,author,data);
-        /*
-            mid gets returned
-         *#/
-        const mid = await newMsg.saveInDB();
-        this.maxMid;
-        this.messages.push(newMsg);*/
         /*
             message is created & initialized
          */
@@ -46,6 +39,9 @@ export class Chat{
 
             case messageTypes.normalMessage: {
                 message = new NormalMessage(this,author);
+                /*
+                    message is saved in DB, mid is saved
+                 */
                 await message.initNewMessage(
                     content.text,
                     content.mentions,
@@ -55,6 +51,9 @@ export class Chat{
             }
             case messageTypes.statusMessage: {
                 message = new StatusMessage(this,author);
+                /*
+                    message is saved in DB, mid is saved
+                 */
                 await message.initNewMessage(
                     content.type,
                     content.passiveUsers
@@ -68,6 +67,14 @@ export class Chat{
             new messages are incremented
          */
         this.incrementUnreadMessages(1);
+        /*
+            message gets sent to all users
+         */
+        this.sendToAll(
+            author,
+            'chat message',
+            message.getMessageObject()
+        );
 
         return message.mid;
     }

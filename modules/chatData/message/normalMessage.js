@@ -139,10 +139,11 @@ export default class NormalMessage extends Message {
 
         return new Promise((resolve, reject) => {
 
+            const text = chatServer.con.escape(this.text);
             const query_str1 =
                "INSERT " +
                "INTO normalmessage(mid,text) " +
-               "VALUES (" + this.mid + "," + this.text + ");";
+               "VALUES (" + this.mid + "," + text + ");";
 
             chatServer.con.query(query_str1,(err,result,fields) => {
                 if (err)

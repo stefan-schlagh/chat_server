@@ -90,10 +90,13 @@ When a message got sent by another user.
 #### parameters
 ````json
 {
-  "type": "type of the chat",
-  "id": "id of the chat",
+  "chat": {
+     "type": "type of the chat",
+     "id": "id of the chat"
+  },
   "uid":"id of the user",
   "mid": "the id of the message",
+  "type": "the type of the chat",
   "content": "see content"
 }
 ````
@@ -107,8 +110,10 @@ gets emitted by the server when a member of a chat starts typing.
 #### parameters
 ````json
 {
-    "type": "type of the chat",
-    "id": "id of the chat",
+    "chat": {
+         "type": "type of the chat",
+         "id": "id of the chat"
+    },
     "uid":"id of the user"
 }
 ````
@@ -121,11 +126,11 @@ gets emitted by the server when a member of a chat stops typing.
 #### parameters
 ````json
 {
-    "type": "type of the chat",
-    "id": "id of the chat",
-    "uid":"id of the user",
-    "mid": "the message id",
-    "content": "the content of the message"
+    "chat": {
+         "type": "type of the chat",
+         "id": "id of the chat",
+    },
+    "uid":"id of the user"
 }
 ````
 

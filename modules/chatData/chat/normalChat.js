@@ -27,28 +27,14 @@ export default class NormalChat extends Chat{
         this.unreadMessages2 = unreadMessages2;
     }
 
-    async sendMessage(sentBy,data) {
-        /*
-            message is saved
-         */
-        const mid = await super.sendMessage(sentBy,data);
-        /*
-            message gets sent to all users
-         */
-        this.sendToAll(sentBy,'chat message',data,mid);
-        /*
-            messageId is returned
-         */
-        return mid;
-    }
-
-    sendToAll(sentBy,type,content,mid = -1){
+    sendToAll(sentBy,emitName,rest){
         const data = {
-            type: this.type,
-            id: this.chatId,
+            chat: {
+                type: this.type,
+                id: this.chatId,
+            },
             uid: sentBy.uid,
-            mid: mid,
-            content: content
+            ...rest
         };
         /*
             es wird der user, der nicht der Sender ist, definiert
@@ -59,14 +45,14 @@ export default class NormalChat extends Chat{
                 es wird geschaut, ob Socket definiert ist
              */
             if(this.user2.socket != null)
-                chatServer.io.to(this.user2.socket.id).emit(type,data);
+                chatServer.io.to(this.user2.socket.id).emit(emitName,data);
         }
         else {
             /*
                 es wird geschaut, ob Socket definiert ist
              */
             if(this.user1.socket != null)
-                chatServer.io.to(this.user1.socket.id).emit(type,data);
+                chatServer.io.to(this.user1.socket.id).emit(emitName,data);
         }
     }
     /*
