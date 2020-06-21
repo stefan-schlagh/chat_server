@@ -22,7 +22,7 @@ export class Chat{
         this.type = type;
         this.chatId = id;
 
-        this.messageStorage = new MessageStorage(this,type,id);
+        this.messageStorage = new MessageStorage(this);
     }
     /*
         neue Message wird zu message-array hinzugefügt

@@ -1,14 +1,22 @@
 import BinSearchArray from "binsearcharray";
 import NormalChat from "./normalChat.js";
-import chatData from "../chatData.js";
 import {GroupChat} from "./groupChat.js";
 import GroupChatMember from "./groupChatMember.js";
+import {chatServer} from "../../chatServer.js";
+import User from "../user.js";
 
 export default class ChatStorage{
 
+    #_user;
+    /*
+        chats
+     */
     #_normal = new BinSearchArray();
     #_group = new BinSearchArray();
 
+    constructor(user) {
+        this.user = user;
+    }
 
     addChat(chat){
         if(chat.type === 'normalChat'){
@@ -91,7 +99,7 @@ export default class ChatStorage{
          */
         const ncid = await newChat.saveChatInDB();
 
-        chatData.chats.normal.add(ncid,newChat);
+        this.normal.add(ncid,newChat);
         /*
             chats are added to the users
          */
@@ -128,7 +136,7 @@ export default class ChatStorage{
         /*
             chat is saved in the database
          */
-        const gcid = await newChat.saveChatInDB();
+        await newChat.saveChatInDB();
         /*
             groupChatMembers are created
          */
@@ -139,7 +147,7 @@ export default class ChatStorage{
         const gcmSelf = new GroupChatMember(
             -1,
             newChat,
-            chatData.user.get(userFrom.uid),
+            this.user.get(userFrom.uid),
             userFrom.isAdmin,
             0
         );
@@ -150,7 +158,7 @@ export default class ChatStorage{
          */
         for(let i=0;i<users.length;i++){
 
-            const user = chatData.user.get(users[i].uid);
+            const user = this.user.get(users[i].uid);
             const gcm = new GroupChatMember(
                 -1,
                 newChat,
@@ -163,7 +171,7 @@ export default class ChatStorage{
             members.add(user.uid,gcm);
         }
         newChat.members = members;
-        chatData.chats.group.add(newChat.chatId,newChat);
+        this.group.add(newChat.chatId,newChat);
         /*
             chat gets added to the members
          */
@@ -171,6 +179,187 @@ export default class ChatStorage{
             user.addLoadedChat(newChat);
             user.addNewChat(newChat);
         });
+    }
+    /*
+        all normalChats of the user are loaded
+     */
+    async loadNormalChats(user){
+
+        const normalChatsDB = await this.selectNormalChats(user.uid);
+
+        for(let i=0;i<normalChatsDB.length;i++){
+
+            const normalChatDB = normalChatsDB[i];
+            /*
+                is the chat already loaded?
+             */
+            if(this.normal.getIndex(normalChatDB.ncid) !== -1){
+                /*
+                    if chat is already loaded, it gets added to user
+                 */
+                user.addLoadedChat(this.normal.get(normalChatDB.ncid));
+            }
+            /*
+                if not, it gets created
+             */
+            else {
+                /*
+                    es wird der user ermittelt, der nicht der user selbst ist.
+                 */
+                let user1;
+                let user2;
+
+                const getOtherUser = (uid,username) => {
+                    /*
+                        does the user already exist at the server?
+                     */
+                    if (this.user.getIndex(uid) === -1) {
+                        const newUser =  new User(uid, username);
+                        this.user.add(uid,newUser);
+                        return newUser;
+                    }else{
+                        return this.user.get(uid);
+                    }
+                };
+
+                if (normalChatDB.uid1 === user.uid) {
+                    user1 = user;
+                    user2 = getOtherUser(normalChatDB.uid2,normalChatDB.uname2);
+                } else {
+                    user1 = getOtherUser(normalChatDB.uid1,normalChatDB.uname1);
+                    user2 = user;
+                }
+                /*
+                    new chat is created
+                 */
+                const newChat =
+                    new NormalChat(
+                        normalChatDB.ncid,
+                        user1,
+                        user2,
+                        normalChatDB.unreadMessages1,
+                        normalChatDB.unreadMessages2
+                    );
+                await newChat.messageStorage.initFirstMessage();
+                /*
+                    chat gets added to user and otherUser
+                 */
+                user1.addLoadedChat(newChat);
+                user2.addLoadedChat(newChat);
+                /*
+                    chat wird bei array, das alle chats beinhaltet hinzugefügt
+                 */
+                this.normal.add(normalChatDB.ncid,newChat);
+            }
+
+        }
+    }
+    /*
+        normalChats of the user are selected
+     */
+    async selectNormalChats(uid){
+
+        return new Promise((resolve, reject) => {
+
+            const query_str =
+                "SELECT nc.ncid, " +
+                "nc.uid1, " +
+                "u1.username AS 'uname1', " +
+                "nc.unreadMessages1, " +
+                "nc.uid2, " +
+                "u2.username AS 'uname2', " +
+                "nc.unreadMessages2 " +
+                "FROM normalchat nc " +
+                "INNER JOIN user u1 " +
+                "ON nc.uid1 = u1.uid " +
+                "INNER JOIN user u2 " +
+                "ON nc.uid2 = u2.uid " +
+                "WHERE uid1 = '" + uid + "' OR uid2 = '" + uid + "';";
+
+            chatServer.con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                resolve(result);
+            });
+        });
+    }
+    /*
+        all groupChats of the user are loaded
+     */
+    async loadGroupChats(user){
+
+        const groupChatsDB = await this.selectGroupChats(user.uid);
+
+        for(let i=0;i<groupChatsDB.length;i++) {
+
+            const groupChatDB = groupChatsDB[i];
+            /*
+                is chat already loaded?
+             */
+            if (this.group.getIndex(groupChatDB.gcid) !== -1) {
+                /*
+                    if chat is already loaded, it gets added to user
+                 */
+                user.addLoadedChat(this.group.get(groupChatDB.gcid));
+            }
+            /*
+                chat is not already loaded, a new one is created
+             */
+            else {
+                /*
+                    groupChat is initialized
+                 */
+                const isPublic = groupChatDB.isPublic === 1;
+                const newChat = new GroupChat(
+                    groupChatDB.gcid,
+                    groupChatDB.name,
+                    groupChatDB.description,
+                    isPublic
+                );
+                /*
+                    members of the chat are laoded
+                 */
+                await newChat.loadGroupChatMembers();
+                /*
+                    first message is loaded
+                 */
+                await newChat.messageStorage.initFirstMessage();
+                /*
+                    chat gets added in chatData
+                 */
+                this.group.add(newChat.chatId, newChat);
+            }
+        }
+    }
+    /*
+        all groupChats of the user are selected
+     */
+    async selectGroupChats(uid){
+
+        return new Promise((resolve, reject) => {
+
+            const con = chatServer.con;
+            const query_str =
+                "SELECT * " +
+                "FROM groupchatmember gcm " +
+                "JOIN groupchat gc " +
+                "ON gcm.gcid = gc.gcid " +
+                "WHERE gcm.uid = '" + uid + "';";
+
+            con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                resolve(result);
+            });
+        });
+    }
+
+    get user() {
+        return this._user;
+    }
+
+    set user(value) {
+        this._user = value;
     }
 
     get normal() {

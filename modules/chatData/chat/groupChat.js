@@ -3,6 +3,8 @@ import chatData from "../chatData.js";
 import BinSearchArray from "binsearcharray";
 import {randomString} from "../../util/random.js";
 import {chatServer} from "../../chatServer.js";
+import User from "../user.js";
+import GroupChatMember from "./groupChatMember.js";
 
 export class GroupChat extends Chat{
 
@@ -75,6 +77,76 @@ export class GroupChat extends Chat{
                         }
                     });
                 }
+            });
+        });
+    }
+    /*
+        all members of this chat are loaded
+     */
+    async loadGroupChatMembers(){
+
+        const usersChatDB = this.selectGroupChatMembers();
+        this.members = new BinSearchArray();
+        /*
+            loop through users, if not exists --> gets created
+         */
+        for (let j = 0; j < usersChatDB.length; j++) {
+
+            const userChatDB = usersChatDB[j];
+            const isAdmin = userChatDB.isAdmin === 1;
+            const unreadMessages = userChatDB.unreadMessages;
+            /*
+                does user already exist?
+             */
+            if (chatData.user.getIndex(userChatDB.uid) === -1) {
+                /*
+                    new user gets created
+                 */
+                const newUser = new User(userChatDB.uid, userChatDB.username);
+                chatData.user.add(newUser.uid, newUser);
+            }
+
+            const newUser = this.user.get(userChatDB.uid);
+            const groupChatMember =
+                new GroupChatMember(
+                    userChatDB.gcmid,
+                    this,
+                    newUser,
+                    isAdmin,
+                    unreadMessages
+                );
+            this.members.add(newUser.uid, groupChatMember);
+        }
+        /*
+            chat gets added to the members
+         */
+        for (let j = 0; j < this.members.length; j++) {
+            this.members[j].value.user.addLoadedChat(this);
+        }
+    }
+    /*
+        groupChatMembers are selected
+     */
+    async selectGroupChatMembers(){
+
+        return new Promise((resolve, reject) => {
+
+            const con = chatServer.con;
+            const query_str =
+                "SELECT u.uid, " +
+                "u.username, " +
+                "gcm.isAdmin, " +
+                "gcm.gcmid, " +
+                "gcm.unreadMessages " +
+                "FROM user u " +
+                "JOIN groupchatmember gcm " +
+                "ON u.uid = gcm.uid " +
+                "WHERE gcm.gcid = '" + this.chatId + "';";
+
+            con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                resolve(result);
             });
         });
     }

@@ -18,13 +18,12 @@ export default class MessageStorage {
     constructor(chat) {
 
         this.chat = chat;
-
+    }
+    async initFirstMessage(){
         /*
             first message is loaded
          */
-        this.loadMessages(1)
-            .then(r => {})
-            .catch(err => console.error(err));
+        await this.loadMessages(1);
     }
     /*
         messages are returned

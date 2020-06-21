@@ -6,7 +6,7 @@ import {setChatData} from "./data.js";
 class ChatData{
 
     #_user = new BinSearchArray();
-    #_chats = new ChatStorage();
+    #_chats = new ChatStorage(this.user);
     /*
         the current chat is changed
             user: the user where the currentChat should be changed

@@ -1,6 +1,5 @@
 import EventEmitter from 'events';
 import chatData from "./chatData.js";
-import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
 import ChatStorage from "./chat/chatStorage.js";
 
 class Emitter extends EventEmitter {}
@@ -39,11 +38,11 @@ export default class User{
         /*
             normalChats are loaded
          */
-        await loadNormalChats(this);
+        await chatData.chats.loadNormalChats(this);
         /*
             groupChats are loaded
          */
-        await loadGroupChats(this);
+        await chatData.chats.loadGroupChats(this);
 
         const chats = await this.getChatJson();
 
