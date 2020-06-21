@@ -15,6 +15,7 @@ export default class NormalMessage extends Message {
         super(
             chat,
             author,
+            messageTypes.normalMessage,
             mid
         );
     }

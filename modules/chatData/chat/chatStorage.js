@@ -173,6 +173,10 @@ export default class ChatStorage{
         newChat.members = members;
         this.group.add(newChat.chatId,newChat);
         /*
+            statusMessages are added
+         */
+        await newChat.createStatusMessagesStart(userFrom);
+        /*
             chat gets added to the members
          */
         newChat.forEachUser((user,index,key) => {

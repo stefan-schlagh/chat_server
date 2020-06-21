@@ -5,6 +5,7 @@ import {randomString} from "../../util/random.js";
 import {chatServer} from "../../chatServer.js";
 import User from "../user.js";
 import GroupChatMember from "./groupChatMember.js";
+import StatusMessage,{statusMessageTypes} from "../message/statusMessage.js";
 
 export class GroupChat extends Chat{
 
@@ -81,11 +82,50 @@ export class GroupChat extends Chat{
         });
     }
     /*
+        status messages at the start of the chat are created
+            createdBy: the user who created the chat
+     */
+    async createStatusMessagesStart(createdBy){
+
+        const chatCreated =
+            new StatusMessage(this,createdBy);
+
+        await chatCreated.initNewMessage(
+            statusMessageTypes.chatCreated,
+            []
+        );
+
+        const usersAdded =
+            new StatusMessage(this,createdBy);
+
+        await usersAdded.initNewMessage(
+            statusMessageTypes.usersAdded,
+            this.getMemberUids()
+        );
+        /*
+            messages are added to messageStorage
+         */
+        this.messageStorage.addNewMessage(chatCreated);
+        this.messageStorage.addNewMessage(usersAdded);
+    }
+    /*
+        all uids of the groupChatMembers are returned
+     */
+    getMemberUids(){
+
+        const uids = new Array(this.members.length);
+
+        for(let i=0;i<this.members.length;i++){
+            uids[i] = this.members[i].key;
+        }
+        return uids;
+    }
+    /*
         all members of this chat are loaded
      */
     async loadGroupChatMembers(){
 
-        const usersChatDB = this.selectGroupChatMembers();
+        const usersChatDB = await this.selectGroupChatMembers();
         this.members = new BinSearchArray();
         /*
             loop through users, if not exists --> gets created
@@ -106,7 +146,7 @@ export class GroupChat extends Chat{
                 chatData.user.add(newUser.uid, newUser);
             }
 
-            const newUser = this.user.get(userChatDB.uid);
+            const newUser = chatData.user.get(userChatDB.uid);
             const groupChatMember =
                 new GroupChatMember(
                     userChatDB.gcmid,

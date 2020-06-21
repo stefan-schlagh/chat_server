@@ -8,15 +8,17 @@ export const messageTypes = {
 export default class Message{
 
     #_mid;
+    #_messageType;
     #_chat;
     #_author;
     #_date;
 
-    constructor(chat,author,mid = -1) {
+    constructor(chat,author,type,mid = -1) {
 
         if (new.target === Message)
             throw new TypeError("Cannot construct Abstract instances directly");
 
+        this.messageType = type;
         this.chat = chat;
         //aktuelles Datum
         this.date = new Date(Date.now());
@@ -45,10 +47,17 @@ export default class Message{
 
             const query_str1 =
                 "INSERT " +
-                "INTO message (date, isGroupChat, cid,uid) " +
+                "INTO message (" +
+                    "date, " +
+                    "isGroupChat, " +
+                    "messageType," +
+                    "cid," +
+                    "uid" +
+                ") " +
                 "VALUES (" +
                     "CURRENT_TIMESTAMP(),'" +
-                    isGroupChat +"','" +
+                    isGroupChat + "','" +
+                    this.messageType + "','" +
                     this.chat.chatId + "','" +
                     this.author.uid +
                 "');";
@@ -83,6 +92,14 @@ export default class Message{
 
     set mid(value) {
         this.#_mid = value;
+    }
+
+    get messageType() {
+        return this.#_messageType;
+    }
+
+    set messageType(value) {
+        this.#_messageType = value;
     }
 
     get chat() {

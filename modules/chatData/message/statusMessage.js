@@ -7,7 +7,9 @@ export const statusMessageTypes = {
     usersAdded: 1,
     usersRemoved: 2,
     usersJoined: 3,
-    usersLeft: 4
+    usersLeft: 4,
+    usersMadeAdmin: 5,
+    usersRemovedAdmin: 6
 };
 
 export default class StatusMessage extends Message {
@@ -20,6 +22,7 @@ export default class StatusMessage extends Message {
         super(
             chat,
             author,
+            messageTypes.statusMessage,
             mid
         );
     }
@@ -158,7 +161,7 @@ export default class StatusMessage extends Message {
             this.passiveUsers[i] = user;
         }
 
-        return new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
 
             if(this.passiveUsers.length > 0) {
                 let query_str =
@@ -179,6 +182,7 @@ export default class StatusMessage extends Message {
                 chatServer.con.query(query_str,(err,result,fields) => {
                     if (err)
                         reject(err);
+                    resolve();
                 });
             }else{
                 resolve();
