@@ -28,11 +28,7 @@ export class Chat{
         neue Message wird zu message-array hinzugefügt
         im Callback wird die msgId zurückgegeben
      */
-    async sendMessage(author,data){
-        /*
-            a new message is added to the chat
-         */
-        const message = await this.addMessage(author,data);
+    async sendMessage(author,message){
         /*
             message gets sent to all users
          */
@@ -41,8 +37,6 @@ export class Chat{
             'chat message',
             message.getMessageObject()
         );
-
-        return message.mid;
     }
     /*
         a new message is added to the chat

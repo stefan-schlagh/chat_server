@@ -31,26 +31,6 @@ which is important when it comes to messages
 }
 ````
 
-### join chat
-
-#### info
-not yet implemented
-
-#### parameters
-````
-not yet implemented
-````
-
-
-### leave chat
-
-#### info
-not yet implemented
-#### parameters
-````
-not yet implemented
-````
-
 ### started typing
 
 #### info

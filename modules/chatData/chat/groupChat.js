@@ -82,6 +82,150 @@ export class GroupChat extends Chat{
         });
     }
     /*
+        member is added to groupChat by admin
+     */
+    async addMember(memberFrom,otherUser){
+        /*
+            groupChatMember is created
+         */
+        const groupChatMember =
+            new GroupChatMember(
+                -1,
+                this,
+                otherUser,
+                false,
+                0
+            );
+        /*
+            groupChatMember is saved in the database
+         */
+        await groupChatMember.saveGroupChatMemberInDB();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersAdded,
+            memberFrom.user,
+            [otherUser]
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            memberFrom.user,
+            message
+        );
+    }
+    /*
+        member is removed from groupChat by admin
+     */
+    async removeMember(memberFrom,memberOther){
+        /*
+            member is removed
+         */
+        await memberOther.deleteGroupChatMember();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersRemoved,
+            memberFrom.user,
+            [memberOther.user]
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            memberFrom.user,
+            message
+        );
+    }
+    /*
+        member joins chat --> only when public
+     */
+    async joinChat(user){
+        /*
+            groupChatMember is created
+         */
+        const groupChatMember =
+            new GroupChatMember(
+                -1,
+                this,
+                user,
+                false,
+                0
+            );
+        /*
+            groupChatMember is saved in the database
+         */
+        await groupChatMember.saveGroupChatMemberInDB();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersJoined,
+            user,
+            []
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            user,
+            message
+        );
+    }
+    /*
+        chat is left by the user
+     */
+    async leaveChat(member){
+        /*
+            member is removed
+         */
+        await member.deleteGroupChatMember();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersLeft,
+            member.user,
+            []
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            member.user,
+            message
+        );
+    }
+    /*
+        statusMessage is addedd
+     */
+    async addStatusMessage(type,userFrom,passiveUsers){
+
+        const message = new StatusMessage(this,userFrom);
+
+        await message.initNewMessage(
+            type,
+            passiveUsers
+        );
+        /*
+            message is added to messageStorage
+         */
+        this.messageStorage.addNewMessage(message);
+
+        return message;
+    }
+    /*
+        requested member is returned
+     */
+    getMember(uid){
+        const member = this.members.get(uid);
+        if(!member)
+            throw new Error('member does not exist');
+    }
+    /*
         status messages at the start of the chat are created
             createdBy: the user who created the chat
      */
@@ -100,7 +244,7 @@ export class GroupChat extends Chat{
 
         await usersAdded.initNewMessage(
             statusMessageTypes.usersAdded,
-            this.getMemberUids()
+            this.getMemberUids(createdBy.uid)
         );
         /*
             messages are added to messageStorage
@@ -111,12 +255,14 @@ export class GroupChat extends Chat{
     /*
         all uids of the groupChatMembers are returned
      */
-    getMemberUids(){
+    getMemberUids(uidC){
 
-        const uids = new Array(this.members.length);
+        const uids = new Array(this.members.length - 1);
 
         for(let i=0;i<this.members.length;i++){
-            uids[i] = this.members[i].key;
+            const uid = this.members[i].key;
+            if(uid !== uidC)
+                uids[i] = uid;
         }
         return uids;
     }

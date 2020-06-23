@@ -116,9 +116,17 @@ export default class User{
          */
         if(this.currentChat !== null) {
             /*
+                a new message is added to the chat
+             */
+            const message = await this.currentChat.addMessage(this,data);
+            /*
+                message is sent
+             */
+            await this.currentChat.sendMessage(this,message);
+            /*
                 mid is returned
              */
-            return this.currentChat.sendMessage(this,data);
+            return message.mid;
         }else{
             throw new Error('no chat selected')
         }

@@ -2,6 +2,7 @@ import BinSearchArray from 'binsearcharray';
 import ChatStorage from "./chat/chatStorage.js";
 import User from "./user.js";
 import {setChatData} from "./data.js";
+import {chatServer} from "../chatServer.js";
 
 class ChatData{
 
@@ -183,6 +184,56 @@ class ChatData{
             }
         }
         return await this.chats.newGroupChat(userFrom,data,users);
+    }
+    /*
+        requested chat is returned
+     */
+    getChat(type,id){
+        const chat = this.chats.getChat(type,id);
+        if(!chat)
+            throw new Error('chat does not exist');
+        return chat;
+    }
+    /*
+        requested user is returned
+            createNew:
+                if true the userdata is requested from the database and saved
+                else, an exception is thrown
+     */
+    async getUser(uid,createNew) {
+        let user = this.user.get(uid);
+        if (!user) {
+            if (createNew) {
+                user = await this.loadUser()
+            } else {
+                throw new Error('user does not exist');
+            }
+        }
+        return user;
+    }
+    /*
+        userdata is loaded, user is saved
+     */
+    async loadUser(uid){
+
+        return new Promise((resolve, reject) => {
+
+            const query_str =
+                "SELECT username " +
+                "FROM user " +
+                "WHERE uid = " + uid + ";";
+
+            chatServer.con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                /*
+                    user is initialized
+                 */
+                const user = new User(uid,result[0].username);
+                this.user.add(uid,user);
+                resolve(user);
+            });
+        });
     }
 
     get chats() {

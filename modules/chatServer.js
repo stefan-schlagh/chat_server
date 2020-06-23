@@ -59,18 +59,6 @@ class ChatServer{
                 else
                     chatData.changeChat(user,data.type,data.id);
             });
-            /*
-                Wird aufgerufen, wenn einem chat beigetreten wird
-             */
-            socket.on('join chat', chat => {
-
-            });
-            /*
-                wird aufgerufen, wenn ein chat verlassen wird
-             */
-            socket.on('leave chat', chat => {
-
-            });
             socket.on('started typing',() => {
                 /*
                     user started typing

@@ -9,7 +9,11 @@ export const statusMessageTypes = {
     usersJoined: 3,
     usersLeft: 4,
     usersMadeAdmin: 5,
-    usersRemovedAdmin: 6
+    usersRemovedAdmin: 6,
+    /*
+        when user resigns from admin status
+     */
+    userResignedAdmin: 7
 };
 
 export default class StatusMessage extends Message {
