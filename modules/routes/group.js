@@ -1,12 +1,13 @@
 import express from 'express';
-import {setUser,reqAuth} from "../authentication.js";
 import {getGroupChatInfo} from "../chatData/chat/groupChatInfo.js";
 import {chatData} from "../chatData/data.js";
+import {isAuthenticated} from "../authentication/jwt.js";
+import {setUser} from "../chatData/setUser.js";
 
 const router = express.Router();
 
+router.use(isAuthenticated);
 router.use(setUser);
-router.use(reqAuth);
 /*
     route for all groups of the specified user
  */

@@ -15,7 +15,6 @@ import http from 'http';
 import express_enforces_ssl from 'express-enforces-ssl';
 import https from 'https';
 import express from 'express';
-import session from 'express-session';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
@@ -53,14 +52,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static('public'));
 app.use(cors());
 app.use(cookieParser());
-const MemoryStore =session.MemoryStore;
-app.use(session({
-    name : 'app.sid',
-    secret: "1234567890QWERTY",
-    resave: true,
-    store: new MemoryStore(),
-    saveUninitialized: true
-}));
 /*
     Routers for express
  */

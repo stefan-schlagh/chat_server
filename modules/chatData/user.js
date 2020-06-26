@@ -43,6 +43,12 @@ export default class User{
             groupChats are loaded
          */
         await chatData.chats.loadGroupChats(this);
+        /*
+            subscribe to all socket-rooms in the chats
+        */
+        this.chats.forEachGroup((chat,index,key) => {
+            chat.subscribeToRoom(this);
+        });
 
         const chats = await this.getChatJson();
 

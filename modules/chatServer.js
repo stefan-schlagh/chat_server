@@ -1,5 +1,6 @@
 import socket from 'socket.io';
 import {chatData} from "./chatData/data.js";
+import {verifyToken} from "./authentication/jwt.js";
 
 export let chatServer;
 export function createChatServer(server,con,app){
@@ -31,21 +32,30 @@ class ChatServer{
                 the user who uses this connection
              */
             let user;
-            /*
-                TODO: socket-auth
-             */
-            socket.on('auth',(uid,username) => {
-                chatData.initUserSocket(uid,username,socket)
-                    .then(_user => {
-                        user = _user;
-                        /*
-                            info that user is initialized is emitted to client
-                         */
-                        socket.emit('initialized');
-                    })
-                    .catch(err => {
-                        console.error(err);
-                    });
+
+            socket.on('auth',async (authTokens) => {
+                /*
+                    authentication with jwt
+                 */
+                try {
+                    const data = await verifyToken(authTokens);
+                    /*
+                        data is extracted from token
+                     */
+                    const {uid,username} = data;
+                    /*
+                        socket is initialized
+                     */
+                    user = await chatData.initUserSocket(uid,username,socket);
+                    /*
+                        info that user is initialized is emitted to client
+                     */
+                    socket.emit('initialized');
+
+                }catch (err) {
+                    console.error(err);
+                    socket.disconnect();
+                }
             });
             /*
                 wird aufgerufen, wenn chat gewechselt wird
