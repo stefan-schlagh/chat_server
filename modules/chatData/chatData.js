@@ -1,5 +1,5 @@
 import BinSearchArray from 'binsearcharray';
-import ChatStorage from "./chat/chatStorage.js";
+import CDataChatStorage from "./chat/cDataChatStorage.js";
 import User from "./user.js";
 import {setChatData} from "./data.js";
 import {chatServer} from "../chatServer.js";
@@ -7,7 +7,7 @@ import {chatServer} from "../chatServer.js";
 class ChatData{
 
     #_user = new BinSearchArray();
-    #_chats = new ChatStorage(this.user);
+    #_chats = new CDataChatStorage(this.user);
     /*
         the current chat is changed
             user: the user where the currentChat should be changed
