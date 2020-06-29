@@ -1,5 +1,4 @@
 import express from 'express';
-import {getGroupChatInfo} from "../chatData/chat/groupChatInfo.js";
 import {chatData} from "../chatData/data.js";
 import {isAuthenticated} from "../authentication/jwt.js";
 import {setUser} from "../chatData/setUser.js";
@@ -63,29 +62,31 @@ router.delete('/:gcid',(req,res) => {
 /*
     route for getting the info of a groupChat
  */
-router.get('/:gcid',(req,res) => {
+router.get(
+    '/:gcid',
+    getChat(false),
+    getGroupChatMemberSelf(false),
+    (req,res) => {
 
-    const gcid = req.params.gcid;
-    const uidReq = req.user.uid;
-
-    getGroupChatInfo(uidReq,gcid)
-        .then(data => {
-            res.send(data);
-        })
-        .catch(err => {
-            console.error(err);
-            res.status(500);
-            res.send();
-        });
+        const chat = req.chat;
+        /*
+            chatInfo is sent
+         */
+        res.send(
+            chat.getGroupChatInfo(
+                req.memberSelf
+            )
+        );
 });
 /*
     route for adding a user to a groupChat
+        to perfrom this action, the requesting user has to be an admin
  */
 router.put(
     '/:gcid/member/:uid',
-    getChat,
+    getChat(true),
     getOtherUser(true),
-    getGroupChatMemberSelf,
+    getGroupChatMemberSelf(true),
     authAdminSelf,
     (req,res) => {
 
@@ -105,12 +106,13 @@ router.put(
 });
 /*
     route for removing a user from a groupChat
+        to perfrom this action, the requesting user has to be an admin
  */
 router.delete(
     '/:gcid/member/:uid',
-    getChat,
+    getChat(true),
     getOtherUser(false),
-    getGroupChatMemberSelf,
+    getGroupChatMemberSelf(true),
     getGroupChatMemberOther,
     authAdminSelf,
     (req,res) => {
@@ -131,12 +133,13 @@ router.delete(
 });
 /*
     route to give a user admin rights
+        to perfrom this action, the requesting user has to be an admin
  */
 router.post(
     '/:gcid/member/:uid/giveAdmin',
-    getChat,
+    getChat(true),
     getOtherUser(false),
-    getGroupChatMemberSelf,
+    getGroupChatMemberSelf(true),
     getGroupChatMemberOther,
     authAdminSelf,
     (req,res) => {
@@ -155,12 +158,13 @@ router.post(
 });
 /*
     route to take a users admin rights away
+        to perfrom this action, the requesting user has to be an admin
  */
 router.post(
     '/:gcid/member/:uid/removeAdmin',
-    getChat,
+    getChat(true),
     getOtherUser(false),
-    getGroupChatMemberSelf,
+    getGroupChatMemberSelf(true),
     getGroupChatMemberOther,
     authAdminSelf,
     authAdminOther,
@@ -183,7 +187,7 @@ router.post(
  */
 router.post(
     '/:gcid/join',
-    getChat,
+    getChat(false),
     authChatPublic,
     (req,res) => {
 
@@ -205,8 +209,7 @@ router.post(
  */
 router.post(
     '/:gcid/joinWithLink',
-    getChat,
-    getGroupChatMemberSelf,
+    getChat(false),
     (req,res) => {
         /*
             TODO
@@ -217,8 +220,8 @@ router.post(
  */
 router.post(
     '/:gcid/leave',
-    getChat,
-    getGroupChatMemberSelf,
+    getChat(true),
+    getGroupChatMemberSelf(true),
     (req,res) => {
 
         const chat = req.chat;
@@ -239,8 +242,8 @@ router.post(
  */
 router.post(
     '/:gcid/removeAdmin',
-    getChat,
-    getGroupChatMemberSelf,
+    getChat(true),
+    getGroupChatMemberSelf(true),
     authAdminSelf,
     (req,res) => {
 
@@ -258,19 +261,43 @@ router.post(
 });
 /*
     chat with the chatId in params is returned
+        shouldBeLoaded: should the chat already be loaded?
  */
-function getChat(req,res,next){
-    try {
+function getChat(shouldBeLoaded){
+    return function(req,res,next){
+
         const gcid = req.params.gcid;
-        req.chat = chatData.getChat('groupChat', gcid);
-        next();
-    }catch(err){
-        /*
-            400 -> bad request
-        */
-        console.error(err);
-        res.status(400);
-        res.send();
+        if(shouldBeLoaded) {
+            try {
+                req.chat = chatData.getChat('groupChat', gcid);
+                next();
+            } catch (err) {
+                /*
+                    400 -> bad request
+                */
+                res.status(400);
+                res.send();
+            }
+        }else{
+            chatData.chats.getGroupChat(gcid)
+                .then(chat => {
+                    /*
+                       if chat does not exist
+                           --> 404 (not found)
+                    */
+                    if(!chat){
+                        res.status(404);
+                        res.send();
+                    }else{
+                        req.chat = chat;
+                        next();
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    res.status(500);
+                    res.send();
+                });
+        }
     }
 }
 /*
@@ -315,27 +342,61 @@ function getOtherUser(createNew){
 }
 /*
     the groupChatmember of the requesting user is returned
+        params:
+            memberRequired: does the requesting user need to be a member in this chat?
         required:
             userSelf
             chat
  */
-function getGroupChatMemberSelf(req,res,next) {
-    try {
-        /*
-            groupChatMembesr is searched
-         */
-        req.memberSelf =
-            req.chat.getMember(
-                req.user.uid
-            );
-        next();
-    }catch(err){
-        /*
-            400 -> bad request
-        */
-        console.error(err);
-        res.status(400);
-        res.send();
+function getGroupChatMemberSelf(memberReqired = true){
+    return function(req,res,next) {
+        try {
+            /*
+                groupChatMembesr is searched
+             */
+            req.memberSelf =
+                req.chat.getMember(
+                    req.user.uid
+                );
+            next();
+        } catch (err) {
+            /*
+                error is thrown if user is not member in the chat
+             */
+            if(memberReqired) {
+                /*
+                    400 -> bad request,
+                    user should be member of this chat when making the request
+                */
+                res.status(400);
+                res.send();
+            }else{
+                /*
+                    if member is not reqired, the action is still not performed, but the messages give more detail
+                    is err member does not exist?
+                 */
+                console.log(err);
+                if(err.message === 'member does not exist') {
+                    const chat = req.chat;
+                    if (chat.isPublic) {
+
+                        res.send({
+                            chatName: chat.chatName,
+                            error: "not part of chat"
+                        });
+                    } else {
+                        res.status(400);
+                        res.send();
+                    }
+                }else{
+                    /*
+                        otherwise, status 400 is sent
+                     */
+                    res.status(400);
+                    res.send();
+                }
+            }
+        }
     }
 }
 /*

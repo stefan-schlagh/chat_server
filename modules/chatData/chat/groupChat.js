@@ -223,6 +223,9 @@ export class GroupChat extends Chat{
     getMember(uid){
         const member = this.members.get(uid);
         if(!member)
+            /*
+                member is not in this chat
+             */
             throw new Error('member does not exist');
     }
     /*
@@ -448,19 +451,32 @@ export class GroupChat extends Chat{
     }
     /*
         all members of the chat get returned
+            minified: show only the most important information
      */
-    getMemberObject(uid){
+    getMemberObject(uid,minified = true){
 
         let members = [];
 
-        for(let j=0;j<this.members.length;j++){
+        for(let j=0;j<this.members.length;j++) {
 
-            const member = this.members[j].value.user;
-            if(!(uid === member.uid))
+            if (minified) {
+
+                const member = this.members[j].value.user;
+                if (!(uid === member.uid)) {
+                    members.push({
+                        uid: member.uid,
+                        username: member.username
+                    });
+                }
+            }else{
+                const member = this.members[j].value;
                 members.push({
-                    uid: member.uid,
-                    username: member.username
+                    uid: member.user.uid,
+                    username: member.user.username,
+                    isAdmin: member.isAdmin,
+                    gcmid: member.gcmid
                 });
+            }
         }
         return members;
     }
@@ -469,6 +485,22 @@ export class GroupChat extends Chat{
         for(let i=0;i<this.members.length;i++){
             callback(this.members[i].value.user,i,this.members[i].key);
         }
+    }
+    /*
+        groupChatInfo is returned
+     */
+    getGroupChatInfo(memberSelf){
+        return({
+            type: this.type,
+            id: this.chatId,
+            chatName: this.chatName,
+            description: this.description,
+            public: this.isPublic,
+            memberSelf: {
+                isAdmin: memberSelf.isAdmin
+            },
+            members: this.getMemberObject(-1,false),
+        });
     }
 
     get members() {

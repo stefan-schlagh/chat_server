@@ -15,6 +15,66 @@ export default class CDataChatStorage extends ChatStorage {
         this.user = user;
     }
     /*
+        if chat is loaded
+            --> gets returned
+            else --> is loaded from DB
+     */
+    async getGroupChat(gcid){
+
+        const chat = this.getChat('groupChat',gcid);
+
+        if(chat){
+            return chat;
+        }else{
+            return await this.loadGroupChat(gcid);
+        }
+    }
+    /*
+        groupChat with this id is loaded from the Database
+     */
+    async loadGroupChat(gcid){
+
+        const data = await new Promise((resolve, reject) => {
+
+            const query_str =
+                "SELECT * " +
+                "FROM groupchat " +
+                "WHERE gcid = " + gcid + ";";
+
+            chatServer.con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                else if(!result || result.length === 0)
+                    resolve();
+                else
+                    resolve(result[0]);
+            });
+        });
+        /*
+            if nothing found, undefined is returned
+         */
+        if(!data)
+            return undefined;
+
+        const isPublic = data.isPublic === 1;
+        const chat = new GroupChat(
+            gcid,
+            data.name,
+            data.description,
+            isPublic
+        );
+        /*
+            members of the chat are laoded
+         */
+        await chat.loadGroupChatMembers();
+        /*
+            first message is loaded
+         */
+        await chat.messageStorage.initFirstMessage();
+
+        return chat;
+    }
+    /*
         new normalChat is created
      */
     async newNormalChat(user1,user2,message){
