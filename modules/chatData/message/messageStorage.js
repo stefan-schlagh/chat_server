@@ -214,6 +214,12 @@ export default class MessageStorage {
 
         this.messages.add(message.mid,message);
         this.maxMid = message.mid;
+        /*
+            if this is the only message, minMid is set
+         */
+        if(this.messages.length === 1){
+            this.minMid = message.mid;
+        }
     }
     /*
         the message in this chat with the highest messageId gets searched
