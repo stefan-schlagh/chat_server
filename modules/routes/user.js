@@ -1,6 +1,10 @@
 import express from 'express';
-import {selectUsersNoChat} from "../chatData/database/selectUsers.js";
-import {getUserInfo, selectAllUsers} from "../chatData/database/selectUsers.js";
+import {
+    getUserInfo,
+    selectAllUsers,
+    selectUsersNoChat,
+    selectUsersNotInGroup
+} from "../chatData/database/selectUsers.js";
 import {chatData} from "../chatData/data.js";
 import {isAuthenticated} from "../authentication/jwt.js";
 import {setUser} from "../chatData/setUser.js";
@@ -40,14 +44,43 @@ router.post('/noChat',(req,res) => {
     const limit = req.body.limit;
     const start = req.body.start;
 
-    selectUsersNoChat(uidFrom,search,limit,start).then(data => {
-        res.send(data);
-    }).catch(err => {
-        console.error(err);
-        res.status(500);
-        res.send();
-    })
+    selectUsersNoChat(uidFrom,search,limit,start)
+        .then(data => {
+            res.send(data);
+        }).catch(err => {
+            console.error(err);
+            res.status(500);
+            res.send();
+        })
 
+});
+/*
+    all users who are not in the chat are retuned
+ */
+router.post('/notInGroup/:gcid',(req,res) => {
+    try {
+        const gcid = parseInt(req.params.gcid);
+
+        const search = req.body.search;
+        const limit = req.body.limit;
+        const start = req.body.start;
+
+        selectUsersNotInGroup(gcid,search,limit,start)
+            .then(data => {
+                res.send(data);
+            }).catch(err => {
+            console.error(err);
+            res.status(500);
+            res.send();
+        })
+    }catch (err) {
+        /*
+                400 -> bad request
+             */
+        console.error(err);
+        res.status(400);
+        res.send();
+    }
 });
 /*
     the userInfo from the user self is returned

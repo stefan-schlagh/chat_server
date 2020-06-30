@@ -197,6 +197,27 @@ not yet implemented
 a new member gets added to the group
 requesting user has to be admin
 
+### PUT /group/:gcid/members
+
+new members are added to the group
+requesting user has to be admin
+
+#### params-in
+````json
+{
+  "users": [
+    {
+      "uid": "the id of the user",
+      "username": "the username"
+    },
+    {
+      "uid": "the id of the user",
+      "username": "the username"
+    }
+  ]
+}
+````
+
 ### DELETE /group/:gcid/member/:uid
 
 member is removed from the chat
@@ -216,7 +237,7 @@ requesting user has to be admin
 
 only for public chats, chat is joined
 
-### joinwithling
+### joinwithlink
 
 not yet implemented
 

@@ -143,7 +143,7 @@ export default class GroupChatMember{
         const statusMessage = await this.chat.addStatusMessage(
             statusMessageType,
             userFrom,
-            []
+            [this.user.uid]
         );
         /*
             send message to all users
@@ -152,6 +152,10 @@ export default class GroupChatMember{
             userFrom,
             statusMessage
         );
+
+        return {
+            mid: statusMessage.mid
+        }
     }
     /*
         groupChatMember is deleted in the database

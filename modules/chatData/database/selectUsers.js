@@ -122,3 +122,36 @@ export async function getUserInfo(uidFrom,uidReq){
 
     return await getUser(uidFrom, uidReq);
 }
+/*
+    users who are not in the group are returned
+ */
+export async function selectUsersNotInGroup(
+    gcid,
+    search,
+    limit,
+    start=0
+){
+    return await new Promise((resolve, reject) => {
+
+        const query_str =
+            "SELECT DISTINCT u.uid, u.username " +
+            "FROM user u " +
+            "WHERE NOT u.uid = " +
+            "ANY (SELECT uid " +
+                "FROM groupchatmember gcm " +
+                "WHERE gcm.gcid = " + gcid +
+            ")" +
+            "AND u.username LIKE " + chatServer.con.escape('%' + search + '%') +
+            "LIMIT " + start + "," + limit + ";";
+
+        chatServer.con.query(query_str,(err,result,fields) => {
+            if(err)
+                reject(err);
+            if(result) {
+                resolve(result);
+            }
+            else
+                resolve([]);
+        });
+    });
+}

@@ -204,7 +204,7 @@ class ChatData{
         let user = this.user.get(uid);
         if (!user) {
             if (createNew) {
-                user = await this.loadUser()
+                user = await this.loadUser(uid);
             } else {
                 throw new Error('user does not exist');
             }

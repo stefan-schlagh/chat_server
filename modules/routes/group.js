@@ -105,6 +105,33 @@ router.put(
             });
 });
 /*
+    route for adding multiple users to a groupChat
+        to perfrom this action, the requesting user has to be an admin
+ */
+router.put(
+    '/:gcid/members',
+    getChat(true),
+    getOtherUsers(true),
+    getGroupChatMemberSelf(true),
+    authAdminSelf,
+    (req,res) => {
+
+        const users = req.otherUsers;
+        const chat = req.chat;
+        const memberSelf = req.memberSelf;
+
+        chat.addMembers(memberSelf,users)
+            .then(data => {
+                res.send(data);
+            })
+            .catch(err => {
+                console.error(err);
+                res.status(500);
+                res.send();
+            });
+});
+
+/*
     route for removing a user from a groupChat
         to perfrom this action, the requesting user has to be an admin
  */
@@ -144,9 +171,10 @@ router.post(
     authAdminSelf,
     (req,res) => {
 
+        const user = req.user;
         const memberOther = req.memberOther;
 
-        memberOther.setAdmin(true)
+        memberOther.setAdmin(user,true)
             .then(data => {
                 res.send(data);
             })
@@ -170,9 +198,10 @@ router.post(
     authAdminOther,
     (req,res) => {
 
+        const user = req.user;
         const memberOther = req.memberOther;
 
-        memberOther.setAdmin(true)
+        memberOther.setAdmin(user,false)
             .then(data => {
                 res.send(data);
             })
@@ -266,37 +295,48 @@ router.post(
 function getChat(shouldBeLoaded){
     return function(req,res,next){
 
-        const gcid = req.params.gcid;
         if(shouldBeLoaded) {
             try {
+                const gcid = parseInt(req.params.gcid);
                 req.chat = chatData.getChat('groupChat', gcid);
                 next();
             } catch (err) {
                 /*
                     400 -> bad request
                 */
+                console.error(err);
                 res.status(400);
                 res.send();
             }
         }else{
-            chatData.chats.getGroupChat(gcid)
-                .then(chat => {
-                    /*
-                       if chat does not exist
-                           --> 404 (not found)
-                    */
-                    if(!chat){
-                        res.status(404);
-                        res.send();
-                    }else{
-                        req.chat = chat;
-                        next();
-                    }
-                }).catch(err => {
+            try {
+                const gcid = parseInt(req.params.gcid);
+                chatData.chats.getGroupChat(gcid)
+                    .then(chat => {
+                        /*
+                           if chat does not exist
+                               --> 404 (not found)
+                        */
+                        if (!chat) {
+                            res.status(404);
+                            res.send();
+                        } else {
+                            req.chat = chat;
+                            next();
+                        }
+                    }).catch(err => {
                     console.error(err);
                     res.status(500);
                     res.send();
                 });
+            }catch(err){
+                /*
+                    400 -> bad request
+                */
+                console.error(err);
+                res.status(400);
+                res.send();
+            }
         }
     }
 }
@@ -321,23 +361,60 @@ function authChatPublic(req,res,next){
 function getOtherUser(createNew){
     return function(req,res,next){
 
-        const uid = req.params.uid;
-        chatData.getUser(uid,createNew)
-            .then(user => {
-                /*
-                    otherUser in req is defined
-                 */
-                req.otherUser = user;
-                next();
-            })
-            .catch(err => {
-                /*
-                    400 -> bad request
-                 */
-                console.error(err);
-                res.status(400);
-                res.send();
-            });
+        try {
+            const uid = parseInt(req.params.uid);
+            chatData.getUser(uid, createNew)
+                .then(user => {
+                    /*
+                        otherUser in req is defined
+                     */
+                    req.otherUser = user;
+                    next();
+                })
+                .catch(err => {
+                    /*
+                        400 -> bad request
+                     */
+                    console.error(err);
+                    res.status(400);
+                    res.send();
+                });
+        }catch (err) {
+            /*
+                400 -> bad request
+             */
+            console.error(err);
+            res.status(400);
+            res.send();
+        }
+    }
+}
+/*
+    the users defined in the body of the chat are created
+ */
+function getOtherUsers(createNew){
+    return async function(req,res,next){
+
+        try {
+            const usersBody = req.body.users;
+            const users = new Array(usersBody.length);
+
+            for(let i=0;i<usersBody.length;i++){
+
+                users[i] = await chatData.getUser(usersBody[i].uid,createNew);
+            }
+            req.otherUsers = users;
+
+            next();
+
+        }catch (err) {
+            /*
+                400 -> bad request
+             */
+            console.error(err);
+            res.status(400);
+            res.send();
+        }
     }
 }
 /*

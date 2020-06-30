@@ -101,12 +101,66 @@ export class GroupChat extends Chat{
          */
         await groupChatMember.saveGroupChatMemberInDB();
         /*
+            chat is sent to user
+        */
+        otherUser.addNewChat(this);
+        /*
             statusMessage is added
          */
         const message = await this.addStatusMessage(
             statusMessageTypes.usersAdded,
             memberFrom.user,
             [otherUser]
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            memberFrom.user,
+            message
+        );
+    }
+    /*
+        multiple members are added to the chat
+     */
+    async addMembers(memberFrom,users){
+
+        const members = new Array(users.length);
+        const uids = new Array(users.length);
+
+        for(let i=0;i<users.length;i++){
+            /*
+                groupChatMember is created
+             */
+            const groupChatMember =
+                new GroupChatMember(
+                    -1,
+                    this,
+                    users[i],
+                    false,
+                    0
+                );
+            /*
+                groupChatMember is saved in the database
+             */
+            await groupChatMember.saveGroupChatMemberInDB();
+            /*
+                chat is sent to user
+            */
+            users[i].addNewChat(this);
+            /*
+                infos at the array index is set
+             */
+            members[i] = groupChatMember;
+            uids[i] = users[i].uid;
+        }
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersAdded,
+            memberFrom.user,
+            uids
         );
         /*
             message is sent
@@ -135,10 +189,14 @@ export class GroupChat extends Chat{
         /*
             message is sent
          */
-        this.sendMessage(
+        await this.sendMessage(
             memberFrom.user,
             message
         );
+
+        return {
+            mid: message.mid
+        }
     }
     /*
         member joins chat --> only when public
@@ -285,6 +343,7 @@ export class GroupChat extends Chat{
             const userChatDB = usersChatDB[j];
             const isAdmin = userChatDB.isAdmin === 1;
             const unreadMessages = userChatDB.unreadMessages;
+            const isStillMember = userChatDB.isStillMember === 1;
             /*
                 does user already exist?
              */
@@ -292,7 +351,10 @@ export class GroupChat extends Chat{
                 /*
                     new user gets created
                  */
-                const newUser = new User(userChatDB.uid, userChatDB.username);
+                const newUser = new User(
+                    userChatDB.uid,
+                    userChatDB.username
+                );
                 chatData.user.add(newUser.uid, newUser);
             }
 
@@ -303,9 +365,13 @@ export class GroupChat extends Chat{
                     this,
                     newUser,
                     isAdmin,
-                    unreadMessages
+                    unreadMessages,
+                    isStillMember
                 );
-            this.members.add(newUser.uid, groupChatMember);
+            this.members.add(
+                newUser.uid,
+                groupChatMember
+            );
         }
         /*
             chat gets added to the members
@@ -327,7 +393,8 @@ export class GroupChat extends Chat{
                 "u.username, " +
                 "gcm.isAdmin, " +
                 "gcm.gcmid, " +
-                "gcm.unreadMessages " +
+                "gcm.unreadMessages, " +
+                "gcm.isStillMember " +
                 "FROM user u " +
                 "JOIN groupchatmember gcm " +
                 "ON u.uid = gcm.uid " +
@@ -471,12 +538,13 @@ export class GroupChat extends Chat{
                 }
             }else{
                 const member = this.members[j].value;
-                members.push({
-                    uid: member.user.uid,
-                    username: member.user.username,
-                    isAdmin: member.isAdmin,
-                    gcmid: member.gcmid
-                });
+                if(member.isStillMember)
+                    members.push({
+                        uid: member.user.uid,
+                        username: member.user.username,
+                        isAdmin: member.isAdmin,
+                        gcmid: member.gcmid
+                    });
             }
         }
         return members;
