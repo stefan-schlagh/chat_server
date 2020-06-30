@@ -166,27 +166,68 @@ the info of the groupChat with this id will be returned
 #### params-out
 ````json
 {
-  
+  "type": "type of the chat",
+  "id": "id of the chat",
+  "chatName": "chatName",
+  "description": "description",
+  "public": "is the chat public?",
+  "memberSelf": {
+      "isAdmin": "is the requesting member admin?"
+  },
+  "members": [
+    {
+      "uid": "uid of the member",
+      "username": "username of the member",
+      "isAdmin": "is the member admin in this chat?",
+      "gcmid": "groupchatmemberId"
+    },
+    {
+    }
+  ] 
 }
 ````
 
 ### DELETE /group/:gcid
 
 a group chat will be deleted
+not yet implemented
 
-#### params-in
-````json
-{
-  
-}
-````
+### PUT /group/:gcid/member/:uid
 
-#### params-out
-````json
-{
-  
-}
-````
+a new member gets added to the group
+requesting user has to be admin
+
+### DELETE /group/:gcid/member/:uid
+
+member is removed from the chat
+requesting user has to be admin
+
+### POST /group/:gcid/member/:uid/giveAdmin
+
+admin status is added to the member
+requesting user has to be admin
+
+### POST /group/:gcid/member/:uid/removeAdmin
+
+admin status is removed from member
+requesting user has to be admin
+
+### POST /group/:gcid/join
+
+only for public chats, chat is joined
+
+### joinwithling
+
+not yet implemented
+
+### POST /group/:gcid/leave
+
+member leaves chat
+
+### POST /group/:gcid/removeAdmin
+
+the requesting user takes the admin rights away himself
+requesting user has to be admin
 
 ## message
 

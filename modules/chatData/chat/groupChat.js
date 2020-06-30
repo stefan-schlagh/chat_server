@@ -227,6 +227,7 @@ export class GroupChat extends Chat{
                 member is not in this chat
              */
             throw new Error('member does not exist');
+        return member;
     }
     /*
         status messages at the start of the chat are created

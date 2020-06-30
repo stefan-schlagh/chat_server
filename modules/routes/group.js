@@ -375,7 +375,6 @@ function getGroupChatMemberSelf(memberReqired = true){
                     if member is not reqired, the action is still not performed, but the messages give more detail
                     is err member does not exist?
                  */
-                console.log(err);
                 if(err.message === 'member does not exist') {
                     const chat = req.chat;
                     if (chat.isPublic) {
