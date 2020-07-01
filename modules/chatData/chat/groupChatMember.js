@@ -150,7 +150,8 @@ export default class GroupChatMember{
         */
         await this.chat.sendMessage(
             userFrom,
-            statusMessage
+            statusMessage,
+            true
         );
 
         return {
@@ -165,6 +166,10 @@ export default class GroupChatMember{
             isStillMember is set to false
          */
         this.isStillMember = false;
+        /*
+             admin is set to false
+         */
+        this.isAdmin = false;
         /*
             isStillMember is updated in the Database
          */

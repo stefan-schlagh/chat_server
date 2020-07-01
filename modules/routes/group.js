@@ -251,6 +251,7 @@ router.post(
     '/:gcid/leave',
     getChat(true),
     getGroupChatMemberSelf(true),
+    isAdminLeft,
     (req,res) => {
 
         const chat = req.chat;
@@ -274,6 +275,7 @@ router.post(
     getChat(true),
     getGroupChatMemberSelf(true),
     authAdminSelf,
+    isAdminLeft,
     (req,res) => {
 
         const member = req.memberSelf;
@@ -452,7 +454,10 @@ function getGroupChatMemberSelf(memberReqired = true){
                     if member is not reqired, the action is still not performed, but the messages give more detail
                     is err member does not exist?
                  */
-                if(err.message === 'member does not exist') {
+                if(
+                    err.message === 'member does not exist' ||
+                    err.message === 'member not in chat anymore'
+                ) {
                     const chat = req.chat;
                     if (chat.isPublic) {
 
@@ -461,7 +466,10 @@ function getGroupChatMemberSelf(memberReqired = true){
                             error: "not part of chat"
                         });
                     } else {
-                        res.status(400);
+                        /*
+                            chat not public and not member --> not authenticated
+                         */
+                        res.status(403);
                         res.send();
                     }
                 }else{
@@ -530,6 +538,26 @@ function authAdminOther(req,res,next){
         res.status(400);
         res.send();
     }
+}
+/*
+    is there an admin left?
+        --> if member leaves or removes admin, ther has to be an admin left
+ */
+function isAdminLeft(req,res,next){
+    /*
+        are there multiple admins?
+     */
+    if(req.chat.getAdminCount() > 1)
+        next();
+    /*
+        if not, it is checked if the user is no admin
+     */
+    else if(!req.memberSelf.isAdmin)
+        next();
+    else
+        res.send({
+            error: "no admin left!"
+        });
 }
 
 export default router;

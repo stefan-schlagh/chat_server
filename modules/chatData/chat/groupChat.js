@@ -117,7 +117,8 @@ export class GroupChat extends Chat{
          */
         this.sendMessage(
             memberFrom.user,
-            message
+            message,
+            true
         );
     }
     /*
@@ -167,7 +168,8 @@ export class GroupChat extends Chat{
          */
         this.sendMessage(
             memberFrom.user,
-            message
+            message,
+            true
         );
     }
     /*
@@ -191,7 +193,8 @@ export class GroupChat extends Chat{
          */
         await this.sendMessage(
             memberFrom.user,
-            message
+            message,
+            true
         );
 
         return {
@@ -254,8 +257,12 @@ export class GroupChat extends Chat{
          */
         this.sendMessage(
             member.user,
-            message
+            message,
+            true
         );
+        /*
+            TODO: socket remove chat
+         */
     }
     /*
         statusMessage is addedd
@@ -285,6 +292,11 @@ export class GroupChat extends Chat{
                 member is not in this chat
              */
             throw new Error('member does not exist');
+        if(!member.isStillMember)
+            /*
+                member is not in the chat anymore
+             */
+            throw new Error('member not in chat anymore');
         return member;
     }
     /*
@@ -377,7 +389,13 @@ export class GroupChat extends Chat{
             chat gets added to the members
          */
         for (let j = 0; j < this.members.length; j++) {
-            this.members[j].value.user.addLoadedChat(this);
+
+            const member = this.members[j].value;
+            /*
+                is the member still member?
+             */
+            if(member.isStillMember)
+                member.user.addLoadedChat(this);
         }
     }
     /*
@@ -460,7 +478,7 @@ export class GroupChat extends Chat{
     /*
         event is emitted to all participants of the chat
      */
-    sendToAll(sentBy,emitName,rest){
+    sendToAll(sentBy,emitName,rest,includeSender=false){
         /*
             msg gets emitted to all users
          */
@@ -471,7 +489,10 @@ export class GroupChat extends Chat{
             },
             ...rest
         };
-        sentBy.socket.to(this.socketRoomName).emit(emitName,data);
+        if(includeSender)
+            chatServer.io.to(this.socketRoomName).emit(emitName,data);
+        else
+            sentBy.socket.to(this.socketRoomName).emit(emitName,data);
     }
     /*
         is called:
@@ -570,6 +591,20 @@ export class GroupChat extends Chat{
             },
             members: this.getMemberObject(-1,false),
         });
+    }
+    /*
+        the number of admins in this chat is returned
+     */
+    getAdminCount(){
+
+        let counter = 0;
+
+        for(let i=0;i<this.members.length;i++){
+            if(this.members[i].value.isAdmin)
+                counter ++;
+        }
+
+        return counter;
     }
 
     get members() {

@@ -28,14 +28,15 @@ export class Chat{
         neue Message wird zu message-array hinzugefügt
         im Callback wird die msgId zurückgegeben
      */
-    async sendMessage(author,message){
+    async sendMessage(author,message,includeSender=false){
         /*
             message gets sent to all users
          */
         this.sendToAll(
             author,
             'chat message',
-            message.getMessageObject()
+            message.getMessageObject(),
+            includeSender
         );
     }
     /*
