@@ -56,7 +56,7 @@ export default class NormalMessage extends Message {
 
             const query_str =
                 "SELECT muid,uid,textColumn " +
-                "FROM mentionedUser " +
+                "FROM mentioneduser " +
                 "WHERE nmid = " + this.nmid + ";";
 
             chatServer.con.query(query_str, (err, result, fields) => {
