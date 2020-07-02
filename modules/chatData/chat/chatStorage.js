@@ -1,10 +1,11 @@
 import BinSearchArray from "binsearcharray";
 
 export default class ChatStorage{
-
+    /*
+        chats
+     */
     #_normal = new BinSearchArray();
     #_group = new BinSearchArray();
-
 
     addChat(chat){
         if(chat.type === 'normalChat'){

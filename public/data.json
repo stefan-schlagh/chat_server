@@ -1,0 +1,15 @@
+{
+  "messageTypes": {
+    "normalMessage": 0,
+    "statusMessage": 1
+  },
+  "statusMessageTypes": {
+    "chatCreated": 0,
+    "usersAdded": 1,
+    "usersRemoved": 2,
+    "usersJoined": 3,
+    "usersLeft": 4,
+    "usersMadeAdmin": 5,
+    "usersRemovedAdmin": 6
+  }
+}

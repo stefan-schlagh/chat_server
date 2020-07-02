@@ -1,7 +1,11 @@
-import {Chat} from "../chat/chat.js";
+import {Chat} from "./chat.js";
 import chatData from "../chatData.js";
 import BinSearchArray from "binsearcharray";
 import {randomString} from "../../util/random.js";
+import {chatServer} from "../../chatServer.js";
+import User from "../user.js";
+import GroupChatMember from "./groupChatMember.js";
+import StatusMessage,{statusMessageTypes} from "../message/statusMessage.js";
 
 export class GroupChat extends Chat{
 
@@ -12,9 +16,8 @@ export class GroupChat extends Chat{
     #_isPublic;
     #_socketRoomName;
 
-    constructor(chatId, members, chatName, description, isPublic) {
+    constructor(chatId = -1, chatName, description, isPublic) {
         super('groupChat',chatId);
-        this.members = members;
         this.chatName = chatName;
         this.description = description;
         this.isPublic = isPublic;
@@ -36,25 +39,460 @@ export class GroupChat extends Chat{
             }
         }
     }
+    /*
+        chat is saved in the database
+     */
+    async saveChatInDB(){
 
-    async sendMessage(sentBy,msg) {
+        return new Promise((resolve,reject) => {
 
-        const mid = await super.sendMessage(sentBy,msg);
-        this.sendToAll(sentBy,'chat message',msg,mid);
-        return mid;
+            const con = chatServer.con;
+            const query_str1 =
+                "INSERT " +
+                "INTO groupchat (name,description,isPublic) " +
+                "VALUES (" +
+                    con.escape(this.chatName) + "," +
+                    con.escape(this.description) + "," +
+                    con.escape(this.isPublic) +
+                ")";
+
+            con.query(query_str1,(err) => {
+                /*
+                    if no error has occured, the chatID gets requested
+                 */
+                if(err) {
+                    reject(err);
+                }else{
+
+                    const query_str2 =
+                        "SELECT max(gcid) AS 'gcid' " +
+                        "FROM groupchat;";
+
+                    con.query(query_str2,(err,result,fields) => {
+
+                        if(err){
+                            reject(err);
+                        }else{
+                            this.chatId = result[0].gcid;
+                            resolve(this.chatId);
+                        }
+                    });
+                }
+            });
+        });
     }
-    sendToAll(sentBy,type,content,mid = -1){
+    /*
+        member is added to groupChat by admin
+     */
+    async addMember(memberFrom,otherUser){
+        /*
+            groupChatMember is created
+         */
+        const groupChatMember =
+            new GroupChatMember(
+                -1,
+                this,
+                otherUser,
+                false,
+                0
+            );
+        /*
+            groupChatMember is saved in the database
+         */
+        await groupChatMember.saveGroupChatMemberInDB();
+        /*
+            chat is sent to user
+        */
+        otherUser.addNewChat(this);
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersAdded,
+            memberFrom.user,
+            [otherUser]
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            memberFrom.user,
+            message,
+            true
+        );
+    }
+    /*
+        multiple members are added to the chat
+     */
+    async addMembers(memberFrom,users){
+
+        const members = new Array(users.length);
+        const uids = new Array(users.length);
+
+        for(let i=0;i<users.length;i++){
+            /*
+                groupChatMember is created
+             */
+            const groupChatMember =
+                new GroupChatMember(
+                    -1,
+                    this,
+                    users[i],
+                    false,
+                    0
+                );
+            /*
+                groupChatMember is saved in the database
+             */
+            await groupChatMember.saveGroupChatMemberInDB();
+            /*
+                chat is sent to user
+            */
+            users[i].addNewChat(this);
+            /*
+                infos at the array index is set
+             */
+            members[i] = groupChatMember;
+            uids[i] = users[i].uid;
+        }
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersAdded,
+            memberFrom.user,
+            uids
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            memberFrom.user,
+            message,
+            true
+        );
+    }
+    /*
+        member is removed from groupChat by admin
+     */
+    async removeMember(memberFrom,memberOther){
+        /*
+            member is removed
+         */
+        await memberOther.deleteGroupChatMember();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersRemoved,
+            memberFrom.user,
+            [memberOther.user]
+        );
+        /*
+            message is sent
+         */
+        await this.sendMessage(
+            memberFrom.user,
+            message,
+            true
+        );
+
+        return {
+            mid: message.mid
+        }
+    }
+    /*
+        member joins chat --> only when public
+     */
+    async joinChat(user){
+        /*
+            groupChatMember is created
+         */
+        const groupChatMember =
+            new GroupChatMember(
+                -1,
+                this,
+                user,
+                false,
+                0
+            );
+        /*
+            groupChatMember is saved in the database
+         */
+        await groupChatMember.saveGroupChatMemberInDB();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersJoined,
+            user,
+            []
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            user,
+            message
+        );
+    }
+    /*
+        chat is left by the user
+     */
+    async leaveChat(member){
+        /*
+            member is removed
+         */
+        await member.deleteGroupChatMember();
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersLeft,
+            member.user,
+            []
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            member.user,
+            message,
+            true
+        );
+        /*
+            TODO: socket remove chat
+         */
+    }
+    /*
+        statusMessage is addedd
+     */
+    async addStatusMessage(type,userFrom,passiveUsers){
+
+        const message = new StatusMessage(this,userFrom);
+
+        await message.initNewMessage(
+            type,
+            passiveUsers
+        );
+        /*
+            message is added to messageStorage
+         */
+        this.messageStorage.addNewMessage(message);
+
+        return message;
+    }
+    /*
+        requested member is returned
+     */
+    getMember(uid){
+        const member = this.members.get(uid);
+        if(!member)
+            /*
+                member is not in this chat
+             */
+            throw new Error('member does not exist');
+        if(!member.isStillMember)
+            /*
+                member is not in the chat anymore
+             */
+            throw new Error('member not in chat anymore');
+        return member;
+    }
+    /*
+        status messages at the start of the chat are created
+            createdBy: the user who created the chat
+     */
+    async createStatusMessagesStart(createdBy){
+
+        const chatCreated =
+            new StatusMessage(this,createdBy);
+
+        await chatCreated.initNewMessage(
+            statusMessageTypes.chatCreated,
+            []
+        );
+
+        const usersAdded =
+            new StatusMessage(this,createdBy);
+
+        await usersAdded.initNewMessage(
+            statusMessageTypes.usersAdded,
+            this.getMemberUids(createdBy.uid)
+        );
+        /*
+            messages are added to messageStorage
+         */
+        this.messageStorage.addNewMessage(chatCreated);
+        this.messageStorage.addNewMessage(usersAdded);
+    }
+    /*
+        all uids of the groupChatMembers are returned
+     */
+    getMemberUids(uidC){
+
+        const uids = new Array(this.members.length - 1);
+
+        for(let i=0;i<this.members.length;i++){
+            const uid = this.members[i].key;
+            if(uid !== uidC)
+                uids[i] = uid;
+        }
+        return uids;
+    }
+    /*
+        all members of this chat are loaded
+     */
+    async loadGroupChatMembers(){
+
+        const usersChatDB = await this.selectGroupChatMembers();
+        this.members = new BinSearchArray();
+        /*
+            loop through users, if not exists --> gets created
+         */
+        for (let j = 0; j < usersChatDB.length; j++) {
+
+            const userChatDB = usersChatDB[j];
+            const isAdmin = userChatDB.isAdmin === 1;
+            const unreadMessages = userChatDB.unreadMessages;
+            const isStillMember = userChatDB.isStillMember === 1;
+            /*
+                does user already exist?
+             */
+            if (chatData.user.getIndex(userChatDB.uid) === -1) {
+                /*
+                    new user gets created
+                 */
+                const newUser = new User(
+                    userChatDB.uid,
+                    userChatDB.username
+                );
+                chatData.user.add(newUser.uid, newUser);
+            }
+
+            const newUser = chatData.user.get(userChatDB.uid);
+            const groupChatMember =
+                new GroupChatMember(
+                    userChatDB.gcmid,
+                    this,
+                    newUser,
+                    isAdmin,
+                    unreadMessages,
+                    isStillMember
+                );
+            this.members.add(
+                newUser.uid,
+                groupChatMember
+            );
+        }
+        /*
+            chat gets added to the members
+         */
+        for (let j = 0; j < this.members.length; j++) {
+
+            const member = this.members[j].value;
+            /*
+                is the member still member?
+             */
+            if(member.isStillMember)
+                member.user.addLoadedChat(this);
+        }
+    }
+    /*
+        groupChatMembers are selected
+     */
+    async selectGroupChatMembers(){
+
+        return new Promise((resolve, reject) => {
+
+            const con = chatServer.con;
+            const query_str =
+                "SELECT u.uid, " +
+                "u.username, " +
+                "gcm.isAdmin, " +
+                "gcm.gcmid, " +
+                "gcm.unreadMessages, " +
+                "gcm.isStillMember " +
+                "FROM user u " +
+                "JOIN groupchatmember gcm " +
+                "ON u.uid = gcm.uid " +
+                "WHERE gcm.gcid = '" + this.chatId + "';";
+
+            con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                resolve(result);
+            });
+        });
+    }
+    /*
+        unreadMessages of the user with this uid are set
+     */
+    setUnreadMessages(uid,unreadMessages){
+        /*
+            is the groupChatMember defined?
+         */
+        const groupChatMember = this.members.get(uid);
+
+        if(groupChatMember)
+            groupChatMember.setUnreadMessages(unreadMessages);
+
+    }
+    /*
+        unreadMessages are incremented at all users
+     */
+    incrementUnreadMessages(num){
+
+        for(let i=0;i<this.members.length;i++){
+
+            this.members[i].value.incrementUnreadMessages(num);
+        }
+    }
+    /*
+        unreadMessages are increment at the user with this uid
+     */
+    incrementUnreadMessagesAt(uid,num){
+        /*
+            is the groupChatMember defined?
+         */
+        const groupChatMember = this.members.get(uid);
+
+        if(groupChatMember) {
+            groupChatMember.incrementUnreadMessages(num);
+        }
+    }
+    /*
+        unread Messages of the user with this uid are returned
+     */
+    getUnreadMessages(uid){
+        /*
+            is the groupChatMember defined?
+         */
+        const groupChatMember = this.members.get(uid);
+
+        if(groupChatMember) {
+            return groupChatMember.unreadMessages;
+        }
+        return 0;
+    }
+    /*
+        event is emitted to all participants of the chat
+     */
+    sendToAll(sentBy,emitName,rest,includeSender=false){
         /*
             msg gets emitted to all users
          */
         const data = {
-            type: this.type,
-            id: this.chatId,
-            uid: sentBy.uid,
-            mid: mid,
-            content: content
+            chat: {
+                type: this.type,
+                id: this.chatId
+            },
+            ...rest
         };
-        sentBy.socket.to(this.socketRoomName).emit(type,data);
+        if(includeSender)
+            chatServer.io.to(this.socketRoomName).emit(emitName,data);
+        else
+            sentBy.socket.to(this.socketRoomName).emit(emitName,data);
     }
     /*
         is called:
@@ -102,19 +540,33 @@ export class GroupChat extends Chat{
     }
     /*
         all members of the chat get returned
+            minified: show only the most important information
      */
-    getMemberObject(uid){
+    getMemberObject(uid,minified = true){
 
         let members = [];
 
-        for(let j=0;j<this.members.length;j++){
+        for(let j=0;j<this.members.length;j++) {
 
-            const member = this.members[j].value.user;
-            if(!(uid === member.uid))
-                members.push({
-                    uid: member.uid,
-                    username: member.username
-                });
+            if (minified) {
+
+                const member = this.members[j].value.user;
+                if (!(uid === member.uid)) {
+                    members.push({
+                        uid: member.uid,
+                        username: member.username
+                    });
+                }
+            }else{
+                const member = this.members[j].value;
+                if(member.isStillMember)
+                    members.push({
+                        uid: member.user.uid,
+                        username: member.user.username,
+                        isAdmin: member.isAdmin,
+                        gcmid: member.gcmid
+                    });
+            }
         }
         return members;
     }
@@ -123,6 +575,36 @@ export class GroupChat extends Chat{
         for(let i=0;i<this.members.length;i++){
             callback(this.members[i].value.user,i,this.members[i].key);
         }
+    }
+    /*
+        groupChatInfo is returned
+     */
+    getGroupChatInfo(memberSelf){
+        return({
+            type: this.type,
+            id: this.chatId,
+            chatName: this.chatName,
+            description: this.description,
+            public: this.isPublic,
+            memberSelf: {
+                isAdmin: memberSelf.isAdmin
+            },
+            members: this.getMemberObject(-1,false),
+        });
+    }
+    /*
+        the number of admins in this chat is returned
+     */
+    getAdminCount(){
+
+        let counter = 0;
+
+        for(let i=0;i<this.members.length;i++){
+            if(this.members[i].value.isAdmin)
+                counter ++;
+        }
+
+        return counter;
     }
 
     get members() {

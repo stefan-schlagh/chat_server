@@ -1,11 +1,12 @@
 import express from 'express';
-import {setUser,reqAuth} from "../authentication.js";
 import chatData from "../chatData/chatData.js";
+import {isAuthenticated} from "../authentication/jwt.js";
+import {setUser} from "../chatData/setUser.js";
 
 const router = express.Router();
 
+router.use(isAuthenticated);
 router.use(setUser);
-router.use(reqAuth);
 
 /*
     a new message is put on the server
@@ -13,12 +14,11 @@ router.use(reqAuth);
 router.put('/',(req,res) => {
 
     const user = req.user;
-    const msg = req.body.msg;
-
+    const data = req.body;
     /*
         message is sent
      */
-    chatData.sendMessage(user,msg)
+    chatData.sendMessage(user,data)
         .then(mid => {
             res.send({
                 mid: mid

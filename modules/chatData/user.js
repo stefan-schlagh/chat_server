@@ -1,7 +1,6 @@
 import EventEmitter from 'events';
 import chatData from "./chatData.js";
-import {loadNormalChats,loadGroupChats} from "./database/loadChats.js";
-import ChatStorage from "../util/chatStorage.js";
+import ChatStorage from "./chat/chatStorage.js";
 
 class Emitter extends EventEmitter {}
 
@@ -39,11 +38,17 @@ export default class User{
         /*
             normalChats are loaded
          */
-        await loadNormalChats(this);
+        await chatData.chats.loadNormalChats(this);
         /*
             groupChats are loaded
          */
-        await loadGroupChats(this);
+        await chatData.chats.loadGroupChats(this);
+        /*
+            subscribe to all socket-rooms in the chats
+        */
+        this.chats.forEachGroup((chat,index,key) => {
+            chat.subscribeToRoom(this);
+        });
 
         const chats = await this.getChatJson();
 
@@ -94,24 +99,40 @@ export default class User{
             nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
          */
         if(this.currentChat !== null)
-            this.currentChat.sendToAll(this,'started typing',this.uid);
+            this.currentChat.sendToAll(
+                this,
+                'started typing',
+                {uid: this.uid}
+            );
     }
     stoppedTyping(){
         /*
             nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
          */
         if(this.currentChat !== null)
-            this.currentChat.sendToAll(this,'stopped typing',this.uid);
+            this.currentChat.sendToAll(
+                this,
+                'stopped typing',
+                {uid: this.uid}
+            );
     }
-    async sendMessage(msg){
+    async sendMessage(data){
         /*
             only when a chat is selected it can be sent
          */
         if(this.currentChat !== null) {
             /*
+                a new message is added to the chat
+             */
+            const message = await this.currentChat.addMessage(this,data);
+            /*
+                message is sent
+             */
+            await this.currentChat.sendMessage(this,message);
+            /*
                 mid is returned
              */
-            return this.currentChat.sendMessage(this,msg);
+            return message.mid;
         }else{
             throw new Error('no chat selected')
         }
@@ -139,7 +160,7 @@ export default class User{
      */
     async getChatJson(){
 
-        return new Promise(((resolve, reject) => {
+        return new Promise((resolve, reject) => {
 
             let rc = [];
             /*
@@ -152,23 +173,24 @@ export default class User{
 
                 const members = chat.getMemberObject(this.uid);
                 const chatName = chat.getChatName(this.uid);
-                const fm = chat.getNewestMessageObject();
+                const fm = chat.messageStorage.getNewestMessageObject();
                 /*
                     Objekt wird erstellt und zum Array hinzugefügt
                  */
                 rc.push({
-                    type:  chat.type,
+                    type: chat.type,
                     id: key,
                     chatName: chatName,
                     members: members,
-                    firstMessage: fm
+                    firstMessage: fm,
+                    unreadMessages: chat.getUnreadMessages(this.uid)
                 });
 
                 if(rc.length === this.chats.length())
                     resolve(rc);
 
             });
-        }));
+        });
     }
     /*
         a new chat gets added to the user
@@ -185,11 +207,20 @@ export default class User{
                 id: chat.chatId,
                 chatName: chat.getChatName(this.uid),
                 members: chat.getMemberObject(this.uid),
-                firstMessage: chat.getNewestMessageObject()
+                firstMessage: chat.messageStorage.getNewestMessageObject()
             };
 
             this.socket.emit("new chat", data);
         }
+    }
+    /*
+        is the chat the currentChat of the user?
+     */
+    isCurrentChat(chat){
+        if(!this.currentChat)
+            return false;
+        return this.currentChat.type === chat.type
+            && this.currentChat.chatId === chat.chatId;
     }
 
     get eventEmitter() {
@@ -246,6 +277,13 @@ export default class User{
 
     set currentChat(value) {
         this.#_currentChat = value;
+        /*
+            unreadMessages at currentChat are set to 0
+         */
+        if(value) {
+
+            value.setUnreadMessages(this.uid,0);
+        }
     }
 
     get chatsLoaded() {

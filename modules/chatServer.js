@@ -1,6 +1,6 @@
 import socket from 'socket.io';
-import {newNormalChat} from "./chatData/database/newChat.js";
-import chatData from "./chatData/chatData.js";
+import {chatData} from "./chatData/data.js";
+import {verifyToken} from "./authentication/jwt.js";
 
 export let chatServer;
 export function createChatServer(server,con,app){
@@ -32,21 +32,30 @@ class ChatServer{
                 the user who uses this connection
              */
             let user;
-            /*
-                TODO: socket-auth
-             */
-            socket.on('auth',(uid,username) => {
-                chatData.initUserSocket(uid,username,socket)
-                    .then(_user => {
-                        user = _user;
-                        /*
-                            info that user is initialized is emitted to client
-                         */
-                        socket.emit('initialized');
-                    })
-                    .catch(err => {
-                        console.error(err);
-                    });
+
+            socket.on('auth',async (authTokens) => {
+                /*
+                    authentication with jwt
+                 */
+                try {
+                    const data = await verifyToken(authTokens);
+                    /*
+                        data is extracted from token
+                     */
+                    const {uid,username} = data;
+                    /*
+                        socket is initialized
+                     */
+                    user = await chatData.initUserSocket(uid,username,socket);
+                    /*
+                        info that user is initialized is emitted to client
+                     */
+                    socket.emit('initialized');
+
+                }catch (err) {
+                    console.error(err);
+                    socket.disconnect();
+                }
             });
             /*
                 wird aufgerufen, wenn chat gewechselt wird
@@ -60,18 +69,6 @@ class ChatServer{
                 else
                     chatData.changeChat(user,data.type,data.id);
             });
-            /*
-                Wird aufgerufen, wenn einem chat beigetreten wird
-             */
-            socket.on('join chat', chat => {
-
-            });
-            /*
-                wird aufgerufen, wenn ein chat verlassen wird
-             */
-            socket.on('leave chat', chat => {
-
-            });
             socket.on('started typing',() => {
                 /*
                     user started typing
@@ -83,15 +80,6 @@ class ChatServer{
                     user stopped typing
                  */
                 user.stoppedTyping();
-            });
-            /*
-                a new normal chat gets created
-             */
-            socket.on('new normalChat',(data,callback) => {
-
-                newNormalChat(user.uid,data.uid,data.username,data.message)
-                    .then(res => callback(res))
-                    .catch(err => console.log(err));
             });
             /*
                 is called after client disconnected

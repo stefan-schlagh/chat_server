@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import {generateToken} from "./jwt.js";
 
 export async function login (username,password,con,chatServer){
     /*
@@ -22,9 +23,16 @@ export async function login (username,password,con,chatServer){
             const result = await comparePassword(password,hash);
 
             if (result) {
+
+                const token = await generateToken({
+                    username: username,
+                    uid: uid
+                });
+
                 return({
                     success: true,
-                    uid: uid
+                    uid: uid,
+                    tokens: token
                 });
             } else {
                 return({
@@ -57,9 +65,15 @@ export async function register (username,password,con){
         const hash = await hashPassword(password);
         const uid = await saveUser(username,hash,con);
 
+        const token = await generateToken({
+            username: username,
+            uid: uid
+        });
+
         return({
             success: true,
-            uid: uid
+            uid: uid,
+            tokens: token
         })
 
     }else{

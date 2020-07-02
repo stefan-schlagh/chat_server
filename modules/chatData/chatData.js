@@ -1,11 +1,13 @@
 import BinSearchArray from 'binsearcharray';
-import ChatStorage from "../util/chatStorage.js";
+import CDataChatStorage from "./chat/cDataChatStorage.js";
 import User from "./user.js";
+import {setChatData} from "./data.js";
+import {chatServer} from "../chatServer.js";
 
 class ChatData{
 
     #_user = new BinSearchArray();
-    #_chats = new ChatStorage();
+    #_chats = new CDataChatStorage(this.user);
     /*
         the current chat is changed
             user: the user where the currentChat should be changed
@@ -35,11 +37,11 @@ class ChatData{
     /*
         a message is sent
      */
-    async sendMessage(user,msg){
+    async sendMessage(user,data){
         /*
             mid is returned
          */
-        return await user.sendMessage(msg);
+        return await user.sendMessage(data);
     }
     /*
         messages get loaded
@@ -53,25 +55,20 @@ class ChatData{
      */
     async loadMessages(user,type,id,lastMsgId,num){
         /*
-            TODO: chat.getMessages async/await
+            does the chat exist?
          */
-        return new Promise(((resolve, reject) => {
-
-            const chat = this.chats.getChat(type,id);
-            if(chat)
-                /*
-                    messages in this chat are loaded
-                 */
-                chat.getMessages(lastMsgId,num,data => {
-                    resolve(data);
-                });
-            else{
-                /*
-                    chat not found, Promise rejected with error
-                 */
-                reject(new Error('chat not found'));
-            }
-        }));
+        const chat = this.chats.getChat(type,id);
+        if(chat)
+            /*
+                messages in this chat are loaded
+             */
+            return await chat.getMessages(lastMsgId,num);
+        else{
+            /*
+                chat not found, Promise rejected with error
+             */
+            throw new Error('chat not found');
+        }
     }
     /*
         user is unloaded. this happens when the client disconnects
@@ -153,6 +150,91 @@ class ChatData{
         }
         return this.user.get(uid);
     }
+    /*
+         a new normalChat is created
+     */
+    async newNormalChat(userSelf,uidOther,usernameOther,message){
+        /*
+            does user already exist in server?
+                if not --> gets created
+        */
+        let otherUser = this.user.get(uidOther);
+        if(!otherUser){
+            /*
+                user gets created
+             */
+            otherUser = new User(uidOther,usernameOther);
+            chatData.user.add(uidOther,otherUser);
+        }
+        return await this.chats.newNormalChat(userSelf,otherUser,message);
+    }
+    /*
+        a new groupChat is created
+     */
+    async newGroupChat(userFrom,data,users){
+        /*
+            not saved users are created
+         */
+        for(let i=0;i<users.length;i++){
+
+            const user = users[i];
+            if(chatData.user.getIndex(user.uid) === -1){
+
+                chatData.user.add(user.uid,new User(user.uid,user.username));
+            }
+        }
+        return await this.chats.newGroupChat(userFrom,data,users);
+    }
+    /*
+        requested chat is returned
+     */
+    getChat(type,id){
+        const chat = this.chats.getChat(type,id);
+        if(!chat)
+            throw new Error('chat does not exist');
+        return chat;
+    }
+    /*
+        requested user is returned
+            createNew:
+                if true the userdata is requested from the database and saved
+                else, an exception is thrown
+     */
+    async getUser(uid,createNew) {
+        let user = this.user.get(uid);
+        if (!user) {
+            if (createNew) {
+                user = await this.loadUser(uid);
+            } else {
+                throw new Error('user does not exist');
+            }
+        }
+        return user;
+    }
+    /*
+        userdata is loaded, user is saved
+     */
+    async loadUser(uid){
+
+        return new Promise((resolve, reject) => {
+
+            const query_str =
+                "SELECT username " +
+                "FROM user " +
+                "WHERE uid = " + uid + ";";
+
+            chatServer.con.query(query_str,(err,result,fields) => {
+                if(err)
+                    reject(err);
+                /*
+                    user is initialized
+                 */
+                const user = new User(uid,result[0].username);
+                this.user.add(uid,user);
+                resolve(user);
+            });
+        });
+    }
 
     get chats() {
         return this.#_chats;
@@ -172,5 +254,7 @@ class ChatData{
 }
 
 const chatData = new ChatData();
+
+setChatData(chatData);
 
 export default chatData;
