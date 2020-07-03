@@ -176,6 +176,19 @@ export default class GroupChatMember{
         await this.update();
     }
     /*
+        delete is undone
+     */
+    async undoDelete(){
+        /*
+            isStillMember is set to true
+         */
+        this.isStillMember = true;
+        /*
+            isStillMember is updated in the Database
+         */
+        await this.update();
+    }
+    /*
         groupChatMember is updated in the DB
      */
     async update(){

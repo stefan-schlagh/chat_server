@@ -173,6 +173,10 @@ export default class CDataChatStorage extends ChatStorage {
             user.addLoadedChat(newChat);
             user.addNewChat(newChat);
         });
+        /*
+            users are subscribed to socket
+         */
+        newChat.subscribeUsersToSocket();
     }
     /*
         all normalChats of the user are loaded
