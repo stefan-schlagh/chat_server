@@ -105,7 +105,7 @@ export default class StatusMessage extends Message {
             passive users are saved in the database
          */
         await this.saveStatusMsgInDB();
-        await this.savePassiveUsersInDB(passiveUsers)
+        await this.savePassiveUsersInDB(passiveUsers);
     }
     /*
         statusMsg is saved in the Database

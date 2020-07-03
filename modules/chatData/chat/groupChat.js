@@ -23,12 +23,11 @@ export class GroupChat extends Chat{
         this.isPublic = isPublic;
         this.socketRoomName = randomString(10);
 
-        this.initChat();
     }
     /*
-        chat gets initialized
+        subscribeUsersToSocket
      */
-    initChat(){
+    subscribeUsersToSocket(){
         /*
             each users socket joins the roo,
          */
@@ -44,7 +43,7 @@ export class GroupChat extends Chat{
      */
     async saveChatInDB(){
 
-        return new Promise((resolve,reject) => {
+        return await new Promise((resolve,reject) => {
 
             const con = chatServer.con;
             const query_str1 =
@@ -101,6 +100,10 @@ export class GroupChat extends Chat{
          */
         await groupChatMember.saveGroupChatMemberInDB();
         /*
+            member is added at chat
+         */
+        this.members.add(otherUser.uid,groupChatMember);
+        /*
             chat is sent to user
         */
         otherUser.addNewChat(this);
@@ -110,7 +113,7 @@ export class GroupChat extends Chat{
         const message = await this.addStatusMessage(
             statusMessageTypes.usersAdded,
             memberFrom.user,
-            [otherUser]
+            [otherUser.uid]
         );
         /*
             message is sent
@@ -120,6 +123,10 @@ export class GroupChat extends Chat{
             message,
             true
         );
+        /*
+            member is subscribed to socket
+         */
+        this.subscribeToRoom(otherUser);
     }
     /*
         multiple members are added to the chat
@@ -130,6 +137,8 @@ export class GroupChat extends Chat{
         const uids = new Array(users.length);
 
         for(let i=0;i<users.length;i++){
+
+            const user = users[i];
             /*
                 groupChatMember is created
              */
@@ -137,7 +146,7 @@ export class GroupChat extends Chat{
                 new GroupChatMember(
                     -1,
                     this,
-                    users[i],
+                    user,
                     false,
                     0
                 );
@@ -146,14 +155,18 @@ export class GroupChat extends Chat{
              */
             await groupChatMember.saveGroupChatMemberInDB();
             /*
+                member is added at chat
+             */
+            this.members.add(user.uid,groupChatMember);
+            /*
                 chat is sent to user
             */
-            users[i].addNewChat(this);
+            user.addNewChat(this);
             /*
                 infos at the array index is set
              */
             members[i] = groupChatMember;
-            uids[i] = users[i].uid;
+            uids[i] = user.uid;
         }
         /*
             statusMessage is added
@@ -177,16 +190,20 @@ export class GroupChat extends Chat{
      */
     async removeMember(memberFrom,memberOther){
         /*
-            member is removed
+            member is removed from DB
          */
         await memberOther.deleteGroupChatMember();
+        /*
+            member is removed from groupChat
+         */
+        this.members.remove(memberOther.user.uid);
         /*
             statusMessage is added
          */
         const message = await this.addStatusMessage(
             statusMessageTypes.usersRemoved,
             memberFrom.user,
-            [memberOther.user]
+            [memberOther.user.uid]
         );
         /*
             message is sent
@@ -196,6 +213,10 @@ export class GroupChat extends Chat{
             message,
             true
         );
+        /*
+            socket room is left
+         */
+        this.leaveRoom(memberOther.user);
 
         return {
             mid: message.mid
@@ -221,6 +242,10 @@ export class GroupChat extends Chat{
          */
         await groupChatMember.saveGroupChatMemberInDB();
         /*
+            member is added at chat
+         */
+        this.members.add(user.uid,groupChatMember);
+        /*
             statusMessage is added
          */
         const message = await this.addStatusMessage(
@@ -235,15 +260,23 @@ export class GroupChat extends Chat{
             user,
             message
         );
+        /*
+            member is subscribed to socket
+         */
+        this.subscribeToRoom(user);
     }
     /*
         chat is left by the user
      */
     async leaveChat(member){
         /*
-            member is removed
+            member is removed from DB
          */
         await member.deleteGroupChatMember();
+        /*
+            member is removed from groupChat
+         */
+        this.members.remove(member.user.uid);
         /*
             statusMessage is added
          */
@@ -261,11 +294,13 @@ export class GroupChat extends Chat{
             true
         );
         /*
-            TODO: socket remove chat
+            socket room is left
          */
+        this.leaveRoom(member.user);
     }
     /*
         statusMessage is addedd
+            passiveUsers: uids
      */
     async addStatusMessage(type,userFrom,passiveUsers){
 
@@ -397,6 +432,10 @@ export class GroupChat extends Chat{
             if(member.isStillMember)
                 member.user.addLoadedChat(this);
         }
+        /*
+            users are subscribed to socket
+         */
+        this.subscribeUsersToSocket();
     }
     /*
         groupChatMembers are selected
@@ -502,8 +541,10 @@ export class GroupChat extends Chat{
         if(user.socket !== null)
             user.socket.join(this.socketRoomName);
     }
+
     leaveRoom(user){
-        user.socket.leave(this.socketRoomName);
+        if(user.socket !== null)
+            user.socket.leave(this.socketRoomName);
     }
     isAnyoneOnline(){
         for(let i=0;i<this.members.length;i++){
