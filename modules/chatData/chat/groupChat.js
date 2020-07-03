@@ -81,66 +81,22 @@ export class GroupChat extends Chat{
         });
     }
     /*
-        member is added to groupChat by admin
+        member is added to chat
      */
-    async addMember(memberFrom,otherUser){
+    async addGroupChatMember(user){
         /*
-            groupChatMember is created
+            is there already a groupChatMember for this user?
          */
-        const groupChatMember =
-            new GroupChatMember(
-                -1,
-                this,
-                otherUser,
-                false,
-                0
-            );
+        const groupChatMember = this.members.get(user.uid);
         /*
-            groupChatMember is saved in the database
+            if defined --> isStillMember is updated
          */
-        await groupChatMember.saveGroupChatMemberInDB();
-        /*
-            member is added at chat
-         */
-        this.members.add(otherUser.uid,groupChatMember);
-        /*
-            chat is sent to user
-        */
-        otherUser.addNewChat(this);
-        /*
-            statusMessage is added
-         */
-        const message = await this.addStatusMessage(
-            statusMessageTypes.usersAdded,
-            memberFrom.user,
-            [otherUser.uid]
-        );
-        /*
-            message is sent
-         */
-        this.sendMessage(
-            memberFrom.user,
-            message,
-            true
-        );
-        /*
-            member is subscribed to socket
-         */
-        this.subscribeToRoom(otherUser);
-    }
-    /*
-        multiple members are added to the chat
-     */
-    async addMembers(memberFrom,users){
+        if(groupChatMember){
 
-        const members = new Array(users.length);
-        const uids = new Array(users.length);
-
-        for(let i=0;i<users.length;i++){
-
-            const user = users[i];
+            await groupChatMember.undoDelete();
+        }else {
             /*
-                groupChatMember is created
+                else --> new groupChatMember is created
              */
             const groupChatMember =
                 new GroupChatMember(
@@ -157,16 +113,60 @@ export class GroupChat extends Chat{
             /*
                 member is added at chat
              */
-            this.members.add(user.uid,groupChatMember);
-            /*
-                chat is sent to user
-            */
-            user.addNewChat(this);
+            this.members.add(user.uid, groupChatMember);
+        }
+        /*
+            chat is sent to user
+        */
+        user.addNewChat(this);
+        /*
+            member is subscribed to socket
+         */
+        this.subscribeToRoom(user);
+
+        return groupChatMember;
+    }
+    /*
+        member is added to groupChat by admin
+     */
+    async addMember(memberFrom,otherUser){
+
+        await this.addGroupChatMember(otherUser);
+        /*
+            statusMessage is added
+         */
+        const message = await this.addStatusMessage(
+            statusMessageTypes.usersAdded,
+            memberFrom.user,
+            [otherUser.uid]
+        );
+        /*
+            message is sent
+         */
+        this.sendMessage(
+            memberFrom.user,
+            message,
+            true
+        );
+    }
+    /*
+        multiple members are added to the chat
+     */
+    async addMembers(memberFrom,users){
+
+        const members = new Array(users.length);
+        const uids = new Array(users.length);
+
+        for(let i=0;i<users.length;i++){
+
+            const user = users[i];
+
+            const groupChatMember = await this.addGroupChatMember(user);
             /*
                 infos at the array index is set
              */
-            members[i] = groupChatMember;
             uids[i] = user.uid;
+            members[i] = groupChatMember;
         }
         /*
             statusMessage is added
@@ -193,10 +193,6 @@ export class GroupChat extends Chat{
             member is removed from DB
          */
         await memberOther.deleteGroupChatMember();
-        /*
-            member is removed from groupChat
-         */
-        this.members.remove(memberOther.user.uid);
         /*
             statusMessage is added
          */
@@ -226,25 +222,8 @@ export class GroupChat extends Chat{
         member joins chat --> only when public
      */
     async joinChat(user){
-        /*
-            groupChatMember is created
-         */
-        const groupChatMember =
-            new GroupChatMember(
-                -1,
-                this,
-                user,
-                false,
-                0
-            );
-        /*
-            groupChatMember is saved in the database
-         */
-        await groupChatMember.saveGroupChatMemberInDB();
-        /*
-            member is added at chat
-         */
-        this.members.add(user.uid,groupChatMember);
+
+        await this.addGroupChatMember(user);
         /*
             statusMessage is added
          */
@@ -260,10 +239,6 @@ export class GroupChat extends Chat{
             user,
             message
         );
-        /*
-            member is subscribed to socket
-         */
-        this.subscribeToRoom(user);
     }
     /*
         chat is left by the user
@@ -273,10 +248,6 @@ export class GroupChat extends Chat{
             member is removed from DB
          */
         await member.deleteGroupChatMember();
-        /*
-            member is removed from groupChat
-         */
-        this.members.remove(member.user.uid);
         /*
             statusMessage is added
          */

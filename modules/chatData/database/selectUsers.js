@@ -139,7 +139,8 @@ export async function selectUsersNotInGroup(
             "WHERE NOT u.uid = " +
             "ANY (SELECT uid " +
                 "FROM groupchatmember gcm " +
-                "WHERE gcm.gcid = " + gcid +
+                "WHERE gcm.gcid = " + gcid + " " +
+                "AND isStillMember = 1 " +
             ")" +
             "AND u.username LIKE " + chatServer.con.escape('%' + search + '%') +
             "LIMIT " + start + "," + limit + ";";
