@@ -2,3 +2,6 @@
 /.idea/jsLibraryMappings.xml
 .env
 /cert/
+
+# let's encrypt challenge
+/public/.well-known

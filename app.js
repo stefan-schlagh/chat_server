@@ -46,7 +46,10 @@ import messageRouter from './modules/routes/message.js';
 app.use(helmet());
 app.use(express_enforces_ssl());
 app.use(express.static('build'));
-app.use(express.static('public'));
+app.use(express.static(
+    'public',
+    {dotfiles:'allow'}
+    ));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static('public'));
