@@ -119,8 +119,8 @@ export default class CDataChatStorage extends ChatStorage {
          */
         const newChat = new GroupChat(
             -1,
-            data.name
-            ,data.description,
+            data.name,
+            data.description,
             data.isPublic
         );
         /*

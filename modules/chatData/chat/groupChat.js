@@ -46,13 +46,15 @@ export class GroupChat extends Chat{
         return await new Promise((resolve,reject) => {
 
             const con = chatServer.con;
+            const isPublic = this.isPublic ? 1 : 0;
+
             const query_str1 =
                 "INSERT " +
                 "INTO groupchat (name,description,isPublic) " +
                 "VALUES (" +
                     con.escape(this.chatName) + "," +
                     con.escape(this.description) + "," +
-                    con.escape(this.isPublic) +
+                    isPublic +
                 ")";
 
             con.query(query_str1,(err) => {
