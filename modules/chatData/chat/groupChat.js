@@ -620,6 +620,39 @@ export class GroupChat extends Chat{
 
         return counter;
     }
+    /*
+        info is updated in the database:
+            chatName
+            description
+            isPublic
+     */
+    async update(){
+
+        await new Promise((resolve,reject) => {
+
+            const con = chatServer.con;
+            const isPublic = this.isPublic ? 1 : 0;
+
+            const query_str1 =
+                "UPDATE groupchat " +
+                "SET name = " + con.escape(this.chatName) + ", " +
+                "description = " + con.escape(this.description) + ", " +
+                "isPublic = " + isPublic + " " +
+                "WHERE gcid = " + this.chatId;
+
+            con.query(query_str1,(err) => {
+                /*
+                    if no error has occured, the chatID gets requested
+                 */
+                if(err)
+                    reject(err);
+                else
+                    resolve();
+            });
+        });
+
+        //TODO: emit via socket
+    }
 
     get members() {
         return this.#_members;
