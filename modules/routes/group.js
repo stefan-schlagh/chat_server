@@ -50,6 +50,70 @@ router.put('/',(req,res) => {
         });
 });
 /*
+    route for changing the chatName of a groupChat
+ */
+router.put(
+    '/:gcid/chatName',
+    getChat(true),
+    getGroupChatMemberSelf(true),
+    authAdminSelf,
+    async (req,res) => {
+
+        try {
+            const chat = req.chat;
+            const chatName = req.body.chatName;
+
+            if (!chatName){
+                console.error("chatName cannot be undefined");
+                res.status(500);
+                res.send();
+            }else {
+
+                chat.chatName = chatName;
+
+                await chat.update();
+
+                res.send();
+            }
+        } catch(err) {
+            console.error(err);
+            res.status(500);
+            res.send();
+        }
+    });
+/*
+    route for changing the description of a groupChat
+ */
+router.put(
+    '/:gcid/description',
+    getChat(true),
+    getGroupChatMemberSelf(true),
+    authAdminSelf,
+    async (req,res) => {
+
+        try {
+            const chat = req.chat;
+            const description = req.body.description;
+
+            if (!description){
+                console.error("description cannot be undefined");
+                res.status(500);
+                res.send();
+            }else {
+
+                chat.description = description;
+
+                await chat.update();
+
+                res.send();
+            }
+        } catch(err) {
+            console.error(err);
+            res.status(500);
+            res.send();
+        }
+});
+/*
     route for deleting a groupChat
  */
 router.delete('/:gcid',(req,res) => {
