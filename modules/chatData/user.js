@@ -163,6 +163,7 @@ export default class User{
         return new Promise((resolve, reject) => {
 
             let rc = [];
+            let i=0;
             /*
                 if length is 0, empty array gets returned
              */
@@ -171,24 +172,40 @@ export default class User{
 
             this.chats.forEach((chat,index,key) => {
 
-                const members = chat.getMemberObject(this.uid);
-                const chatName = chat.getChatName(this.uid);
-                const fm = chat.messageStorage.getNewestMessageObject();
-                /*
-                    Objekt wird erstellt und zum Array hinzugefügt
-                 */
-                rc.push({
-                    type: chat.type,
-                    id: key,
-                    chatName: chatName,
-                    members: members,
-                    firstMessage: fm,
-                    unreadMessages: chat.getUnreadMessages(this.uid)
-                });
+                try {
+                    /*
+                        if groupChat -->
+                            is the user still member in this chat?
+                            TODO
+                     */
+                    if (chat.type === "groupChat") {
 
-                if(rc.length === this.chats.length())
-                    resolve(rc);
+                        chat.getMember(this.uid);
+                    }
 
+                    const members = chat.getMemberObject(this.uid);
+                    const chatName = chat.getChatName(this.uid);
+                    const fm = chat.messageStorage.getNewestMessageObject();
+                    /*
+                        Objekt wird erstellt und zum Array hinzugefügt
+                     */
+                    rc.push({
+                        type: chat.type,
+                        id: key,
+                        chatName: chatName,
+                        members: members,
+                        firstMessage: fm,
+                        unreadMessages: chat.getUnreadMessages(this.uid)
+                    });
+
+                }catch(e) {
+
+                }finally {
+
+                    i++;
+                    if (i === this.chats.length())
+                        resolve(rc);
+                }
             });
         });
     }
