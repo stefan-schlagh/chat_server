@@ -44,6 +44,7 @@ import messageRouter from './modules/routes/message.js';
     various middleware for express
  */
 app.use(helmet());
+//TODO: only if mode = production
 app.use(express_enforces_ssl());
 app.use(express.static('build'));
 app.use(express.static(
