@@ -23,6 +23,7 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
+export default app;
 const server = https.createServer(
     {
         key: key,
@@ -31,7 +32,7 @@ const server = https.createServer(
 /*
     dirname is initialized
  */
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import __dirname from "./dirname.cjs";
 /*
     routers are imported
  */
@@ -44,8 +45,9 @@ import messageRouter from './modules/routes/message.js';
     various middleware for express
  */
 app.use(helmet());
-//TODO: only if mode = production
-app.use(express_enforces_ssl());
+if(process.env.NODE_ENV !== "test") {
+    app.use(express_enforces_ssl());
+}
 app.use(express.static('build'));
 app.use(express.static(
     'public',

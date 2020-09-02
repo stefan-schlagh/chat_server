@@ -17,9 +17,10 @@ application/json
 application/json
 ````json
 {
-  "success": "was login successful?",
+  "success": "was login successful? | boolean",
   "username": "error message for the username",
-  "password": "error message for password"
+  "password": "error message for password",
+  "tokens": "jsonwebtoken"
 }
 ````
 
@@ -38,8 +39,10 @@ application/json
 application/json
 ````json
 {
-  "success": "was register successful?",
-  "password": "error message for password"
+  "success": "was register successful? | boolean",
+  "username": "error message for the username",
+  "password": "error message for password",
+  "tokens": "jsonwebtoken"
 }
 ````
 
