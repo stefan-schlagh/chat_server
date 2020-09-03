@@ -57,5 +57,5 @@ jobs:
       # test
       - name: npm test
         run: |
-          cd ./chat_client
+          cd ./chat_server
           npm test
