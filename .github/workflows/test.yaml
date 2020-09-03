@@ -1,0 +1,61 @@
+name: Test
+
+on:
+  pull_request:
+  
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags' 
+
+jobs:
+  test:
+    name: test App
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # chat server repository is checked out
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: chat_server
+      # node.js setup
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      # install dependencies
+      - name: install dependencies
+        run: |
+          cd ./chat_server
+          npm ci
+      # setup mysql DB
+      - name: setup mysql DB
+        run: |
+          sudo systemctl start mysql.service
+          mysql -h 127.0.0.1 -P 3306 -u root "-proot" -e "CREATE DATABASE chat;"
+          mysql -h 127.0.0.1 -P 3306 -u root "-proot" "chat" < "./chat_server/sql/chat.sql"
+      # create private key, .env
+      - name: create jwt private key
+        run: |
+          cd ./chat_server
+          mkdir cert
+          cd ./cert
+          openssl genrsa -out jwtPrivate.pem 1024
+          cd ..
+          cp ./test_templates/test.env ./.env
+      # create certificate
+      - name: create certificate
+        run: |
+          cd ./chat_server/cert
+          openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem -subj "/C=AT/ST=Vienna/L=Vienna/O=/CN="
+          dir
+      # test
+      - name: npm test
+        run: |
+          cd ./chat_client
+          npm test
