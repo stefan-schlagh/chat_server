@@ -23,5 +23,5 @@ jobs:
           script: |
             cd /var/nodejs/chat_server # navigate into the folder
             git pull origin master # update git repository
-            npm install # install all dependencies 
+            npm ci # install all dependencies 
             forever restartall # all forever scripts are restarted
