@@ -99,7 +99,7 @@ describe('test API', () => {
                reject();
            })
         })*/
-        expect(console.log).toHaveBeenCalledWith('http://localhost:80');
+        expect(console.log).toHaveBeenCalledWith('http://localhost:' + process.env.NODE_HTTP_PORT);
         //expect(console.log).toHaveBeenCalledWith('connection');
         //expect(console.log).toHaveBeenCalledWith('socket connected');
     });
