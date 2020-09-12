@@ -1,9 +1,23 @@
 import request from 'supertest';
-import app from '../app.js';
+import {startServer, app, closeServer} from '../modules/app.js';
 import io from 'socket.io-client';
-import {tokens,setTokens} from "../__testHelpers/tokensStorage";
+import {tokens,setTokens} from "../__testHelpers/tokensStorage.js";
 
 describe('test API', () => {
+    beforeAll((done) => {
+        startServer();
+        done();
+    });
+    beforeEach(() => {
+        global.console = {
+            warn: jest.fn(),
+            log: jest.fn()
+        }
+    });
+    afterAll((done) => {
+        closeServer();
+        done();
+    });
     it('create account/login', async () => {
         const res = await request(app)
             .post('/auth/register')
@@ -60,12 +74,8 @@ describe('test API', () => {
         expect(res.statusCode).toEqual(200);
     })
     it('establish socket connection',async() => {
-        global.console = {
-            warn: jest.fn(),
-            log: jest.fn()
-        }
         const socket = io.connect(
-            '/',
+            'https:/localhost:443',
             {
                 transports: ['websocket'],
                 'reconnection delay' : 0,
@@ -74,6 +84,7 @@ describe('test API', () => {
             }
         );
         console.log('http://localhost:' + process.env.NODE_HTTP_PORT)
+        console.log('abc')
         socket.on('connect',() => {
             console.log("socket connected")
             done();
@@ -82,17 +93,15 @@ describe('test API', () => {
         // is called when user is initialized
         /*await new Promise((resolve, reject) => {
            socket.on('initialized',() => {
-
-               resolve();
+                resolve();
            });
            socket.on('disconnect',() => {
                reject();
            })
         })*/
-        await new Promise((resolve, reject) => {
-            setTimeout(() => resolve(),3000);
-        })
         expect(console.log).toHaveBeenCalledWith('http://localhost:80');
+        //expect(console.log).toHaveBeenCalledWith('connection');
+        //expect(console.log).toHaveBeenCalledWith('socket connected');
     });
 })
 
