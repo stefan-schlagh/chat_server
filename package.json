@@ -2,10 +2,10 @@
   "name": "chat_server",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "modules/app.js",
   "type": "module",
   "scripts": {
-    "start": "node app.js",
+    "start": "node index.js",
     "test": "jest --forceExit"
   },
   "keywords": [],
@@ -30,6 +30,7 @@
     "@babel/preset-env": "^7.11.5",
     "babel-jest": "^26.3.0",
     "jest": "^26.4.2",
+    "socket.io-client": "^2.3.0",
     "supertest": "^4.0.2"
   },
   "jest": {
