@@ -1,4 +1,4 @@
-import {comparePassword,hashPassword} from "./bcryptWrappers";
+import {comparePassword,hashPassword} from "./bcryptWrappers.js";
 import {generateToken} from "./jwt.js";
 
 export async function login (username,password,con,chatServer){
