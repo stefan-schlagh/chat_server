@@ -6,10 +6,11 @@ describe('test Verification', () => {
     })
     it('extractParts', async () => {
         const uid = 2804;//0x00000af4
-        const hash = "aoijf3aiodf5jald7h9fa5j5f6sdgha";
+        const code = "aoijf3aiodf5jald7h9fa5j5f6sdgha";
+        const uidHex = toHex(uid,8);
 
-        //extractParts()
-        const num = 255;
-        expect(num.toString(16)).toBe("ff");
+        const parts = extractParts(uidHex + code);
+        expect(parts.uid).toBe(uid);
+        expect(parts.code).toBe(code);
     });
 });

@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import {comparePassword,hashPassword} from "./bcryptWrappers.js";
 import {generateToken} from "./jwt.js";
 
 export async function login (username,password,con,chatServer){
@@ -161,40 +161,6 @@ async function saveUser(username,hash,con){
             const {exists,uid} = await getUserInfo(username,con);
 
             resolve(uid);
-        });
-    });
-}
-async function comparePassword(password,hash){
-
-    return new Promise(function(resolve, reject) {
-
-        bcrypt.compare(password, hash, function (err, result) {
-            if(err)
-                reject(err);
-
-            resolve(result);
-        });
-    });
-}
-async function hashPassword(password){
-
-    return new Promise(function(resolve, reject) {
-
-        const saltRounds = 10;
-        /*
-                salt gets generated
-             */
-        bcrypt.genSalt(saltRounds, function (err, salt) {
-            if(err)
-                reject(err);
-            /*
-                hash gets generated
-             */
-            bcrypt.hash(password, salt, function (err, hash) {
-                if(err)
-                    reject(err);
-                resolve(hash);
-            });
         });
     });
 }
