@@ -2,7 +2,7 @@ import crypto from "crypto";
 import {con} from "../app.js";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers.js";
 
-const verificationCodeTypes = {
+export const verificationCodeTypes = {
     verification: 0,
     pwReset: 1
 }
@@ -22,6 +22,9 @@ export function extractParts(sCode){
     });
 }
 export async function verifyCode(parts,type){
+    /*
+        TODO: delete old codes
+     */
 
     const query_str =
         "SELECT type,hash " +

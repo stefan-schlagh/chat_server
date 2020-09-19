@@ -31,6 +31,8 @@ import userRouter from './routes/user.js';
 import groupRouter from './routes/group.js';
 import chatRouter from './routes/chats.js';
 import messageRouter from './routes/message.js';
+import pwResetRouter from './routes/passwordReset.js';
+import verificationRouter from './routes/verification.js'
 
 import mysql from 'mysql';
 import {chatServer, createChatServer} from './chatServer.js';
@@ -78,6 +80,8 @@ export function startServer(){
     app.use('/group',groupRouter);
     app.use('/chats',chatRouter);
     app.use('/message',messageRouter);
+    app.use('/pwReset',pwResetRouter);
+    app.use('/verification',verificationRouter);
 
     con = mysql.createConnection({
         host: process.env.DB_HOST,

@@ -1,6 +1,12 @@
 import EventEmitter from 'events';
 import chatData from "./chatData.js";
 import ChatStorage from "./chat/chatStorage.js";
+import {
+    verifyCode,
+    verificationCodeTypes,
+    generateVerificationCode
+} from "../verification/code.js";
+import {con} from "../app.js";
 
 class Emitter extends EventEmitter {}
 
@@ -238,6 +244,53 @@ export default class User{
             return false;
         return this.currentChat.type === chat.type
             && this.currentChat.chatId === chat.chatId;
+    }
+    async createPasswordResetCode(){
+        return await generateVerificationCode(verificationCodeTypes.pwReset,this.uid);
+    }
+    /*
+        set a new password
+            password: the new password
+            code: the code sent by the user
+     */
+    async setPassword(hash,code){
+        //is email verified?
+        if(await this.isVerified()) {
+            //verify code
+            if (await verifyCode({
+                uid: this.uid,
+                code: code
+            }, verificationCodeTypes.pwReset)) {
+
+                const query_str =
+                    "UPDATE user " +
+                    "SET password = " + hash + " " +
+                    "WHERE uid = " + this.uid + ";";
+
+                await new Promise((resolve, reject) => {
+                    con.query(query_str, (err) => {
+                        if (err)
+                            reject(err);
+                    });
+                });
+            } else
+                throw new Error("invalid code")
+        }else
+            throw new Error("Email not verified!");
+    }
+    async isVerified(){
+        const result = await new Promise((resolve, reject) => {
+            const query_str =
+                "SELECT isVerified " +
+                "FROM user " +
+                "WHERE uid = " + this.uid + ";";
+            con.query(query_str,(err,result) => {
+                if(err)
+                    reject(err);
+                resolve(result);
+            });
+        });
+        return result[0].isVerified === 1;
     }
 
     get eventEmitter() {
