@@ -18,7 +18,8 @@ router.get("/isValid/:code",async (req,res) => {
             res.send(403);
     }catch (e){
         console.error(e);
-        res.send(500);
+        res.status(500);
+        res.send();
     }
 });
 /*
@@ -37,7 +38,8 @@ router.post("/set",async (req, res) => {
         await user.setPassword(hash,parts.code);
     }catch (e){
         console.error(e);
-        res.send(400);
+        res.status(400);
+        res.send();
     }
 });
 /*
@@ -55,7 +57,8 @@ router.post("/requestLink",async (req,res) => {
 
     }catch (e){
         console.error(e);
-        res.send(400);
+        res.status(400);
+        res.send();
     }
 });
 

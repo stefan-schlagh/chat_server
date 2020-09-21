@@ -130,5 +130,11 @@ router.put('/chat',(req,res) => {
             res.send();
         });
 });
+/*
+    the email of the user is changed
+ */
+router.post('setEmail',(req, res) => {
+
+})
 
 export default router;

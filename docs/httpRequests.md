@@ -321,6 +321,11 @@ a new message is sent to the server
 }
 ````
 
+## passwordReset
+````java
+//TODO
+````
+
 ## user
 
 ### POST /user/
@@ -406,7 +411,7 @@ the info of a specific user is returned
 
 a new normalChat is created
 
-### params-in
+#### params-in
 ````json
 {
     "uid": "the id of the user who should be added",
@@ -419,7 +424,7 @@ a new normalChat is created
 ````
 [content](#message-content)
 
-### params-out
+#### params-out
 ````json
 {
     "ncid": "the id of the new chat",
@@ -427,7 +432,7 @@ a new normalChat is created
 }
 ````
 
-### message content
+#### message content
 
 if normalMessage:
 ````json
@@ -449,4 +454,20 @@ if statusMessage:
     "type": "the type of the statusMessage",
     "passiveUsers": ["the uids of the passive users mentioned in this statusMessage"]
 }
+````
+
+### POST /user/setEmail
+
+the email is set and a email for verification is sent to the new email
+
+#### params-in
+````json
+{
+    "email": "the new email address"
+}
+````
+
+## verification
+````java
+//TODO
 ````

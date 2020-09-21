@@ -7,6 +7,8 @@ import {
     generateVerificationCode
 } from "../verification/code.js";
 import {con} from "../app.js";
+import {isEmpty,createEmptyError} from "../util/sqlHelpers";
+import {sendMail} from "../verification/sendMail";
 
 class Emitter extends EventEmitter {}
 
@@ -291,6 +293,41 @@ export default class User{
             });
         });
         return result[0].isVerified === 1;
+    }
+    //email of the user is set
+    async setEmail(email){
+        await new Promise((resolve, reject) => {
+            const query_str =
+                "INSERT " +
+                "INTO emailChange (uid,newEmail,date)" +
+                "VALUES (" + this.uid + "," + email + ",CURRENT_TIMESTAMP());"
+            con.query(query_str,(err,result) => {
+               if(err)
+                   reject(err);
+               if(isEmpty(result))
+                   reject(createEmptyError());
+               resolve(result);
+            });
+        });
+        await this.deleteVerificationCodes();
+
+        const sCode = await generateVerificationCode(verificationCodeTypes.verification,this.uid);
+
+        await sendMail(email,"Chat App: email verification",sCode);
+    }
+    //all current verificationCodes are deleted
+    async deleteVerificationCodes(){
+        await new Promise((resolve, reject) => {
+            const query_str =
+                "DELETE " +
+                "FROM verificationCode " +
+                "WHERE uid = " + this.uid + ";";
+            con.query(query_str,(err) => {
+                if(err)
+                    reject(err);
+                resolve();
+            });
+        });
     }
 
     get eventEmitter() {

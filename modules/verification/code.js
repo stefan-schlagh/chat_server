@@ -28,7 +28,7 @@ export async function verifyCode(parts,type){
 
     const query_str =
         "SELECT type,hash " +
-        "FROM verificationcode " +
+        "FROM verificationCode " +
         "WHERE uid = " + parts.uid + ";";
 
     const res = await new Promise((resolve, reject) => {
@@ -86,7 +86,7 @@ async function saveCodeInDB(type,uid,hash){
 
     const query_str =
         "INSERT " +
-        "INTO verificationcode(type,uid,hash) " +
+        "INTO verificationCode(type,uid,hash) " +
         "VALUES(" + type + "," + uid + "," + con.escape(hash) + ");";
 
     await new Promise((resolve, reject) => {
