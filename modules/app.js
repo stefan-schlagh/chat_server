@@ -19,6 +19,7 @@ import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import compression from 'compression';
 /*
     dirname is initialized
  */
@@ -70,6 +71,7 @@ export function startServer(){
     app.use(express.static('public'));
     app.use(cors());
     app.use(cookieParser());
+    app.use(compression());
     /*
         Routers for express
      */
