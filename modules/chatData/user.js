@@ -296,11 +296,14 @@ export default class User{
     }
     //email of the user is set
     async setEmail(email){
+
+        await this.deleteVerificationCodes();
+
         await new Promise((resolve, reject) => {
             const query_str =
                 "INSERT " +
-                "INTO emailChange (uid,newEmail,date)" +
-                "VALUES (" + this.uid + "," + email + ",CURRENT_TIMESTAMP());"
+                "INTO emailChange (uid,newEmail,date) " +
+                "VALUES (" + this.uid + "," + con.escape(email) + ",CURRENT_TIMESTAMP());"
             con.query(query_str,(err,result) => {
                if(err)
                    reject(err);
@@ -309,7 +312,6 @@ export default class User{
                resolve(result);
             });
         });
-        await this.deleteVerificationCodes();
 
         const sCode = await generateVerificationCode(verificationCodeTypes.verification,this.uid);
 
@@ -320,7 +322,7 @@ export default class User{
         await new Promise((resolve, reject) => {
             const query_str =
                 "DELETE " +
-                "FROM verificationCode " +
+                "FROM verificationcode " +
                 "WHERE uid = " + this.uid + ";";
             con.query(query_str,(err) => {
                 if(err)

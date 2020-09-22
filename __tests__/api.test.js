@@ -1,7 +1,7 @@
 import request from 'supertest';
 import {startServer, app, closeServer} from '../modules/app.js';
 import io from 'socket.io-client';
-import {tokens,setTokens} from "../__testHelpers/tokensStorage.js";
+import {tokensStorage} from "../__testHelpers/tokensStorage.js";
 
 describe('test API', () => {
     beforeAll((done) => {
@@ -60,12 +60,12 @@ describe('test API', () => {
         expect(res.statusCode).toEqual(200)
         expect(res.body).toHaveProperty('tokens')
 
-        setTokens(res.body.tokens);
+        tokensStorage.set("stefan",res.body.tokens);
     })
     it("access protected path",async () => {
         const res = await request(app)
             .post('/user/noChat')
-            .set('Authorization',tokens)
+            .set('Authorization',tokensStorage.get("stefan"))
             .send({
                 search: "",
                 limit: 10,
@@ -89,7 +89,7 @@ describe('test API', () => {
             console.log("socket connected")
             done();
         })
-        socket.emit('auth',tokens);
+        socket.emit('auth',tokensStorage.get("stefan"));
         // is called when user is initialized
         /*await new Promise((resolve, reject) => {
            socket.on('initialized',() => {

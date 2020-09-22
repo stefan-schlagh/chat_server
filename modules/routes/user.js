@@ -133,8 +133,20 @@ router.put('/chat',(req,res) => {
 /*
     the email of the user is changed
  */
-router.post('setEmail',(req, res) => {
+router.post('/setEmail',async (req, res) => {
+    try {
+        const user = req.user;
+        const email = req.body.email;
 
+        console.log(email);
+        await user.setEmail(email)
+
+        res.send();
+    }catch (e){
+        console.error(e);
+        res.status(400);
+        res.send();
+    }
 })
 
 export default router;

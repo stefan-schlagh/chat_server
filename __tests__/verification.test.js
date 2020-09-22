@@ -1,4 +1,5 @@
 import {toHex,extractParts} from "../modules/verification/code";
+import {sendMail} from "../modules/verification/sendMail";
 
 describe('test Verification', () => {
     it("toHex",() => {
@@ -13,4 +14,7 @@ describe('test Verification', () => {
         expect(parts.uid).toBe(uid);
         expect(parts.code).toBe(code);
     });
-});
+    it("sendMail",async () => {
+        await sendMail("stefanjkf.test+jestChat@gmail.com","Test","testMail");
+    });
+})
