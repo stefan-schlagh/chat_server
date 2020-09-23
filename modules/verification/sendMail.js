@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import {mailStorage} from "../../__testHelpers/mailStorage";
 
 export async function sendMail(receiver,title,content){
     const transporter = nodemailer.createTransport({
@@ -23,5 +24,9 @@ export async function sendMail(receiver,title,content){
             }
             resolve();
         });
-    })
+    });
+
+    if(process.env.NODE_ENV === "test"){
+        mailStorage.set(title,content);
+    }
 }

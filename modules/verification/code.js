@@ -1,9 +1,10 @@
 import crypto from "crypto";
 import {con} from "../app.js";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers.js";
+import {createEmptyError, isEmpty} from "../util/sqlHelpers";
 
 export const verificationCodeTypes = {
-    verification: 0,
+    emailVerification: 0,
     pwReset: 1
 }
 /*
@@ -21,30 +22,50 @@ export function extractParts(sCode){
         code: code
     });
 }
-export async function verifyCode(parts,type){
-    /*
-        TODO: delete old codes
-     */
-
-    const query_str =
-        "SELECT type,hash " +
-        "FROM verificationcode " +
-        "WHERE uid = " + parts.uid + ";";
-
-    const res = await new Promise((resolve, reject) => {
+export async function verifyCode(parts,type,returnBoolean = true){
+    //codes older than 2 days are deleted
+    await new Promise((resolve, reject) => {
+        const query_str =
+            "DELETE " +
+            "FROM verificationcode " +
+            "WHERE uid = " + parts.uid + " AND DATEDIFF(CURRENT_TIMESTAMP(),date) > 2;";
         con.query(query_str,(err,result) => {
             if(err)
                 reject(err);
             resolve(result);
-        })
+        });
+    });
+
+    const res = await new Promise((resolve, reject) => {
+        const query_str =
+            "SELECT vcid,type,hash " +
+            "FROM verificationcode " +
+            "WHERE uid = " + parts.uid + " " +
+            "AND type = " + type + ";";
+        con.query(query_str,(err,result) => {
+            if(err)
+                reject(err);
+            resolve(result);
+        });
     });
 
     for(let i=0;i<res.length;i++){
-        if(type === res.type)
-            if(await comparePassword(parts.code,res.hash))
-                return true;
+        if(type === res[i].type)
+            if(await comparePassword(parts.code,res[i].hash)){
+                if(returnBoolean)
+                    return true;
+                else{
+                    const vc = res[i];
+                    return {
+                        vcid: vc.vcid
+                    }
+                }
+            }
     }
-    return false;
+    if(returnBoolean)
+        return false;
+    else
+        return  null;
 }
 export function toHex(num,len){
     let sNum = num.toString(16);
@@ -67,9 +88,13 @@ export async function generateVerificationCode(type,uid){
 
     const code = await generateCode();
 
-    await saveCodeInDB(type,uid,await hashPassword(code))
-    //sCode is returned
-    return toHex(uid,8) + code
+    const vcid = await saveCodeInDB(type,uid,await hashPassword(code))
+    //sCode and verificationCodeID is returned
+    return {
+        sCode: toHex(uid, 8) + code,
+        vcid: vcid
+    }
+
 }
 export async function generateCode(){
     return await new Promise((resolve, reject) => {
@@ -84,14 +109,29 @@ async function saveCodeInDB(type,uid,hash){
 
     const query_str =
         "INSERT " +
-        "INTO verificationcode(type,uid,hash) " +
-        "VALUES(" + type + "," + uid + "," + con.escape(hash) + ");";
+        "INTO verificationcode(type,uid,hash,date) " +
+        "VALUES(" + type + "," + uid + "," + con.escape(hash) + ",CURRENT_TIMESTAMP());";
 
     await new Promise((resolve, reject) => {
-        con.query(query_str,(err,result) => {
+        con.query(query_str,async (err,result) => {
            if(err)
                reject(err);
-           resolve(result);
+           resolve();
         });
-    })
+    });
+    return await new Promise((resolve, reject) => {
+        const query_str1 =
+            "SELECT max(vcid) " +
+            "AS 'vcid' " +
+            "FROM verificationcode " +
+            "WHERE uid = " + uid + ";";
+        con.query(query_str1,(err,result) => {
+            if(err)
+                reject(err);
+            else if(isEmpty(result))
+                reject(createEmptyError());
+            else
+                resolve(result[0].vcid);
+        });
+    });
 }

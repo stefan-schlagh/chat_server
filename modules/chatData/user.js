@@ -299,11 +299,13 @@ export default class User{
 
         await this.deleteVerificationCodes();
 
+        const {sCode,vcid} = await generateVerificationCode(verificationCodeTypes.emailVerification,this.uid);
+
         await new Promise((resolve, reject) => {
             const query_str =
                 "INSERT " +
-                "INTO emailChange (uid,newEmail,date) " +
-                "VALUES (" + this.uid + "," + con.escape(email) + ",CURRENT_TIMESTAMP());"
+                "INTO emailChange (uid,vcid,newEmail,date,isVerified) " +
+                "VALUES (" + this.uid + "," + vcid + "," + con.escape(email) + ",CURRENT_TIMESTAMP(),0);"
             con.query(query_str,(err,result) => {
                if(err)
                    reject(err);
@@ -312,8 +314,6 @@ export default class User{
                resolve(result);
             });
         });
-
-        const sCode = await generateVerificationCode(verificationCodeTypes.verification,this.uid);
 
         await sendMail(email,"Chat App: email verification",sCode);
     }
@@ -330,6 +330,56 @@ export default class User{
                 resolve();
             });
         });
+    }
+
+    async verifyEmail(parts){
+        //verifyCode
+        const res = await verifyCode(parts,verificationCodeTypes.emailVerification,false);
+        if (res){
+            const vcid = res.vcid;
+            //email change is selected from DB
+            const result = await new Promise((resolve, reject) => {
+               const query_str =
+                   "SELECT * " +
+                   "FROM emailchange " +
+                   "WHERE vcid = " + vcid + ";";
+               con.query(query_str,(err,result) => {
+                   if(err)
+                       reject(err);
+                   else if(isEmpty(result))
+                       reject(createEmptyError())
+                   else
+                       resolve(result[0]);
+               });
+            });
+            //emailChange is set to verified
+            await new Promise((resolve, reject) => {
+                const query_str =
+                    "UPDATE emailchange " +
+                    "SET isVerified = 1 " +
+                    "WHERE vcid = " + vcid + ";";
+                con.query(query_str,err => {
+                   if(err)
+                       reject(err);
+                   resolve();
+                });
+            });
+            //new email is written to user
+            await new Promise((resolve, reject) => {
+                const query_str =
+                    "UPDATE user " +
+                    "SET email = " + con.escape(result.newEmail) + ",isVerified = 1 " +
+                    "WHERE uid = " + this.uid + ";";
+                con.query(query_str,err => {
+                    if(err)
+                        reject(err);
+                    resolve();
+                });
+            });
+            return true;
+        }else{
+            return false;
+        }
     }
 
     get eventEmitter() {

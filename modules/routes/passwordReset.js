@@ -51,7 +51,7 @@ router.post("/requestLink",async (req,res) => {
         // user is searched/loaded from db
         const user = await chatData.getUserEmail(username,email);
         // code is created
-        const sCode = await user.createPasswordResetCode();
+        const {sCode} = await user.createPasswordResetCode();
         // mail is sent
         await sendMail(email,"pwReset",sCode);
 

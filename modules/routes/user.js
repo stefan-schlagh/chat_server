@@ -8,6 +8,7 @@ import {
 import {chatData} from "../chatData/data.js";
 import {isAuthenticated} from "../authentication/jwt.js";
 import {setUser} from "../chatData/setUser.js";
+import {extractParts} from "../verification/code";
 
 const router = express.Router();
 
@@ -142,6 +143,30 @@ router.post('/setEmail',async (req, res) => {
         await user.setEmail(email)
 
         res.send();
+    }catch (e){
+        console.error(e);
+        res.status(400);
+        res.send();
+    }
+});
+/*
+    email is verified
+ */
+router.post("/verifyEmail",async (req,res) => {
+    try {
+        const code = req.body.code;
+
+        const parts = extractParts(code);
+        //load user
+        const user = await chatData.getUser(parts.uid,true);
+        //verify code
+        if(await user.verifyEmail(parts)){
+            res.send();
+        }else{
+            res.status(403);
+            res.send();
+        }
+
     }catch (e){
         console.error(e);
         res.status(400);

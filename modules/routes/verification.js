@@ -1,11 +1,9 @@
 import express from 'express';
+import {extractParts} from "../verification/code";
+import {chatData} from "../chatData/data";
 
 const router = express.Router();
 
-router.get("/:code",(req,res) => {
-
-    const code = req.params.code;
-});
 /*
     verification code is sent again
  */

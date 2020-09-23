@@ -1,6 +1,7 @@
 import {tokensStorage} from "../__testHelpers/tokensStorage.js";
 import request from "supertest";
 import {app, closeServer, startServer} from "../modules/app";
+import {mailStorage} from "../__testHelpers/mailStorage";
 
 describe('setEmail Test', () => {
     beforeAll((done) => {
@@ -8,6 +9,7 @@ describe('setEmail Test', () => {
         done();
     });
     beforeEach(() => {
+        //console.log('mockedError', console.error.mock.calls);
         global.console = {
             warn: jest.fn(),
             log: jest.fn()
@@ -53,6 +55,34 @@ describe('setEmail Test', () => {
             .send({
                 email: "stefanjkf.test@gmail.com"
             })
-        expect(res.statusCode).toEqual(200)
+        expect(res.statusCode).toEqual(200);
+        expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
+    });
+    it("verifyEmail",async () => {
+        const res = await request(app)
+            .post('/user/verifyEmail')
+            .set('Authorization',tokensStorage.get("test123456"))
+            .send({
+                code: mailStorage.get("Chat App: email verification")
+            })
+        expect(res.statusCode).toEqual(200);
+    });
+    it("fail verify",async () => {
+        const res1 = await request(app)
+            .post('/user/setEmail')
+            .set('Authorization',tokensStorage.get("test123456"))
+            .send({
+                email: "stefanjkf.test@gmail.com"
+            })
+        expect(res1.statusCode).toEqual(200);
+        expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
+
+        const res2 = await request(app)
+            .post('/user/verifyEmail')
+            .set('Authorization',tokensStorage.get("test123456"))
+            .send({
+                code: mailStorage.get("Chat App: email verification") + "jkljl"
+            })
+        expect(res2.statusCode).toEqual(403);
     });
 });
