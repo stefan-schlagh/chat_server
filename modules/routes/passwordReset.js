@@ -1,8 +1,8 @@
 import express from 'express';
-import {extractParts, verificationCodeTypes, verifyCode} from "../verification/code";
+import {extractParts, verificationCodeTypes, verifyCode} from "../verification/code.js";
 import {chatData} from "../chatData/data.js";
-import {hashPassword} from "../authentication/bcryptWrappers";
-import {sendMail} from "../verification/sendMail";
+import {hashPassword} from "../authentication/bcryptWrappers.js";
+import {sendMail} from "../verification/sendMail.js";
 
 const router = express.Router();
 

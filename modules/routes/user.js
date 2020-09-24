@@ -8,7 +8,7 @@ import {
 import {chatData} from "../chatData/data.js";
 import {isAuthenticated} from "../authentication/jwt.js";
 import {setUser} from "../chatData/setUser.js";
-import {extractParts} from "../verification/code";
+import {extractParts} from "../verification/code.js";
 
 const router = express.Router();
 

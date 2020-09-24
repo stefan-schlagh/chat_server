@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import {con} from "../app.js";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers.js";
-import {createEmptyError, isEmpty} from "../util/sqlHelpers";
+import {createEmptyError, isEmpty} from "../util/sqlHelpers.js";
 
 export const verificationCodeTypes = {
     emailVerification: 0,

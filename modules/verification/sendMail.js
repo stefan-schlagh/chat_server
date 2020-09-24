@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import {mailStorage} from "../../__testHelpers/mailStorage";
+import {mailStorage} from "../../__testHelpers/mailStorage.js";
 
 export async function sendMail(receiver,title,content){
     const transporter = nodemailer.createTransport({

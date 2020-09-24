@@ -7,8 +7,8 @@ import {
     generateVerificationCode
 } from "../verification/code.js";
 import {con} from "../app.js";
-import {isEmpty,createEmptyError} from "../util/sqlHelpers";
-import {sendMail} from "../verification/sendMail";
+import {isEmpty,createEmptyError} from "../util/sqlHelpers.js";
+import {sendMail} from "../verification/sendMail.js";
 
 class Emitter extends EventEmitter {}
 
