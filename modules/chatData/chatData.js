@@ -217,7 +217,7 @@ class ChatData{
 
             const query_str =
                 "SELECT * " +
-                "FROM user WHERE username = " + username + ";";
+                "FROM user WHERE username = " + con.escape(username) + ";";
             con.query(query_str,(err,result) => {
                 if(err)
                    reject(err)

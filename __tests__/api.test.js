@@ -3,6 +3,8 @@ import {startServer, app, closeServer} from '../modules/app.js';
 import io from 'socket.io-client';
 import {tokensStorage} from "../__testHelpers/tokensStorage.js";
 
+const test_username = "test234567";
+
 describe('test API', () => {
     beforeAll((done) => {
         startServer();
@@ -22,7 +24,7 @@ describe('test API', () => {
         const res = await request(app)
             .post('/auth/register')
             .send({
-                username: "stefan",
+                username: test_username,
                 password: "password"
             })
         expect(res.statusCode).toEqual(200)
@@ -34,7 +36,7 @@ describe('test API', () => {
                 const res = await request(app)
                     .post('/auth/login')
                     .send({
-                        username: "stefan",
+                        username: test_username,
                         password: "password"
                     })
                 expect(res.statusCode).toEqual(200)
@@ -54,18 +56,18 @@ describe('test API', () => {
         const res = await request(app)
             .post('/auth/login')
             .send({
-                username: "stefan",
+                username: test_username,
                 password: "password"
             })
         expect(res.statusCode).toEqual(200)
         expect(res.body).toHaveProperty('tokens')
 
-        tokensStorage.set("stefan",res.body.tokens);
+        tokensStorage.set(test_username,res.body.tokens);
     })
     it("access protected path",async () => {
         const res = await request(app)
             .post('/user/noChat')
-            .set('Authorization',tokensStorage.get("stefan"))
+            .set('Authorization',tokensStorage.get(test_username))
             .send({
                 search: "",
                 limit: 10,
@@ -89,7 +91,7 @@ describe('test API', () => {
             console.log("socket connected")
             done();
         })
-        socket.emit('auth',tokensStorage.get("stefan"));
+        socket.emit('auth',tokensStorage.get(test_username));
         // is called when user is initialized
         /*await new Promise((resolve, reject) => {
            socket.on('initialized',() => {

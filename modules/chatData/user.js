@@ -266,13 +266,14 @@ export default class User{
 
                 const query_str =
                     "UPDATE user " +
-                    "SET password = " + hash + " " +
+                    "SET password = " + con.escape(hash) + " " +
                     "WHERE uid = " + this.uid + ";";
 
                 await new Promise((resolve, reject) => {
                     con.query(query_str, (err) => {
                         if (err)
                             reject(err);
+                        resolve();
                     });
                 });
             } else

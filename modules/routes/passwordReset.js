@@ -13,9 +13,9 @@ router.get("/isValid/:code",async (req,res) => {
         const parts = extractParts(code);
 
         if (await verifyCode(parts, verificationCodeTypes.pwReset))
-            res.send(200);
+            res.sendStatus(200);
         else
-            res.send(403);
+            res.sendStatus(403);
     }catch (e){
         console.error(e);
         res.status(500);
@@ -31,11 +31,13 @@ router.post("/set",async (req, res) => {
 
         const parts = extractParts(code);
         //load user
-        const user = chatData.getUser(parts.uid,true);
+        const user = await chatData.getUser(parts.uid,true);
         //generate hash
-        const hash = hashPassword(password);
+        const hash = await hashPassword(password);
         //set Password at user
         await user.setPassword(hash,parts.code);
+
+        res.send();
     }catch (e){
         console.error(e);
         res.status(400);
@@ -53,7 +55,9 @@ router.post("/requestLink",async (req,res) => {
         // code is created
         const {sCode} = await user.createPasswordResetCode();
         // mail is sent
-        await sendMail(email,"pwReset",sCode);
+        await sendMail(email,"Chat App: password reset",sCode);
+
+        res.send();
 
     }catch (e){
         console.error(e);
