@@ -1,14 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 4.9.0.1
+-- version 5.0.2
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 02. Jul 2020 um 10:24
--- Server-Version: 10.4.6-MariaDB
--- PHP-Version: 7.1.32
+-- Erstellungszeit: 24. Sep 2020 um 20:22
+-- Server-Version: 10.4.13-MariaDB
+-- PHP-Version: 7.4.8
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -37,13 +36,28 @@ CREATE TABLE `blockedusers` (
 -- --------------------------------------------------------
 
 --
+-- Tabellenstruktur für Tabelle `emailchange`
+--
+
+CREATE TABLE `emailchange` (
+  `ecid` int(11) NOT NULL,
+  `uid` int(11) NOT NULL,
+  `vcid` int(11) NOT NULL,
+  `newEmail` varchar(255) NOT NULL,
+  `date` datetime NOT NULL,
+  `isVerified` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Tabellenstruktur für Tabelle `groupchat`
 --
 
 CREATE TABLE `groupchat` (
   `gcid` int(11) NOT NULL,
-  `name` varchar(255) COLLATE utf8_german2_ci NOT NULL,
-  `description` varchar(4000) COLLATE utf8_german2_ci NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `description` varchar(4000) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `isPublic` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
 
@@ -164,8 +178,24 @@ CREATE TABLE `user` (
   `uid` int(11) NOT NULL,
   `username` varchar(30) COLLATE utf8_german2_ci NOT NULL,
   `password` varchar(255) COLLATE utf8_german2_ci NOT NULL,
-  `time` datetime NOT NULL
+  `time` datetime NOT NULL,
+  `email` varchar(255) COLLATE utf8_german2_ci NOT NULL,
+  `isVerified` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `verificationcode`
+--
+
+CREATE TABLE `verificationcode` (
+  `vcid` int(11) NOT NULL,
+  `uid` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `date` datetime NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Indizes der exportierten Tabellen
@@ -176,6 +206,12 @@ CREATE TABLE `user` (
 --
 ALTER TABLE `blockedusers`
   ADD PRIMARY KEY (`buid`);
+
+--
+-- Indizes für die Tabelle `emailchange`
+--
+ALTER TABLE `emailchange`
+  ADD PRIMARY KEY (`ecid`);
 
 --
 -- Indizes für die Tabelle `groupchat`
@@ -238,6 +274,12 @@ ALTER TABLE `user`
   ADD PRIMARY KEY (`uid`);
 
 --
+-- Indizes für die Tabelle `verificationcode`
+--
+ALTER TABLE `verificationcode`
+  ADD PRIMARY KEY (`vcid`);
+
+--
 -- AUTO_INCREMENT für exportierte Tabellen
 --
 
@@ -246,6 +288,12 @@ ALTER TABLE `user`
 --
 ALTER TABLE `blockedusers`
   MODIFY `buid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT für Tabelle `emailchange`
+--
+ALTER TABLE `emailchange`
+  MODIFY `ecid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `groupchat`
@@ -306,6 +354,12 @@ ALTER TABLE `stmsgpassiveu`
 --
 ALTER TABLE `user`
   MODIFY `uid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT für Tabelle `verificationcode`
+--
+ALTER TABLE `verificationcode`
+  MODIFY `vcid` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
