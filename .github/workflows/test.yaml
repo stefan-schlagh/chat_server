@@ -56,6 +56,12 @@ jobs:
           dir
       # test
       - name: npm test
+        env:
+          EMAIL_SERVICE: ${{ secrets.EMAIL_SERVICE}}
+          EMAIL: ${{ secrets.EMAIL}}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD}}
+          EMAIL_TEST_USER: ${{ secrets.EMAIL_TEST_USER}}
+          EMAIL_TEST_PASSWORD: ${{ secrets.EMAIL_TEST_PASSWORD}}
         run: |
           cd ./chat_server
           npm test
