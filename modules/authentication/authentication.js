@@ -150,8 +150,8 @@ async function saveUser(username,hash,con){
 
         const query_str =
             "INSERT " +
-            "INTO user(username,password,time) " +
-            "VALUES (" + con.escape(username) + ",'" + hash + "',CURRENT_TIMESTAMP());";
+            "INTO user(username,password,time,email,isVerified) " +
+            "VALUES (" + con.escape(username) + ",'" + hash + "',CURRENT_TIMESTAMP(),'',0);";
 
         con.query(query_str, async function (err, result, fields) {
 
