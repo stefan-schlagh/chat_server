@@ -1,6 +1,14 @@
 import EventEmitter from 'events';
 import chatData from "./chatData.js";
 import ChatStorage from "./chat/chatStorage.js";
+import {
+    verifyCode,
+    verificationCodeTypes,
+    generateVerificationCode
+} from "../verification/code.js";
+import {con} from "../app.js";
+import {isEmpty,createEmptyError} from "../util/sqlHelpers.js";
+import {sendMail} from "../verification/sendMail.js";
 
 class Emitter extends EventEmitter {}
 
@@ -238,6 +246,141 @@ export default class User{
             return false;
         return this.currentChat.type === chat.type
             && this.currentChat.chatId === chat.chatId;
+    }
+    async createPasswordResetCode(){
+        return await generateVerificationCode(verificationCodeTypes.pwReset,this.uid);
+    }
+    /*
+        set a new password
+            password: the new password
+            code: the code sent by the user
+     */
+    async setPassword(hash,code){
+        //is email verified?
+        if(await this.isVerified()) {
+            //verify code
+            if (await verifyCode({
+                uid: this.uid,
+                code: code
+            }, verificationCodeTypes.pwReset)) {
+
+                const query_str =
+                    "UPDATE user " +
+                    "SET password = " + con.escape(hash) + " " +
+                    "WHERE uid = " + this.uid + ";";
+
+                await new Promise((resolve, reject) => {
+                    con.query(query_str, (err) => {
+                        if (err)
+                            reject(err);
+                        resolve();
+                    });
+                });
+            } else
+                throw new Error("invalid code")
+        }else
+            throw new Error("Email not verified!");
+    }
+    async isVerified(){
+        const result = await new Promise((resolve, reject) => {
+            const query_str =
+                "SELECT isVerified " +
+                "FROM user " +
+                "WHERE uid = " + this.uid + ";";
+            con.query(query_str,(err,result) => {
+                if(err)
+                    reject(err);
+                resolve(result);
+            });
+        });
+        return result[0].isVerified === 1;
+    }
+    //email of the user is set
+    async setEmail(email){
+
+        await this.deleteVerificationCodes();
+
+        const {sCode,vcid} = await generateVerificationCode(verificationCodeTypes.emailVerification,this.uid);
+
+        await new Promise((resolve, reject) => {
+            const query_str =
+                "INSERT " +
+                "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
+                "VALUES (" + this.uid + "," + vcid + "," + con.escape(email) + ",CURRENT_TIMESTAMP(),0);"
+            con.query(query_str,(err,result) => {
+               if(err)
+                   reject(err);
+               if(isEmpty(result))
+                   reject(createEmptyError());
+               resolve(result);
+            });
+        });
+
+        await sendMail(email,"Chat App: email verification",sCode);
+    }
+    //all current verificationCodes are deleted
+    async deleteVerificationCodes(){
+        await new Promise((resolve, reject) => {
+            const query_str =
+                "DELETE " +
+                "FROM verificationcode " +
+                "WHERE uid = " + this.uid + ";";
+            con.query(query_str,(err) => {
+                if(err)
+                    reject(err);
+                resolve();
+            });
+        });
+    }
+
+    async verifyEmail(parts){
+        //verifyCode
+        const res = await verifyCode(parts,verificationCodeTypes.emailVerification,false);
+        if (res){
+            const vcid = res.vcid;
+            //email change is selected from DB
+            const result = await new Promise((resolve, reject) => {
+               const query_str =
+                   "SELECT * " +
+                   "FROM emailchange " +
+                   "WHERE vcid = " + vcid + ";";
+               con.query(query_str,(err,result) => {
+                   if(err)
+                       reject(err);
+                   else if(isEmpty(result))
+                       reject(createEmptyError())
+                   else
+                       resolve(result[0]);
+               });
+            });
+            //emailChange is set to verified
+            await new Promise((resolve, reject) => {
+                const query_str =
+                    "UPDATE emailchange " +
+                    "SET isVerified = 1 " +
+                    "WHERE vcid = " + vcid + ";";
+                con.query(query_str,err => {
+                   if(err)
+                       reject(err);
+                   resolve();
+                });
+            });
+            //new email is written to user
+            await new Promise((resolve, reject) => {
+                const query_str =
+                    "UPDATE user " +
+                    "SET email = " + con.escape(result.newEmail) + ",isVerified = 1 " +
+                    "WHERE uid = " + this.uid + ";";
+                con.query(query_str,err => {
+                    if(err)
+                        reject(err);
+                    resolve();
+                });
+            });
+            return true;
+        }else{
+            return false;
+        }
     }
 
     get eventEmitter() {

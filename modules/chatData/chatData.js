@@ -2,7 +2,7 @@ import BinSearchArray from 'binsearcharray';
 import CDataChatStorage from "./chat/cDataChatStorage.js";
 import User from "./user.js";
 import {setChatData} from "./data.js";
-import {chatServer} from "../chatServer.js";
+import {con} from "../app.js";
 
 class ChatData{
 
@@ -196,20 +196,43 @@ class ChatData{
     }
     /*
         requested user is returned
-            createNew:
+            loadUser:
                 if true the userdata is requested from the database and saved
                 else, an exception is thrown
      */
-    async getUser(uid,createNew) {
+    async getUser(uid,loadUser) {
         let user = this.user.get(uid);
         if (!user) {
-            if (createNew) {
+            if (loadUser) {
                 user = await this.loadUser(uid);
             } else {
                 throw new Error('user does not exist');
             }
         }
         return user;
+    }
+    async getUserEmail(username,email){
+
+        const result = await new Promise((resolve, reject) => {
+
+            const query_str =
+                "SELECT * " +
+                "FROM user WHERE username = " + con.escape(username) + ";";
+            con.query(query_str,(err,result) => {
+                if(err)
+                   reject(err)
+                if(!result || result.length === 0)
+                    reject(new Error("result is not defined!"))
+                resolve(result);
+            });
+        });
+        /*
+            is email equal with the email in the database?
+         */
+        if(result[0].email !== email)
+            throw new Error("wrong email!")
+        else
+            return await this.getUser(result[0].uid,true);
     }
     /*
         userdata is loaded, user is saved
@@ -223,7 +246,7 @@ class ChatData{
                 "FROM user " +
                 "WHERE uid = " + uid + ";";
 
-            chatServer.con.query(query_str,(err,result,fields) => {
+            con.query(query_str,(err,result,fields) => {
                 if(err)
                     reject(err);
                 /*

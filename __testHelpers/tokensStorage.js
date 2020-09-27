@@ -1,2 +1,1 @@
-export let tokens;
-export const setTokens = tokens_ => tokens = tokens_;
+export let tokensStorage = new Map();
