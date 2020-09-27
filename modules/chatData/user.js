@@ -305,7 +305,7 @@ export default class User{
         await new Promise((resolve, reject) => {
             const query_str =
                 "INSERT " +
-                "INTO emailChange (uid,vcid,newEmail,date,isVerified) " +
+                "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
                 "VALUES (" + this.uid + "," + vcid + "," + con.escape(email) + ",CURRENT_TIMESTAMP(),0);"
             con.query(query_str,(err,result) => {
                if(err)
