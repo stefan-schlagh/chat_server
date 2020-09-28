@@ -33,7 +33,7 @@
     "babel-jest": "^26.3.0",
     "jest": "^26.4.2",
     "socket.io-client": "^2.3.0",
-    "supertest": "^4.0.2"
+    "supertest": "^5.0.0"
   },
   "jest": {
     "testEnvironment": "node",
