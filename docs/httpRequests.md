@@ -401,6 +401,7 @@ the info of a specific user is returned
 #### params-out
 ````json
 {
+  "uidSelf": "uid of the user who did the request",
   "username": "the username of the requested user",
   "blocked": "is the user blocked?",
   "userExists": "does the requested user exists?"
