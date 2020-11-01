@@ -83,6 +83,9 @@ export async function verifyToken(token){
     if(!token)
         throw new Error('token is undefined!');
 
+    if(typeof token !== "string")
+        throw new Error('token does not have type string!');
+
     let privateKey = await fs.promises.readFile(
         './cert/jwtPrivate.pem',
         'utf8'

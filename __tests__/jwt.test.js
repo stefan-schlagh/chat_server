@@ -177,6 +177,28 @@ describe('jwt test',() => {
             expect(req.data).toEqual(undefined);
             expect(status).toEqual(403);
         })
+        it('pass token with wrong type',async () => {
+            let res = {};
+            let req;
+            let status = 0;
+            let error = null;
+            try {
+                req = {headers: {authorization: 123}};
+                await new Promise((resolve, reject) => {
+                    res.send = () => {resolve()}
+                    res.status = (s) => {status = s}
+                    isAuthenticated(req,res,()=>{resolve()})
+                });
+            }catch (err){
+                error = err;
+            }
+            /*
+                 data should be undefined
+                 res.status should have been called with 403
+             */
+            expect(req.data).toEqual(undefined);
+            expect(status).toEqual(403);
+        })
     })
     describe('verifyToken',() => {
         it('use it as intended',async () => {
@@ -231,6 +253,23 @@ describe('jwt test',() => {
             expect(error).not.toEqual(null);
             expect(error).toHaveProperty('message');
             expect(error.message).toEqual('token is undefined!');
+        })
+        it('pass token with wrong type',async () => {
+            let data = null;
+            let error;
+            try {
+                data = await verifyToken(123);
+            }catch (err){
+                error = err;
+            }
+            /*
+                 data should be null
+                 error should be defined
+             */
+            expect(data).toEqual(null);
+            expect(error).not.toEqual(null);
+            expect(error).toHaveProperty('message');
+            expect(error.message).toEqual('token does not have type string!');
         })
     })
 })
