@@ -33,6 +33,7 @@ export async function getUser(uidFrom,uidReq){
             }
             
             const result = {
+                uidSelf: uidFrom,
                 username: username,
                 blocked: blocked,
                 userExists: userExists
