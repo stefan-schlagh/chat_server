@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 
+/*
+    A JSON web token is created
+    params: user --> the data of the user the jwt is created for this user,
+        should contain number:uid (userID) and string:username
+ */
 export async function generateToken(user) {
 
     let privateKey = await fs.promises.readFile(
@@ -8,14 +13,21 @@ export async function generateToken(user) {
         'utf8'
     );
 
-    const data = {
+    const jwtData = {
         ...user
     };
+    if(typeof jwtData.uid !== 'number')
+        throw new Error('user.uid has to have the type number')
+    else if(jwtData.uid < 1)
+        throw new Error('user.uid cannot be smaller than 1')
+    if(typeof jwtData.username !== 'string')
+        throw new Error('user.username has to have the type string')
 
+    //TODO: add expiration date
     return await new Promise((resolve, reject) => {
 
         jwt.sign(
-            data,//data stored in jwt
+            jwtData,//data stored in jwt
             privateKey,//private key
             {
                 algorithm: 'HS256'
@@ -29,11 +41,21 @@ export async function generateToken(user) {
     });
 }
 /*
-    middleware for authenticating user
+    express-middleware for authenticating user
+    the field authorization in the http-header should contain the jwt
+        this jwt is then verified and the data inside the token is stored in req.data for further use
+        if the verification fails, the http request is closed with status 403 (forbidden)
  */
 export function isAuthenticated(req,res,next){
 
-    let token = req.headers.authorization;
+    let token;
+    //if headers is undefined --> error, wrong input
+    try {
+        token = req.headers.authorization;
+    }catch (err){
+        res.status(403);
+        res.send();
+    }
 
     verifyToken(token)
         .then(data => {
@@ -45,18 +67,20 @@ export function isAuthenticated(req,res,next){
         })
         .catch(err => {
             /*
-                authentication failed
+                authentication failed --> client side error
              */
             res.status(403);
             res.send();
         })
 }
 /*
-    token is verified
+    the JSON web token gets verified
+    if the verification fails, an error is thrown
+    if successfull, the data in the token is returned
  */
 export async function verifyToken(token){
 
-    if(!token || token === 'undefined')
+    if(!token)
         throw new Error('token is undefined!');
 
     let privateKey = await fs.promises.readFile(
