@@ -1,7 +1,10 @@
-//returns true if the result is empty
-export function isEmpty(result){
+//returns true if the result is empty, null or undefined
+export function isResultEmpty(result){
     return !result || result.length === 0;
 }
-export function createEmptyError(){
-    return new Error("result is undefined!")
+//custom error when result is empty
+export class ResultEmptyError extends Error{
+    constructor() {
+        super('result is undefined!');
+    }
 }
