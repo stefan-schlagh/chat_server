@@ -5,6 +5,6 @@ export function isResultEmpty(result){
 //custom error when result is empty
 export class ResultEmptyError extends Error{
     constructor() {
-        super('result is undefined!');
+        super('result is empty!');
     }
 }
