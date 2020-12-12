@@ -34,7 +34,7 @@ import chatRouter from './routes/chats.js';
 import messageRouter from './routes/message.js';
 import pwResetRouter from './routes/passwordReset.js';
 
-import mysql from 'mysql';
+import mysql from 'mysql2';
 import {chatServer, createChatServer} from './chatServer.js';
 /*
     express-server is initialized
