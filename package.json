@@ -23,7 +23,7 @@
     "express-enforces-ssl": "^1.1.0",
     "helmet": "^4.2.0",
     "jsonwebtoken": "^8.5.1",
-    "mysql": "^2.18.1",
+    "mysql2": "^2.2.5",
     "nodemailer": "^6.4.16",
     "socket.io": "^2.3.0"
   },
