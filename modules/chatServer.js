@@ -1,4 +1,4 @@
-import socket from 'socket.io';
+import * as socket from 'socket.io';
 import {chatData} from "./chatData/data.js";
 import {verifyToken} from "./authentication/jwt.js";
 
@@ -22,7 +22,7 @@ class ChatServer{
         this.con = con;
         this.app = app;
 
-        this.io = socket(server);
+        this.io = new socket.Server(server);
 
         /*
             gets called when a connection is established
