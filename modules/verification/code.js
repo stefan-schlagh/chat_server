@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import {con} from "../app.js";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers.js";
-import {createEmptyError, isEmpty} from "../util/sqlHelpers.js";
+import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers.js";
 
 export const verificationCodeTypes = {
     emailVerification: 0,
@@ -128,8 +128,8 @@ async function saveCodeInDB(type,uid,hash){
         con.query(query_str1,(err,result) => {
             if(err)
                 reject(err);
-            else if(isEmpty(result))
-                reject(createEmptyError());
+            else if(isResultEmpty(result))
+                reject(new ResultEmptyError());
             else
                 resolve(result[0].vcid);
         });

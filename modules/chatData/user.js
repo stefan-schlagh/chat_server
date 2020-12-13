@@ -7,7 +7,7 @@ import {
     generateVerificationCode
 } from "../verification/code.js";
 import {con} from "../app.js";
-import {isEmpty,createEmptyError} from "../util/sqlHelpers.js";
+import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers.js";
 import {sendMail} from "../verification/sendMail.js";
 
 class Emitter extends EventEmitter {}
@@ -310,8 +310,8 @@ export default class User{
             con.query(query_str,(err,result) => {
                if(err)
                    reject(err);
-               if(isEmpty(result))
-                   reject(createEmptyError());
+               if(isResultEmpty(result))
+                   reject(new ResultEmptyError());
                resolve(result);
             });
         });
@@ -347,8 +347,8 @@ export default class User{
                con.query(query_str,(err,result) => {
                    if(err)
                        reject(err);
-                   else if(isEmpty(result))
-                       reject(createEmptyError())
+                   else if(isResultEmpty(result))
+                       reject(new ResultEmptyError())
                    else
                        resolve(result[0]);
                });
