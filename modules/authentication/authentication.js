@@ -1,6 +1,6 @@
 import {comparePassword,hashPassword} from "./bcryptWrappers.js";
 import {generateToken} from "./jwt.js";
-import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
+import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers.js";
 
 /*
     login function
