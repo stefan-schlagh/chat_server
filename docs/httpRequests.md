@@ -382,6 +382,33 @@ only the users who have no chat with the logged in user will be returned
 ]
 ````
 
+### POST /user/notInGroup/:gcid
+
+all users who are not in the specified group are returned
+
+#### params-in
+````json
+{
+  "search": "searchValue for users",
+  "limit": "how many users should be selected",
+  "start": "from what index should be started" 
+}
+````
+
+#### params-out
+````json
+[
+  {
+      "uid": "the id of the user",
+      "username": "the username"
+  },
+  {
+      "uid": "the id of the user",
+      "username": "the username"
+  }
+]
+````
+
 ### GET /user/self
 
 the userInfo of the logged in user will be returned
@@ -468,7 +495,14 @@ the email is set and a email for verification is sent to the new email
 }
 ````
 
-## verification
-````java
-//TODO
+### POST /user/verifyEmail
+
+path to verify a new email
+
+#### params-in
+#### params-in
+````json
+{
+    "code": "the verification code got by email"
+}
 ````
