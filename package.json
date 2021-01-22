@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "test": "jest --forceExit --maxWorkers=1"
+    "test": "jest --forceExit --maxWorkers=1",
+    "webdriver": "npm test --prefix webdriver"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +40,7 @@
     "testEnvironment": "node",
     "coveragePathIgnorePatterns": [
       "/node_modules/"
-    ]
+    ],
+    "modulePathIgnorePatterns": ["webdriver"]
   }
 }
