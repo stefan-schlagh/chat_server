@@ -65,6 +65,7 @@ router.put(
 
             if (!chatName){
                 console.error("chatName cannot be undefined");
+                //TODO other response, send status message
                 res.status(500);
                 res.send();
             }else {
@@ -97,6 +98,7 @@ router.put(
 
             if (!description){
                 console.error("description cannot be undefined");
+                //TODO other response, send status message
                 res.status(500);
                 res.send();
             }else {
@@ -197,7 +199,7 @@ router.put(
 
 /*
     route for removing a user from a groupChat
-        to perfrom this action, the requesting user has to be an admin
+        to perform this action, the requesting user has to be an admin
  */
 router.delete(
     '/:gcid/member/:uid',

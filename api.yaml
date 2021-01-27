@@ -1,0 +1,595 @@
+openapi: 3.0.3
+info:
+  title: chat server
+  description: this server does provide a api for chat functionality
+  version: 1.0.0
+servers:
+  - url: 'https:chat.schlagh.com'
+components:
+  securitySchemes:
+    authorization:
+      type: authorization
+      name: authorization
+      in: header
+      description: the json web token
+  responses:
+    NotAllowed:
+      description: |
+        the operation is not allowed, possible causes:
+          no authorization header provided
+          token not valid
+          the user user does not have the required role for the action
+  schemas:
+    Message:
+      type: object
+      properties:
+        uid:
+          type: integer
+          description: the user id from the author of the message
+        mid:
+          type: integer
+          description: the id of the message
+        date:
+          type: string
+          description: the date when the message was written
+          format: date-time
+        type:
+          type: integer
+          description: |
+            the type of the message
+              0:    normalMessage
+              1:    statusMessage
+        content:
+          type: object
+          properties:
+            text:
+              type: string
+              description: if normalMessage
+            mentions:
+              type: array
+              description: if normalMessage, not yet implemented
+              properties:
+                uid:
+                  type: integer
+                  description: the uid of the mentioned user
+                textColumn:
+                  type: integer
+                  description: the column in the text where the user is mentioned
+            media:
+              type: array
+              description: if normalMessage, not yet implemented
+            type:
+              type: integer
+              description: if statusMessage, the type of the statusMessage
+            passiveusers:
+              type: array
+              description: the ids of the passive users mentioned in this statusMessage
+              properties:
+                1:
+                  type: integer
+paths:
+  /auth/login:
+    post:
+      description: login to get an authentication token
+      summary: login
+      operationId: login
+      parameters:
+        - name: user
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+      responses:
+        # TODO errors
+        '200':
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: was the login successfull?
+                  username:
+                    type: string
+                    description: error message for the username
+                  password:
+                    type: string
+                    description: error message for password
+                  tokens:
+                    type: string
+                    description: the authentication token
+        '500':
+          description: internal server error
+  /auth/register:
+    post:
+      description: create a new account
+      summary: register
+      operationId: register
+      parameters:
+        - name: user
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+      responses:
+        #TODO errors
+        '200':
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: was the login successfull?
+                  username:
+                    type: string
+                    description: error message for the username
+                  password:
+                    type: string
+                    description: error message for password
+                  tokens:
+                    type: string
+                    description: the authentication token
+        '500':
+          description: internal server error
+  /chats:
+    get:
+      description: return all chats of the user
+      summary: get all chats
+      operationId: getChats
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  type:
+                    type: string
+                    description: |
+                      the type of the chat,
+                      either normalChat or groupChat
+                  id:
+                    type: integer
+                    description: the id of the chat
+                  chatName:
+                    type: string
+                    description: the name of the chat
+                  members:
+                    type: array
+                    properties:
+                      uid:
+                        type: integer
+                        description: the id of the user
+                      username:
+                        type: string
+                        description: the name of the user
+                  firstMessage:
+                    $ref: '#components/schemas/Message'
+        '400':
+          description: timeout
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/all/:uid:
+    # TODO
+    get:
+      description: returns all groups of a specific user, not yet implemented
+      summary: get all groups of user
+      operationId: getGroupsByUser
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: uid
+          in: path
+          required: false
+          schema:
+            type: integer
+            description: the id of the user
+      responses:
+        '501':
+          description: not yet implemented
+  /group/public:
+    # TODO
+    get:
+      description: returns all public groups, not yet implemented
+      summary: get all public groups
+      operationId: getGroupsPublic
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+      responses:
+        '501':
+          description: not yet implemented
+  /group:
+    put:
+      description: create a new group
+      summary: create a new group
+      operationId: createGroup
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: data
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              # TODO: remove surrounding 'data'
+              data:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: the name of the chat
+                  description:
+                    type: string
+                    description: the description of the chat
+                  isPublic:
+                    type: boolean
+                    description: is the chat public?
+              users:
+                type: array
+                properties:
+                  uid:
+                    type: integer
+                    description: the id of the user
+                  username:
+                    type: string
+                    description: the username of the user
+                  isAdmin:
+                    type: boolean
+                    description: will the user be admin in this chat
+      responses:
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid:
+    get:
+      description: get the info of the groupChat
+      summary: get info of groupChat
+      operationId: getGroupInfo
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  #TODO define type
+                  type:
+                    type: string
+                    description: the type of the chat
+                  id:
+                    type: integer
+                    description: the id of the chat
+                  chatName:
+                    type: string
+                    description: the name of the chat
+                  description:
+                    type: string
+                    description: the description of the chat
+                  public:
+                    type: boolean
+                    description: is the chat public?
+                  memberSelf:
+                    type: object
+                    description: infos about the member who requested the info
+                    properties:
+                      isAdmin:
+                        type: boolean
+                        description: is the member who requested the info admin?
+                  members:
+                    type: array
+                    description: all the other members
+                    properties:
+                      uid:
+                        type: integer
+                        description: the id of the member
+                      username:
+                        type: string
+                        description: the username of the member
+                      isAdmin:
+                        type: boolean
+                        description: is the member admin?
+                      gcmid:
+                        type: integer
+                        description: groupchatmemberId - the id of the groupChatMember
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+    # TODO
+    delete:
+      description: the group chat will be deleted - not yet implemented
+      summary: delete groupChat
+      operationId: deleteGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+      responses:
+        '501':
+          description: not yet implemented
+  /group/:gcid/chatName:
+    put:
+      description: |
+        change the name of the group
+        requesting user has to be admin
+      summary: change name of groupChat
+      operationId: changeNameOfGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/description:
+    put:
+      description: |
+        change the description of the group
+        requesting user has to be admin
+      summary: change description of groupChat
+      operationId: changeDescriptionOfGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/member/:uid:
+    put:
+      description: |
+        a new member gets added to the group
+        requesting user has to be admin
+      summary: add a member to a groupChat
+      operationId: addMemberToGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the user who should be added
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+    delete:
+      description: |
+        a new member gets removed from the group
+        requesting user has to be admin
+      summary: remove a member from a groupChat
+      operationId: removeMemberFromGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the user who should be added
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/members:
+    put:
+      description: |
+        new members are added to the group
+        requesting user has to be admin
+      summary: add multiple members to a groupChat
+      operationId: addMembersToGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+        - name: users
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              users:
+                type: array
+                properties:
+                  uid:
+                    type: integer
+                    description: the id of the user
+                  username:
+                    type: string
+                    description: the username of the user
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/member/:uid/giveAdmin:
+    post:
+      description: |
+        admin status is added to the member
+        requesting user has to be admin
+      summary: give member admin status
+      operationId: giveMemberAdminStatus
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the user who should be added
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/member/:uid/removeAdmin:
+    post:
+      description: |
+        admin status is removed from the member
+        requesting user has to be admin
+      summary: remove admin status from member
+      operationId: removeMemberAdminStatus
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the user who should be added
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/join:
+    post:
+      description: only for public chats, chat is joined
+      summary: join groupChat
+      operationId: joinGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /group/:gcid/leave:
+    #TODO
+  /group/:gcid/removeAdmin:
+    post:
+      description: |
+        the requesting user takes the admin rights away himself
+        requesting user has to be admin
+        there has to be at least one admin left after this action
+      summary: user takes away admin rights himself
+      operationId: removeAdminSelf
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+      responses:
+        # TODO response
+        '200':
+          description: successful
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+
+
+
+
+
