@@ -46,15 +46,6 @@ application/json
 }
 ````
 
-### GET /auth/logout
-
-#### params-out
-````json
-{
-  "success": "was logout successful?"
-}
-````
-
 ## chats
 
 ### GET /chats
@@ -469,7 +460,7 @@ if normalMessage:
     "mentions": [
         {
             "uid":"the uid of the mentioned user", 
-            "textColumn": "hte column in the text where the user is mentioned"
+            "textColumn": "the column in the text where the user is mentioned"
         }
     ],
     "media": []
