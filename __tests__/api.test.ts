@@ -1,7 +1,6 @@
-import request from 'supertest';
-import {startServer, app, closeServer} from '../src/app.ts';
-import io from 'socket.io-client';
-import {tokensStorage} from "../src/__testHelpers__/tokensStorage.js";
+import request, {Response} from 'supertest';
+import {startServer, app, closeServer} from '../src/app';
+import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
 
 const test_username = "test234567";
 
@@ -10,24 +9,18 @@ describe('test API', () => {
         startServer();
         done();
     });
-    beforeEach(() => {
-        global.console = {
-            warn: jest.fn(),
-            log: jest.fn()
-        }
-    });
     afterAll((done) => {
         closeServer();
         done();
     });
     it('create account/login', async () => {
-        const res = await request(app)
+        const res:Response = await request(app)
             .post('/auth/register')
             .send({
                 username: test_username,
                 password: "password"
             })
-        expect(res.statusCode).toEqual(200)
+        expect(res.status).toEqual(200)
 
         if(res.body.success) {
             expect(res.body).toHaveProperty('tokens')
@@ -39,7 +32,7 @@ describe('test API', () => {
                         username: test_username,
                         password: "password"
                     })
-                expect(res.statusCode).toEqual(200)
+                expect(res.status).toEqual(200)
                 expect(res.body).toHaveProperty('tokens')
             }else {
                 fail('unknown error');
@@ -50,7 +43,7 @@ describe('test API', () => {
         const res = await request(app)
             .get('/chats')
             .send()
-        expect(res.statusCode).toEqual(403)
+        expect(res.status).toEqual(403)
     })
     it("login and get jsonwebtoken",async () => {
         const res = await request(app)
@@ -59,7 +52,7 @@ describe('test API', () => {
                 username: test_username,
                 password: "password"
             })
-        expect(res.statusCode).toEqual(200)
+        expect(res.status).toEqual(200)
         expect(res.body).toHaveProperty('tokens')
 
         tokensStorage.set(test_username,res.body.tokens);
@@ -73,10 +66,10 @@ describe('test API', () => {
                 limit: 10,
                 start: 0
             })
-        expect(res.statusCode).toEqual(200);
+        expect(res.status).toEqual(200);
     })
-    it('establish socket connection',async() => {
-        const socket = io.connect(
+    /*it('establish socket connection',async() => {
+        const socket:Socket = io.connect(
             'https:/localhost:443',
             {
                 transports: ['websocket'],
@@ -100,11 +93,11 @@ describe('test API', () => {
            socket.on('disconnect',() => {
                reject();
            })
-        })*/
+        })*
         expect(console.log).toHaveBeenCalledWith('http://localhost:' + process.env.NODE_HTTP_PORT);
         //expect(console.log).toHaveBeenCalledWith('connection');
         //expect(console.log).toHaveBeenCalledWith('socket connected');
-    });
+    });*/
 })
 
 

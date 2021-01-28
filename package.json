@@ -14,7 +14,7 @@
     "start": "node .",
     "dev:server": "nodemon",
     "dev:server-debug": "node -r ts-node/register --inspect=5858 src/index.ts",
-    "test": "jest",
+    "test": "jest --maxWorkers=1",
     "dev:tdd": "node --inspect=5859 node_modules/.bin/jest --runInBand --watch",
     "webdriver": "npm test --prefix webdriver"
   },
@@ -59,7 +59,6 @@
     "lint-staged": "^9.4.2",
     "nodemon": "^2.0.7",
     "prettier": "^1.18.2",
-    "socket.io-client": "^3.0.5",
     "supertest": "^4.0.2",
     "ts-jest": "^22.4.2",
     "ts-node": "^8.4.1",

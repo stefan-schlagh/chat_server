@@ -2,9 +2,6 @@ import {isResultEmpty} from "../../src/util/sqlHelpers";
 
 describe('sqlHelpers test',() => {
     describe('isEmpty',() => {
-        it('pass nothing',() => {
-            expect(isResultEmpty()).toEqual(true)
-        })
         it('pass undefined',() => {
             expect(isResultEmpty(undefined)).toEqual(true)
         })

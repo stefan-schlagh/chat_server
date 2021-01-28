@@ -1,5 +1,5 @@
-import {tokensStorage} from "../src/__testHelpers__/tokensStorage.js";
-import request from "supertest";
+import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
+import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../src/app";
 import {mailStorage} from "../src/__testHelpers__/mailStorage";
 
@@ -10,25 +10,18 @@ describe('setEmail Test', () => {
         startServer();
         done();
     });
-    beforeEach(() => {
-        //console.log('mockedError', console.error.mock.calls);
-        global.console = {
-            warn: jest.fn(),
-            log: jest.fn()
-        }
-    });
     afterAll((done) => {
         closeServer();
         done();
     });
     it('create account/login', async () => {
-        const res = await request(app)
+        const res:Response = await request(app)
             .post('/auth/register')
             .send({
                 username: test_username,
                 password: "password"
             })
-        expect(res.statusCode).toEqual(200)
+        expect(res.status).toEqual(200)
 
         if(res.body.success) {
             expect(res.body).toHaveProperty('tokens')
@@ -41,7 +34,7 @@ describe('setEmail Test', () => {
                         username: test_username,
                         password: "password"
                     })
-                expect(res.statusCode).toEqual(200)
+                expect(res.status).toEqual(200)
                 expect(res.body).toHaveProperty('tokens')
                 tokensStorage.set(test_username,res.body.tokens);
 
@@ -51,40 +44,40 @@ describe('setEmail Test', () => {
         }
     });
     it("setEmail",async () => {
-        const res = await request(app)
+        const res:Response = await request(app)
             .post('/user/setEmail')
             .set('Authorization',tokensStorage.get(test_username))
             .send({
                 email: "stefanjkf.test@gmail.com"
             })
-        expect(res.statusCode).toEqual(200);
+        expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
     });
     it("verifyEmail",async () => {
-        const res = await request(app)
+        const res:Response = await request(app)
             .post('/user/verifyEmail')
             .set('Authorization',tokensStorage.get(test_username))
             .send({
                 code: mailStorage.get("Chat App: email verification")
             })
-        expect(res.statusCode).toEqual(200);
+        expect(res.status).toEqual(200);
     });
     it("fail verify",async () => {
-        const res1 = await request(app)
+        const res1:Response = await request(app)
             .post('/user/setEmail')
             .set('Authorization',tokensStorage.get(test_username))
             .send({
                 email: "stefanjkf.test@gmail.com"
             })
-        expect(res1.statusCode).toEqual(200);
+        expect(res1.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
 
-        const res2 = await request(app)
+        const res2:Response = await request(app)
             .post('/user/verifyEmail')
             .set('Authorization',tokensStorage.get(test_username))
             .send({
                 code: mailStorage.get("Chat App: email verification") + "jkljl"
             })
-        expect(res2.statusCode).toEqual(403);
+        expect(res2.status).toEqual(403);
     });
 });

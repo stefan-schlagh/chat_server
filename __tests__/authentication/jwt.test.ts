@@ -87,8 +87,8 @@ describe('jwt test',() => {
     })
     describe('isAuthenticated',() => {
         it('use it as intended',async () => {
-            let res = {};
-            let req;
+            let res:any = {};
+            let req:any;
             let error = null;
             try {
                 //generate token
@@ -112,15 +112,15 @@ describe('jwt test',() => {
             expect(error).toEqual(null);
         })
         it('pass wrong token',async () => {
-            let res = {};
-            let req;
+            let res:any = {};
+            let req:any;
             let status = 0;
             let error = null;
             try {
                 req = {headers: {authorization: "hlhjkhlkj"}};
                 await new Promise((resolve, reject) => {
                     res.send = () => {resolve()}
-                    res.status = (s) => {status = s}
+                    res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
                 });
             }catch (err){
@@ -134,15 +134,15 @@ describe('jwt test',() => {
             expect(status).toEqual(403);
         })
         it('pass no token #1',async () => {
-            let res = {};
-            let req;
+            let res:any = {};
+            let req:any;
             let status = 0;
             let error = null;
             try {
                 req = {};
                 await new Promise((resolve, reject) => {
                     res.send = () => {resolve()}
-                    res.status = (s) => {status = s}
+                    res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
                 });
             }catch (err){
@@ -156,15 +156,15 @@ describe('jwt test',() => {
             expect(status).toEqual(403);
         })
         it('pass no token #2',async () => {
-            let res = {};
-            let req;
+            let res:any = {};
+            let req:any;
             let status = 0;
             let error = null;
             try {
                 req = {headers: {}};
                 await new Promise((resolve, reject) => {
                     res.send = () => {resolve()}
-                    res.status = (s) => {status = s}
+                    res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
                 });
             }catch (err){
@@ -178,15 +178,15 @@ describe('jwt test',() => {
             expect(status).toEqual(403);
         })
         it('pass token with wrong type',async () => {
-            let res = {};
-            let req;
+            let res:any = {};
+            let req:any;
             let status = 0;
             let error = null;
             try {
                 req = {headers: {authorization: 123}};
                 await new Promise((resolve, reject) => {
                     res.send = () => {resolve()}
-                    res.status = (s) => {status = s}
+                    res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
                 });
             }catch (err){
@@ -202,7 +202,7 @@ describe('jwt test',() => {
     })
     describe('verifyToken',() => {
         it('use it as intended',async () => {
-           let data;
+           let data:any;
            let error = null;
            try {
                //generate token
@@ -237,11 +237,11 @@ describe('jwt test',() => {
             expect(error).not.toEqual(null);
             expect(error).toHaveProperty('message');
         })
-        it('pass no token',async () => {
+        it('pass null token',async () => {
             let data = null;
             let error;
             try {
-                data = await verifyToken();
+                data = await verifyToken(null);
             }catch (err){
                 error = err;
             }

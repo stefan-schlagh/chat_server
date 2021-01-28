@@ -1,9 +1,10 @@
 import {login,register,getUserInfo,getPasswordHash,saveUser} from "../../src/authentication/authentication";
 import {hashPassword} from "../../src/authentication/bcryptWrappers";
+import {verifyToken} from "../../src/authentication/jwt";
 
 describe('authentication test',() => {
     describe('login',() => {
-        const escapeFunc = (str) => (str);
+        const escapeFunc = (str:string) => (str);
         it('success',async () => {
             const hash = await hashPassword('password')
             const connection = {
@@ -86,7 +87,7 @@ describe('authentication test',() => {
         })
     })
     describe('register',() => {
-        const escapeFunc = (str) => (str);
+        const escapeFunc = (str:string) => (str);
         const validConnection = {
             escape: escapeFunc,
             query: jest.fn()
@@ -144,34 +145,34 @@ describe('authentication test',() => {
     })
     describe('getUserInfo',() => {
         //con mock that returns a valid result
-        const escapeFunc = (str) => (str);
+        const escapeFunc = (str:string) => (str);
         const validConnection = {
             escape: escapeFunc,
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(null,[{uid: 1}])
             }
         }
         const errorThrowingConnection = {
             escape: escapeFunc,
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(new Error('Error in query!'))
             }
         }
         const connectionTwoUsersReturned = {
             escape: escapeFunc,
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(null,[{uid: 1},{uid: 2}])
             }
         }
         const connectionEmptyResult = {
             escape: escapeFunc,
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(null,[])
             }
         }
         it('use as intended',async () => {
             let error = null;
-            let res;
+            let res:any;
             try{
                 res = await getUserInfo('test123',validConnection);
             }catch (e){
@@ -208,7 +209,7 @@ describe('authentication test',() => {
         })
         it('query returns two users',async () => {
             let error;
-            let res;
+            let res:any;
             const username = 'test123'
             try{
                 res = await getUserInfo(username,connectionTwoUsersReturned);
@@ -220,7 +221,7 @@ describe('authentication test',() => {
         })
         it('query returns empty result',async () => {
             let error;
-            let res;
+            let res:any;
             const username = 'test123'
             try{
                 res = await getUserInfo(username,connectionEmptyResult);
@@ -235,17 +236,17 @@ describe('authentication test',() => {
     describe('getPasswordHash',() => {
         //con mock that returns a valid result
         const validConnection = {
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(null,[{password: 'hash1'}])
             }
         }
         const errorThrowingConnection = {
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(new Error('Error in query!'))
             }
         }
         const connectionEmptyResult = {
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 cb(null,[])
             }
         }
@@ -296,10 +297,10 @@ describe('authentication test',() => {
         })
     })
     describe('saveUser',() => {
-        const escapeFunc = (str) => (str);
+        const escapeFunc = (str:string) => (str);
         const validConnection = {
             escape: escapeFunc,
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 // called by saveUser
                 if(queryStr.includes('INSERT')){
                     cb(null)
@@ -312,7 +313,7 @@ describe('authentication test',() => {
         }
         const connectionThrowErrorAtInsert = {
             escape: escapeFunc,
-                query: (queryStr,cb) => {
+                query: (queryStr:string,cb:any) => {
                 // called by saveUser
                 if(queryStr.includes('INSERT')){
                     cb(cb(new Error('Error in query!')))
@@ -325,7 +326,7 @@ describe('authentication test',() => {
         }
         const connectionThrowErrorAtSelect = {
             escape: escapeFunc,
-            query: (queryStr,cb) => {
+            query: (queryStr:string,cb:any) => {
                 // called by saveUser
                 if(queryStr.includes('INSERT')){
                     cb(null)
