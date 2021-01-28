@@ -1,5 +1,5 @@
-import {login,register,getUserInfo,getPasswordHash,saveUser} from "../../modules/authentication/authentication";
-import {hashPassword} from "../../modules/authentication/bcryptWrappers";
+import {login,register,getUserInfo,getPasswordHash,saveUser} from "../../src/authentication/authentication";
+import {hashPassword} from "../../src/authentication/bcryptWrappers";
 
 describe('authentication test',() => {
     describe('login',() => {

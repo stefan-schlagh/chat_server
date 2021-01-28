@@ -2,7 +2,7 @@ import {
     generateToken,
     isAuthenticated,
     verifyToken
-} from "../../modules/authentication/jwt";
+} from "../../src/authentication/jwt";
 
 describe('jwt test',() => {
     describe('generateToken',() => {

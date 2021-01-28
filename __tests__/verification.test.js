@@ -1,5 +1,5 @@
-import {toHex,extractParts} from "../modules/verification/code";
-import {sendMail} from "../modules/verification/sendMail";
+import {toHex,extractParts} from "../src/verification/code";
+import {sendMail} from "../src/verification/sendMail";
 
 describe('test Verification', () => {
     it("toHex",() => {

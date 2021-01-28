@@ -1,4 +1,4 @@
-import {isResultEmpty} from "../../modules/util/sqlHelpers";
+import {isResultEmpty} from "../../src/util/sqlHelpers";
 
 describe('sqlHelpers test',() => {
     describe('isEmpty',() => {

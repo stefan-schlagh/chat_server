@@ -6,3 +6,4 @@
 # let's encrypt challenge
 /public/.well-known
 /test_templates/docker.env
+/dist/

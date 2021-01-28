@@ -1,7 +1,7 @@
-import {tokensStorage} from "../__testHelpers/tokensStorage.js";
+import {tokensStorage} from "../src/__testHelpers__/tokensStorage.js";
 import request from "supertest";
-import {app, closeServer, startServer} from "../modules/app";
-import {mailStorage} from "../__testHelpers/mailStorage";
+import {app, closeServer, startServer} from "../src/app";
+import {mailStorage} from "../src/__testHelpers__/mailStorage";
 
 const test_username = "test123456";
 

@@ -1,7 +1,7 @@
 import request from 'supertest';
-import {startServer, app, closeServer} from '../modules/app.js';
+import {startServer, app, closeServer} from '../src/app.ts';
 import io from 'socket.io-client';
-import {tokensStorage} from "../__testHelpers/tokensStorage.js";
+import {tokensStorage} from "../src/__testHelpers__/tokensStorage.js";
 
 const test_username = "test234567";
 
