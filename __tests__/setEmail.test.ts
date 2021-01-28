@@ -1,7 +1,7 @@
 import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../src/app";
-import {mailStorage} from "../src/__testHelpers__/mailStorage";
+import {mailStorage} from "../src/verification/mailStorage";
 
 const test_username = "test123456";
 
@@ -48,7 +48,7 @@ describe('setEmail Test', () => {
             .post('/user/setEmail')
             .set('Authorization',tokensStorage.get(test_username))
             .send({
-                email: "stefanjkf.test@gmail.com"
+                email: "stefanjkf.test+setEmailTest@gmail.com"
             })
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");

@@ -4,7 +4,7 @@ import ChatStorage from "./chat/chatStorage";
 import {
     verifyCode,
     verificationCodeTypes,
-    generateVerificationCode
+    generateVerificationCode, Parts
 } from "../verification/code";
 import {con} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
@@ -258,11 +258,12 @@ export default class User{
     async setPassword(hash:string,code:string){
         //is email verified?
         if(await this.isVerified()) {
-            //verify code
-            if (await verifyCode({
+            const parts:Parts = {
                 uid: this.uid,
                 code: code
-            }, verificationCodeTypes.pwReset)) {
+            }
+            //verify code
+            if (await verifyCode(parts, verificationCodeTypes.pwReset) !== -1) {
 
                 const query_str =
                     "UPDATE user " +
@@ -333,11 +334,10 @@ export default class User{
         });
     }
 
-    async verifyEmail(parts:any){
+    async verifyEmail(parts:Parts):Promise<boolean>{
         //verifyCode
-        const res:any = await verifyCode(parts,verificationCodeTypes.emailVerification,false);
-        if (res){
-            const vcid = res.vcid;
+        const vcid:number = await verifyCode(parts,verificationCodeTypes.emailVerification);
+        if(vcid != -1){
             //email change is selected from DB
             const result:any = await new Promise((resolve, reject) => {
                const query_str =

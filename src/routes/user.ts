@@ -8,7 +8,7 @@ import {
 import {chatData} from "../chatData/data";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
-import {extractParts} from "../verification/code";
+import {extractParts, Parts} from "../verification/code";
 
 const router = express.Router();
 
@@ -139,7 +139,6 @@ router.post('/setEmail',async (req:any, res:any) => {
         const user = req.user;
         const email = req.body.email;
 
-        console.log(email);
         await user.setEmail(email)
 
         res.send();
@@ -156,7 +155,7 @@ router.post("/verifyEmail",async (req:any,res:any) => {
     try {
         const code = req.body.code;
 
-        const parts = extractParts(code);
+        const parts:Parts = extractParts(code);
         //load user
         const user = await chatData.getUser(parts.uid,true);
         //verify code

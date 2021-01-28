@@ -8,6 +8,7 @@ module.exports = {
   testEnvironment: "node",
   coverageReporters: ["json", "lcov", "text", "clover"], // "text-summary"
   modulePathIgnorePatterns: [
-    "webdriver"
+    "webdriver",
+    "dist"
   ]
 };

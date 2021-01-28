@@ -3,26 +3,49 @@ import {con} from "../app";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 
-export const verificationCodeTypes = {
-    emailVerification: 0,
-    pwReset: 1
+/*
+    the types the verificationCode can be
+ */
+export enum verificationCodeTypes {
+    emailVerification = 0,
+    pwReset = 1
+}
+/*
+    the parts of the verificationCode
+        uid: the id of the user
+        code: the hashed verificationCode
+ */
+export interface Parts{
+    uid: number,
+    code: string
 }
 /*
     000004efbghjgkjkaghfkjhagkhf
     4 Bytes  uid
     rest  hash
  */
-export function extractParts(sCode:string){
+export function extractParts(sCode:string):Parts{
     let hexUid = sCode.substring(0,8);
     let code = sCode.substring(8,sCode.length);
     let uid = parseInt(hexUid,16);
+
+    if(isNaN(uid))
+        throw new Error('uid is nan!');
 
     return({
         uid: uid,
         code: code
     });
 }
-export async function verifyCode(parts:any,type:any,returnBoolean:boolean = true){
+/*
+    verify a code
+    arguments
+        parts: the parts of the code
+        type: the type of the code
+    returns the id of the verificationCode, if valid
+        else, -1
+ */
+export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise<number>{
     //codes older than 2 days are deleted
     await new Promise((resolve, reject) => {
         const query_str =
@@ -41,7 +64,7 @@ export async function verifyCode(parts:any,type:any,returnBoolean:boolean = true
             "SELECT vcid,type,hash " +
             "FROM verificationcode " +
             "WHERE uid = " + parts.uid + " " +
-            "AND type = " + type + ";";
+            "AND type = " + type.valueOf() + ";";
         con.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
@@ -52,20 +75,11 @@ export async function verifyCode(parts:any,type:any,returnBoolean:boolean = true
     for(let i=0;i<res.length;i++){
         if(type === res[i].type)
             if(await comparePassword(parts.code,res[i].hash)){
-                if(returnBoolean)
-                    return true;
-                else{
-                    const vc = res[i];
-                    return {
-                        vcid: vc.vcid
-                    }
-                }
+                const vc = res[i];
+                return vc.vcid;
             }
     }
-    if(returnBoolean)
-        return false;
-    else
-        return  null;
+    return -1;
 }
 export function toHex(num:number,len:number){
     let sNum = num.toString(16);
@@ -84,7 +98,7 @@ export function getCharString(len:number,char:string){
     code is generated and hash is saved into DB
         returns: sCode: uid(4Byte) + code
  */
-export async function generateVerificationCode(type:any,uid:number){
+export async function generateVerificationCode(type:verificationCodeTypes,uid:number){
 
     const code = await generateCode();
 
@@ -105,12 +119,12 @@ export async function generateCode(){
         });
     })
 }
-async function saveCodeInDB(type:any,uid:number,hash:string){
+async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string){
 
     const query_str =
         "INSERT " +
         "INTO verificationcode(type,uid,hash,date) " +
-        "VALUES(" + type + "," + uid + "," + con.escape(hash) + ",CURRENT_TIMESTAMP());";
+        "VALUES(" + type.valueOf() + "," + uid + "," + con.escape(hash) + ",CURRENT_TIMESTAMP());";
 
     await new Promise((resolve, reject) => {
         con.query(query_str,async (err:Error,result:any) => {

@@ -1,5 +1,5 @@
 import express from 'express';
-import {extractParts, verificationCodeTypes, verifyCode} from "../verification/code";
+import {extractParts, Parts, verificationCodeTypes, verifyCode} from "../verification/code";
 import {chatData} from "../chatData/data";
 import {hashPassword} from "../authentication/bcryptWrappers";
 import {sendMail} from "../verification/sendMail";
@@ -10,7 +10,7 @@ router.get("/isValid/:code",async (req,res) => {
     try {
         const code = req.params.code;
 
-        const parts = extractParts(code);
+        const parts:Parts = extractParts(code);
 
         if (await verifyCode(parts, verificationCodeTypes.pwReset))
             res.sendStatus(200);
@@ -29,7 +29,7 @@ router.post("/set",async (req, res) => {
     try {
         const {code,password} = req.body;
 
-        const parts = extractParts(code);
+        const parts:Parts = extractParts(code);
         //load user
         const user = await chatData.getUser(parts.uid,true);
         //generate hash

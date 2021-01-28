@@ -1,16 +1,18 @@
 import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../src/app";
-import {mailStorage} from "../src/__testHelpers__/mailStorage";
+import {mailStorage} from "../src/verification/mailStorage";
 
 const test_username = "test345678";
 let newpassword = "password2";
 
 describe("setPassword Test",() => {
+    // start the server before the tests
     beforeAll((done) => {
         startServer();
         done();
     });
+    // stop the server after the tests
     afterAll((done) => {
         closeServer();
         done();
@@ -67,6 +69,7 @@ describe("setPassword Test",() => {
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
     });
     it("verifyEmail",async () => {
+        expect(mailStorage.size).toBeGreaterThanOrEqual(1);
         const res:Response = await request(app)
             .post('/user/verifyEmail')
             .set('Authorization',tokensStorage.get(test_username))
@@ -86,6 +89,7 @@ describe("setPassword Test",() => {
         expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
     });
     it("verify password reset",async () => {
+        expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
         const res:Response = await request(app)
             .get('/pwReset/isValid/' + mailStorage.get("Chat App: password reset"))
             .send()
