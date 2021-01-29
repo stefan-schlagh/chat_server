@@ -2,6 +2,7 @@ import express from 'express';
 import {chatData} from "../chatData/data";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
+import {logger} from "../util/logger";
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.put('/',(req:any,res:any) => {
     chatData.newGroupChat(userFrom, data, users)
         .then((r:any)  => res.send())
         .catch((err:Error) => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });
@@ -77,7 +78,7 @@ router.put(
                 res.send();
             }
         } catch(err) {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         }
@@ -110,7 +111,7 @@ router.put(
                 res.send();
             }
         } catch(err) {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         }
@@ -165,7 +166,7 @@ router.put(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -191,7 +192,7 @@ router.put(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -219,7 +220,7 @@ router.delete(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -245,7 +246,7 @@ router.post(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -272,7 +273,7 @@ router.post(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -294,7 +295,7 @@ router.post(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -328,7 +329,7 @@ router.post(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -351,7 +352,7 @@ router.post(
                 res.send(data);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             });
@@ -372,7 +373,7 @@ function getChat(shouldBeLoaded:boolean){
                 /*
                     400 -> bad request
                 */
-                console.error(err);
+                logger.error(err);
                 res.status(400);
                 res.send();
             }
@@ -393,7 +394,7 @@ function getChat(shouldBeLoaded:boolean){
                             next();
                         }
                     }).catch((err:Error) => {
-                    console.error(err);
+                    logger.error(err);
                     res.status(500);
                     res.send();
                 });
@@ -401,7 +402,7 @@ function getChat(shouldBeLoaded:boolean){
                 /*
                     400 -> bad request
                 */
-                console.error(err);
+                logger.error(err);
                 res.status(400);
                 res.send();
             }
@@ -451,7 +452,7 @@ function getOtherUser(createNew:boolean){
             /*
                 400 -> bad request
              */
-            console.error(err);
+            logger.error(err);
             res.status(400);
             res.send();
         }
@@ -479,7 +480,7 @@ function getOtherUsers(createNew:boolean){
             /*
                 400 -> bad request
              */
-            console.error(err);
+            logger.error(err);
             res.status(400);
             res.send();
         }
@@ -569,7 +570,7 @@ function getGroupChatMemberOther(req:any,res:any,next:any){
         /*
             400 -> bad request
         */
-        console.error(err);
+        logger.error(err);
         res.status(400);
         res.send();
     }

@@ -2,6 +2,7 @@ import express from 'express';
 import chatData from "../chatData/chatData";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
+import {logger} from "../util/logger";
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.put('/',(req:any,res) => {
             });
         })
         .catch(err => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });
@@ -50,7 +51,7 @@ router.post('/load',(req:any,res) => {
             res.send(data);
         })
         .catch(err => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });

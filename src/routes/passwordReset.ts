@@ -3,6 +3,7 @@ import {extractParts, Parts, verificationCodeTypes, verifyCode} from "../verific
 import {chatData} from "../chatData/data";
 import {hashPassword} from "../authentication/bcryptWrappers";
 import {sendMail} from "../verification/sendMail";
+import {logger} from "../util/logger";
 
 const router = express.Router();
 
@@ -16,8 +17,8 @@ router.get("/isValid/:code",async (req,res) => {
             res.sendStatus(200);
         else
             res.sendStatus(403);
-    }catch (e){
-        console.error(e);
+    }catch (err){
+        logger.error(err);
         res.status(500);
         res.send();
     }
@@ -38,8 +39,8 @@ router.post("/set",async (req, res) => {
         await user.setPassword(hash,parts.code);
 
         res.send();
-    }catch (e){
-        console.error(e);
+    }catch (err){
+        logger.error(err);
         res.status(400);
         res.send();
     }
@@ -59,8 +60,8 @@ router.post("/requestLink",async (req,res) => {
 
         res.send();
 
-    }catch (e){
-        console.error(e);
+    }catch (err){
+        logger.error(err);
         res.status(400);
         res.send();
     }

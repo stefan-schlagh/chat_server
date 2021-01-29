@@ -9,6 +9,7 @@ import {chatData} from "../chatData/data";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
 import {extractParts, Parts} from "../verification/code";
+import {logger} from "../util/logger";
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.post('/',(req:any,res:any) => {
     selectAllUsers(uidFrom,search,limit,start).then(data => {
         res.send(data);
     }).catch(err => {
-        console.error(err);
+        logger.error(err);
         res.status(500);
         res.send();
     })
@@ -49,7 +50,7 @@ router.post('/noChat',(req:any,res:any) => {
         .then(data => {
             res.send(data);
         }).catch(err => {
-            console.error(err);
+        logger.error(err);
             res.status(500);
             res.send();
         })
@@ -70,7 +71,7 @@ router.post('/notInGroup/:gcid',(req:any,res:any) => {
             .then(data => {
                 res.send(data);
             }).catch(err => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         })
@@ -78,7 +79,7 @@ router.post('/notInGroup/:gcid',(req:any,res:any) => {
         /*
                 400 -> bad request
              */
-        console.error(err);
+        logger.error(err);
         res.status(400);
         res.send();
     }
@@ -106,7 +107,7 @@ router.get('/:uid',(req:any,res:any) => {
     getUserInfo(uidFrom,uidReq)
         .then(result => res.send(result))
         .catch(err => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });
@@ -126,7 +127,7 @@ router.put('/chat',(req:any,res:any) => {
             res.send(result)
         })
         .catch((err:Error) => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });
@@ -142,8 +143,8 @@ router.post('/setEmail',async (req:any, res:any) => {
         await user.setEmail(email)
 
         res.send();
-    }catch (e){
-        console.error(e);
+    }catch (err){
+        logger.error(err);
         res.status(400);
         res.send();
     }
@@ -166,8 +167,8 @@ router.post("/verifyEmail",async (req:any,res:any) => {
             res.send();
         }
 
-    }catch (e){
-        console.error(e);
+    }catch (err){
+        logger.error(err);
         res.status(400);
         res.send();
     }

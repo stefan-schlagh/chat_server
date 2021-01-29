@@ -2,6 +2,7 @@ import express from 'express';
 import {login} from "../authentication/authentication";
 import {chatServer} from "../chatServer";
 import {register} from "../authentication/authentication";
+import {logger} from "../util/logger";
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.post('/login',(req,res) => {
             res.send(result);
         })
         .catch(err => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });
@@ -37,7 +38,7 @@ router.post('/register',(req,res) => {
             res.send(result);
         })
         .catch(err => {
-            console.error(err);
+            logger.error(err);
             res.status(500);
             res.send();
         });

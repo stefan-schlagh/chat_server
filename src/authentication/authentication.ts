@@ -1,7 +1,6 @@
 import {comparePassword,hashPassword} from "./bcryptWrappers";
 import {generateToken} from "./jwt";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
-import {exists} from "fs";
 
 /*
     login function
@@ -102,7 +101,7 @@ export async function register (username:any,password:any,con:any){
     if(!exists){
 
         const hash = await hashPassword(password);
-        const uid = await saveUser(username,hash,con);
+        const uid:number = await saveUser(username,hash,con);
 
         const token = await generateToken({
             username: username,
@@ -209,12 +208,7 @@ export async function getPasswordHash(uid:any,con:any){
         string:hash --> the hashed password of the new user
         object:con --> the connection to the database, uses library mysql
  */
-export async function saveUser(username:any,hash:any,con:any){
-
-    if(typeof username !== "string")
-        throw new Error('username should have the type string!')
-    if(typeof hash !== "string")
-        throw new Error('hash should have the type string!')
+export async function saveUser(username:string,hash:string,con:any):Promise<number>{
 
     return await new Promise(function(resolve, reject) {
 

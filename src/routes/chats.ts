@@ -1,6 +1,7 @@
 import express from 'express';
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
+import {logger} from "../util/logger";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get('/',(req:any,res:any) => {
                 res.send(chats);
             })
             .catch((err:Error) => {
-                console.error(err);
+                logger.error(err);
                 res.status(500);
                 res.send();
             })

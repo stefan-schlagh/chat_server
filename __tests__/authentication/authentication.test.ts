@@ -370,27 +370,5 @@ describe('authentication test',() => {
             expect(error).toHaveProperty('message');
             expect(error.message).toEqual('Error in query!');
         })
-        it('pass username of wrong type',async () => {
-            let error;
-            let res;
-            try{
-                res = await saveUser(1,'hash1', {});
-            }catch (e){
-                error = e;
-            }
-            expect(error).toHaveProperty('message');
-            expect(error.message).toEqual('username should have the type string!');
-        })
-        it('pass hash of wrong type',async () => {
-            let error;
-            let res;
-            try{
-                res = await saveUser('user1',1, {});
-            }catch (e){
-                error = e;
-            }
-            expect(error).toHaveProperty('message');
-            expect(error.message).toEqual('hash should have the type string!');
-        })
     })
 })
