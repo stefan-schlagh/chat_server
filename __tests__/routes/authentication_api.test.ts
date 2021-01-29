@@ -1,6 +1,6 @@
 import request, {Response} from 'supertest';
-import {startServer, app, closeServer} from '../src/app';
-import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
+import {startServer, app, closeServer} from '../../src/app';
+import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 
 const test_username = "test234567";
 
@@ -68,36 +68,6 @@ describe('test API', () => {
             })
         expect(res.status).toEqual(200);
     })
-    /*it('establish socket connection',async() => {
-        const socket:Socket = io.connect(
-            'https:/localhost:443',
-            {
-                transports: ['websocket'],
-                'reconnection delay' : 0,
-                'reopen delay' : 0,
-                'force new connection': true
-            }
-        );
-        console.log('http://localhost:' + process.env.NODE_HTTP_PORT)
-        console.log('abc')
-        socket.on('connect',() => {
-            console.log("socket connected")
-            done();
-        })
-        socket.emit('auth',tokensStorage.get(test_username));
-        // is called when user is initialized
-        /*await new Promise((resolve, reject) => {
-           socket.on('initialized',() => {
-                resolve();
-           });
-           socket.on('disconnect',() => {
-               reject();
-           })
-        })*
-        expect(console.log).toHaveBeenCalledWith('http://localhost:' + process.env.NODE_HTTP_PORT);
-        //expect(console.log).toHaveBeenCalledWith('connection');
-        //expect(console.log).toHaveBeenCalledWith('socket connected');
-    });*/
 })
 
 

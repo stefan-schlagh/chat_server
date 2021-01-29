@@ -1,6 +1,5 @@
 import {login,register,getUserInfo,getPasswordHash,saveUser} from "../../src/authentication/authentication";
 import {hashPassword} from "../../src/authentication/bcryptWrappers";
-import {verifyToken} from "../../src/authentication/jwt";
 
 describe('authentication test',() => {
     describe('login',() => {
@@ -185,17 +184,6 @@ describe('authentication test',() => {
             expect(res.exists).toEqual(true);
             expect(res.uid).toEqual(1);
         })
-        it('pass username of wrong type',async () => {
-            let error;
-            let res;
-            try{
-                res = await getUserInfo(123,validConnection);
-            }catch (e){
-                error = e;
-            }
-            expect(error).toHaveProperty('message');
-            expect(error.message).toEqual('username should have the type string!');
-        })
         it('connection throws error',async () => {
             let error;
             let res;
@@ -260,17 +248,6 @@ describe('authentication test',() => {
             }
             expect(typeof res).toEqual('string');
             expect(res).toEqual('hash1');
-        })
-        it('pass uid of wrong type',async () => {
-            let error;
-            let res;
-            try{
-                res = await getPasswordHash('user1',validConnection);
-            }catch (e){
-                error = e;
-            }
-            expect(error).toHaveProperty('message');
-            expect(error.message).toEqual('uid should have the type number!');
         })
         it('connection throws error',async () => {
             let error;
