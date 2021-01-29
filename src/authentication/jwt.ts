@@ -1,33 +1,28 @@
-import jwt from 'jsonwebtoken';
+import jwt, {VerifyErrors} from 'jsonwebtoken';
 import fs from 'fs';
+import {SimpleUser} from "../models/user";
+import {NextFunction} from "express";
 
 /*
     A JSON web token is created
     params: user --> the data of the user the jwt is created for this user,
         should contain number:uid (userID) and string:username
  */
-export async function generateToken(user:any) {
+export async function generateToken(user:SimpleUser):Promise<string> {
 
     let privateKey = await fs.promises.readFile(
         './cert/jwtPrivate.pem',
         'utf8'
     );
-
-    const jwtData = {
-        ...user
-    };
-    if(typeof jwtData.uid !== 'number')
-        throw new Error('user.uid has to have the type number')
-    else if(jwtData.uid < 1)
+    // user id cannot be smaller than 1
+    if(user.uid < 1)
         throw new Error('user.uid cannot be smaller than 1')
-    if(typeof jwtData.username !== 'string')
-        throw new Error('user.username has to have the type string')
 
     //TODO: add expiration date
     return await new Promise((resolve, reject) => {
 
         jwt.sign(
-            jwtData,//data stored in jwt
+            user,//data stored in jwt
             privateKey,//private key
             {
                 algorithm: 'HS256'
@@ -46,7 +41,7 @@ export async function generateToken(user:any) {
         this jwt is then verified and the data inside the token is stored in req.data for further use
         if the verification fails, the http request is closed with status 403 (forbidden)
  */
-export function isAuthenticated(req:any,res:any,next:any){
+export function isAuthenticated(req:any,res:any,next:NextFunction){
 
     let token;
     //if headers is undefined --> error, wrong input
@@ -78,13 +73,7 @@ export function isAuthenticated(req:any,res:any,next:any){
     if the verification fails, an error is thrown
     if successfull, the data in the token is returned
  */
-export async function verifyToken(token:any){
-
-    if(!token)
-        throw new Error('token is undefined!');
-
-    if(typeof token !== "string")
-        throw new Error('token does not have type string!');
+export async function verifyToken(token:string):Promise<SimpleUser>{
 
     let privateKey = await fs.promises.readFile(
         './cert/jwtPrivate.pem',
@@ -100,7 +89,7 @@ export async function verifyToken(token:any){
             {
                 algorithms: ['HS256']
             },
-            function(err,data){
+            function(err:VerifyErrors,data:SimpleUser){
                 if(err)
                     reject(err);
                 resolve(data);
