@@ -1,26 +1,30 @@
 import {chatServer} from "../../chatServer";
+import {Chat} from "../chat/chat";
+import User from "../user";
+import {logger} from "../../util/logger";
 
-export const messageTypes = {
-    normalMessage: 0,
-    statusMessage: 1
-};
+export enum messageTypes {
+    normalMessage = 0,
+    statusMessage = 1
+}
 
-export default class Message{
+export default abstract class Message{
 
-    public mid:any;
-    public messageType:any;
-    public chat:any;
-    public author:any;
-    public date:any;
+    private _mid:number;
+    private _messageType:messageTypes;
+    private _chat:Chat;
+    private _author:User;
+    private _date:Date;
 
-    constructor(chat:any,author:any,type:any,mid:number = -1) {
+    protected constructor(
+        chat:Chat,
+        author:User,
+        messageType:messageTypes,
+        mid:number = -1
+    ) {
 
-        if (new.target === Message)
-            throw new TypeError("Cannot construct Abstract instances directly");
-
-        this.messageType = type;
+        this.messageType = messageType;
         this.chat = chat;
-        //aktuelles Datum
         this.date = new Date(Date.now());
         this.author = author;
         this.mid = mid;
@@ -61,17 +65,19 @@ export default class Message{
                     this.chat.chatId + "','" +
                     this.author.uid +
                 "');";
+            logger.verbose('SQL: %s',query_str1);
 
             chatServer.con.query(query_str1,(err:Error) => {
                 if(err){
                     reject(err);
                 }else {
                     /*
-                        mid dieser msg wird selected
+                        message id og the message is selected
                      */
                     const query_str2 =
                         "SELECT max(mid) " +
                         "AS 'mid' FROM message";
+                    logger.verbose('SQL: %s',query_str2);
 
                     chatServer.con.query(query_str2, (err:Error, result:any, fields:any) => {
                         if(err){
@@ -85,44 +91,44 @@ export default class Message{
             });
         }));
     }
-/*
-    get mid() {
-        return this.#_mid;
+
+    get mid(): number {
+        return this._mid;
     }
 
-    set mid(value) {
-        this.#_mid = value;
+    set mid(value: number) {
+        this._mid = value;
     }
 
-    get messageType() {
-        return this.#_messageType;
+    get messageType(): messageTypes {
+        return this._messageType;
     }
 
-    set messageType(value) {
-        this.#_messageType = value;
+    set messageType(value: messageTypes) {
+        this._messageType = value;
     }
 
-    get chat() {
-        return this.#_chat;
+    get chat(): Chat {
+        return this._chat;
     }
 
-    set chat(value) {
-        this.#_chat = value;
+    set chat(value: Chat) {
+        this._chat = value;
     }
 
-    get author() {
-        return this.#_author;
+    get author(): User {
+        return this._author;
     }
 
-    set author(value) {
-        this.#_author = value;
+    set author(value: User) {
+        this._author = value;
     }
 
-    get date() {
-        return this.#_date;
+    get date(): Date {
+        return this._date;
     }
 
-    set date(value) {
-        this.#_date = value;
-    }*/
+    set date(value: Date) {
+        this._date = value;
+    }
 }

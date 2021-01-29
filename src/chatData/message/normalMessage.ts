@@ -3,13 +3,14 @@ import {chatServer} from "../../chatServer";
 import Mention from "./mention";
 import Media from "./media";
 import {chatData} from "../data";
+import {logger} from "../../util/logger";
 
 export default class NormalMessage extends Message {
 
-    public nmid:number;
-    public text:string;
-    public mentions:any = [];
-    public media:any = [];
+    private _nmid:number;
+    private _text:string;
+    private _mentions:any = [];
+    private _media:any = [];
 
     constructor(chat:any,author:any,mid:number = -1) {
         super(
@@ -19,7 +20,7 @@ export default class NormalMessage extends Message {
             mid
         );
     }
-
+    // load message
     async loadMessage(){
 
         await this.loadMessageText();
@@ -35,6 +36,7 @@ export default class NormalMessage extends Message {
                 "SELECT nmid, text " +
                 "FROM normalmessage " +
                 "WHERE mid = " + this.mid + ";";
+            logger.verbose('SQL: %s',query_str);
 
             chatServer.con.query(query_str,(err:Error,result:any) => {
                 if(err)
@@ -58,6 +60,7 @@ export default class NormalMessage extends Message {
                 "SELECT muid,uid,textColumn " +
                 "FROM mentioneduser " +
                 "WHERE nmid = " + this.nmid + ";";
+            logger.verbose('SQL: %s',query_str);
 
             chatServer.con.query(query_str, (err:Error, result:any, fields:any) => {
                 if (err)
@@ -87,6 +90,7 @@ export default class NormalMessage extends Message {
                 "SELECT * " +
                 "FROM media " +
                 "WHERE nmid = " + this.nmid + ";";
+            logger.verbose('SQL: %s',query_str);
 
             chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
                if(err)
@@ -144,6 +148,7 @@ export default class NormalMessage extends Message {
                "INSERT " +
                "INTO normalmessage(mid,text) " +
                "VALUES (" + this.mid + "," + text + ");";
+            logger.verbose('SQL: %s',query_str1);
 
             chatServer.con.query(query_str1,(err:Error,result:any,fields:any) => {
                 if (err)
@@ -154,6 +159,7 @@ export default class NormalMessage extends Message {
                 const query_str2 =
                     "SELECT max(nmid) AS 'nmid' " +
                     "FROM normalmessage;";
+                logger.verbose('SQL: %s',query_str2);
 
                 chatServer.con.query(query_str2,(err:Error,result:any,fields:any) => {
                     if (err)
@@ -249,36 +255,35 @@ export default class NormalMessage extends Message {
         return rc;
     }
 
-/*
-    get nmid() {
-        return this.#_nmid;
+    get nmid(): number {
+        return this._nmid;
     }
 
-    set nmid(value) {
-        this.#_nmid = value;
+    set nmid(value: number) {
+        this._nmid = value;
     }
 
-    get text() {
-        return this.#_text;
+    get text(): string {
+        return this._text;
     }
 
-    set text(value) {
-        this.#_text = value;
+    set text(value: string) {
+        this._text = value;
     }
 
-    get mentions() {
-        return this.#_mentions;
+    get mentions(): any {
+        return this._mentions;
     }
 
-    set mentions(value) {
-        this.#_mentions = value;
+    set mentions(value: any) {
+        this._mentions = value;
     }
 
-    get media() {
-        return this.#_media;
+    get media(): any {
+        return this._media;
     }
 
-    set media(value) {
-        this.#_media = value;
-    }*/
+    set media(value: any) {
+        this._media = value;
+    }
 }

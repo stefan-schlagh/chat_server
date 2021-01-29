@@ -40,6 +40,7 @@ if (process.env.NODE_ENV !== 'production') {
         format: format.combine(
             format.colorize(),
             format.simple()
-        )
+        ),
+        level: 'http'
     }));
 }

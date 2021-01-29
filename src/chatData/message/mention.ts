@@ -1,11 +1,13 @@
 import {chatData} from "../data";
 import {chatServer} from "../../chatServer";
+import User from "../user";
+import {logger} from "../../util/logger";
 
 export default class Mention {
 
-    public muid:number;
-    public user:any;
-    public textColumn:number;
+    private _muid:number;
+    private _user:User;
+    private _textColumn:number;
 
     /*
         params:
@@ -20,7 +22,7 @@ export default class Mention {
         /*
             if uid is -1, user is left undefined
          */
-        if(uid!==-1) {
+        if(uid !==- 1) {
             const user = chatData.user.get(uid);
             if (user) {
                 this.user = user;
@@ -45,6 +47,7 @@ export default class Mention {
                     this.user.uid + "," +
                     this.textColumn +
                 ");";
+            logger.verbose('SQL: %s',query_str1);
 
             chatServer.con.query(query_str1, (err:Error) => {
                 if (err)
@@ -55,6 +58,7 @@ export default class Mention {
                 const query_str2 =
                     "SELECT max(muid) AS 'muid'" +
                     "FROM mentioneduser;";
+                logger.verbose('SQL: %s',query_str2);
 
                 chatServer.con.query(query_str2, (err:Error, result:any) => {
                     if (err)
@@ -70,27 +74,27 @@ export default class Mention {
         });
     }
 
-    /*get muid() {
-        return this.#_muid;
+    get muid(): number {
+        return this._muid;
     }
 
-    set muid(value) {
-        this.#_muid = value;
+    set muid(value: number) {
+        this._muid = value;
     }
 
-    get user() {
-        return this.#_user;
+    get user(): User {
+        return this._user;
     }
 
-    set user(value) {
-        this.#_user = value;
+    set user(value: User) {
+        this._user = value;
     }
 
-    get textColumn() {
-        return this.#_textColumn;
+    get textColumn(): number {
+        return this._textColumn;
     }
 
-    set textColumn(value) {
-        this.#_textColumn = value;
-    }*/
+    set textColumn(value: number) {
+        this._textColumn = value;
+    }
 }

@@ -1,28 +1,31 @@
 import Message,{messageTypes} from "./message";
 import {chatServer} from "../../chatServer";
 import {chatData} from "../data";
+import User from "../user";
+import {Chat} from "../chat/chat";
+import {logger} from "../../util/logger";
 
-export const statusMessageTypes:any = {
-    chatCreated: 0,
-    usersAdded: 1,
-    usersRemoved: 2,
-    usersJoined: 3,
-    usersLeft: 4,
-    usersMadeAdmin: 5,
-    usersRemovedAdmin: 6,
+export enum statusMessageTypes {
+    chatCreated,
+    usersAdded ,
+    usersRemoved,
+    usersJoined,
+    usersLeft,
+    usersMadeAdmin,
+    usersRemovedAdmin,
     /*
         when user resigns from admin status
      */
-    userResignedAdmin: 7
-};
+    userResignedAdmin
+}
 
 export default class StatusMessage extends Message {
 
-    public smid:any;
-    public type:any;
-    public passiveUsers:any = [];
+    private _smid:number;
+    private _type:statusMessageTypes;
+    private _passiveUsers:any = [];
 
-    constructor(chat:any,author:any,mid:number = -1) {
+    constructor(chat:Chat,author:User,mid:number = -1) {
         super(
             chat,
             author,
@@ -30,7 +33,7 @@ export default class StatusMessage extends Message {
             mid
         );
     }
-
+    // load the message
     async loadMessage(){
 
         await this.loadStatusMsgType();
@@ -45,6 +48,7 @@ export default class StatusMessage extends Message {
                 "SELECT * " +
                 "FROM statusmessage " +
                 "WHERE mid = " + this.mid + ";";
+            logger.verbose('SQL: %s',query_str);
 
             chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
@@ -68,6 +72,7 @@ export default class StatusMessage extends Message {
                 "SELECT * " +
                 "FROM stmsgpassiveu " +
                 "WHERE smid = " + this.smid + ";";
+            logger.verbose('SQL: %s',query_str);
 
             chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
@@ -93,7 +98,7 @@ export default class StatusMessage extends Message {
         statusMessage is initialized
             passiveUsers: array of uids
      */
-    async initNewMessage(type:any, passiveUsers:any){
+    async initNewMessage(type:statusMessageTypes, passiveUsers:any){
         /*
             message gets saved
          */
@@ -118,6 +123,7 @@ export default class StatusMessage extends Message {
                 "INSERT " +
                 "INTO statusmessage(mid,type) " +
                 "VALUES (" + this.mid + "," + this.type + ");";
+            logger.verbose('SQL: %s',query_str1);
 
             chatServer.con.query(query_str1,(err:Error) => {
                 if (err)
@@ -128,6 +134,7 @@ export default class StatusMessage extends Message {
                 const query_str2 =
                     "SELECT max(smid) AS 'smid'" +
                     "FROM statusmessage;";
+                logger.verbose('SQL: %s',query_str2);
 
                 chatServer.con.query(query_str2,(err:Error,result:any,fields:any) => {
                     if (err)
@@ -172,6 +179,7 @@ export default class StatusMessage extends Message {
                     "INSERT " +
                     "INTO stmsgpassiveu(smid,uid) " +
                     "VALUES ";
+                logger.verbose('SQL: %s',query_str);
                 /*
                     rows are added to query
                  */
@@ -218,28 +226,28 @@ export default class StatusMessage extends Message {
         }
         return rc;
     }
-/*
-    get smid() {
-        return this.#_smid;
+
+    get smid(): number {
+        return this._smid;
     }
 
-    set smid(value) {
-        this.#_smid = value;
+    set smid(value: number) {
+        this._smid = value;
     }
 
-    get passiveUsers() {
-        return this.#_passiveUsers;
+    get type(): statusMessageTypes {
+        return this._type;
     }
 
-    set passiveUsers(value) {
-        this.#_passiveUsers = value;
+    set type(value: statusMessageTypes) {
+        this._type = value;
     }
 
-    get type() {
-        return this.#_type;
+    get passiveUsers(): any {
+        return this._passiveUsers;
     }
 
-    set type(value) {
-        this.#_type = value;
-    }*/
+    set passiveUsers(value: any) {
+        this._passiveUsers = value;
+    }
 }

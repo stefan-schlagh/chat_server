@@ -3,17 +3,18 @@ import {chatServer} from "../../chatServer";
 import {chatData} from "../data";
 import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
-import {messageTypes} from "./message";
+import Message, {messageTypes} from "./message";
+import {Chat} from "../chat/chat";
 
 export default class MessageStorage {
     /*
         are all messages in this chat already loaded?
      */
-    public loadedAllMessages:boolean = false;
-    public chat:any;
-    public minMid:any;
-    public maxMid:any;
-    public messages = new BinSearchArray();
+    private _loadedAllMessages:boolean = false;
+    private _chat:Chat;
+    private _minMid:any;
+    private _maxMid:any;
+    private _messages = new BinSearchArray();
 
     constructor(chat:any) {
 
@@ -92,10 +93,10 @@ export default class MessageStorage {
                     ->all selected messages have a lower date
                 num -> how many messages should be selected
          */
-    async getMessagesByDate(nextDate:any,num:number){
+    async getMessagesByDate(nextDate:Date,num:number){
 
         let found = false;
-        for(let i=this.messages.length-1;i>=0 && !found;i--){
+        for(let i=this.messages.length-1; i>=0 && !found; i--){
             /*
                 date is lower than nextDate
                 TODO ?
@@ -115,7 +116,7 @@ export default class MessageStorage {
 
         if(!this.minMid) {
             await this.getMaxMid();
-            this.minMid = this.maxMid+1;
+            this.minMid = this._maxMid+1;
         }
 
         const result:any = await this.selectMessages(num);
@@ -150,11 +151,11 @@ export default class MessageStorage {
                 switch(messageType){
 
                     case messageTypes.normalMessage: {
-                        message = new NormalMessage(this,user,mid);
+                        message = new NormalMessage(this._chat,user,mid);
                         break;
                     }
                     case messageTypes.statusMessage: {
-                        message = new StatusMessage(this,user,mid);
+                        message = new StatusMessage(this._chat,user,mid);
                         break;
                     }
                 }
@@ -169,21 +170,6 @@ export default class MessageStorage {
         }else{
             this.loadedAllMessages = true;
             return 0;
-        }
-        /*
-            source: https://dzone.com/articles/convert-mysql-datetime-js-date
-         */
-        function mysqlTimeStampToDate(timestamp:any) {
-
-            /*
-                function parses mysql datetime string and returns javascript Date object
-                input has to be in this format: 2007-06-05 15:26:02
-             */
-            console.log(timestamp instanceof Date);
-            timestamp.replace("T"," ");
-            const regex=/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9]) (?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/;
-            const parts:any = timestamp.replace(regex,"$1 $2 $3 $4 $5 $6").split(' ');
-            return new Date(parts[0],parts[1]-1,parts[2],parts[3],parts[4],parts[5]);
         }
     }
     /*
@@ -214,7 +200,7 @@ export default class MessageStorage {
     /*
         a new message is added, should be initialized already
      */
-    addNewMessage(message:any){
+    addNewMessage(message:Message){
 
         this.messages.add(message.mid,message);
         this.maxMid = message.mid;
@@ -290,7 +276,7 @@ export default class MessageStorage {
      */
     getNewestMessageObject(){
 
-        const newestMsg = this.messages[this.messages.length - 1];
+        const newestMsg = this.messages[this._messages.length - 1];
         /*
             does there exist a message?
          */
@@ -328,44 +314,44 @@ export default class MessageStorage {
                 return this.messages[index - 1].key;
         }
     }
-/*
-    get loadedAllMessages() {
-        return this.#_loadedAllMessages;
+
+    get loadedAllMessages(): boolean {
+        return this._loadedAllMessages;
     }
 
-    set loadedAllMessages(value) {
-        this.#_loadedAllMessages = value;
+    set loadedAllMessages(value: boolean) {
+        this._loadedAllMessages = value;
     }
 
-    get chat() {
-        return this.#_chat;
+    get chat(): Chat {
+        return this._chat;
     }
 
-    set chat(value) {
-        this.#_chat = value;
+    set chat(value: Chat) {
+        this._chat = value;
     }
 
-    get minMid() {
-        return this.#_minMid;
+    get minMid(): any {
+        return this._minMid;
     }
 
-    set minMid(value) {
-        this.#_minMid = value;
+    set minMid(value: any) {
+        this._minMid = value;
     }
 
-    get maxMid() {
-        return this.#_maxMid;
+    get maxMid(): any {
+        return this._maxMid;
     }
 
-    set maxMid(value) {
-        this.#_maxMid = value;
+    set maxMid(value: any) {
+        this._maxMid = value;
     }
 
-    get messages() {
-        return this.#_messages;
+    get messages(): BinSearchArray {
+        return this._messages;
     }
 
-    set messages(value) {
-        this.#_messages = value;
-    }*/
+    set messages(value: BinSearchArray) {
+        this._messages = value;
+    }
 }
