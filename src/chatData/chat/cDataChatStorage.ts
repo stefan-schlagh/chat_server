@@ -8,11 +8,11 @@ import ChatStorage from "./chatStorage";
 
 export default class CDataChatStorage extends ChatStorage {
 
-    public user:any;
+    private _user:BinSearchArray;
 
-    constructor(user:any) {
+    constructor(user:BinSearchArray) {
         super();
-        this.user = user;
+        this._user = user;
     }
     /*
         if chat is loaded
@@ -137,7 +137,7 @@ export default class CDataChatStorage extends ChatStorage {
         const gcmSelf = new GroupChatMember(
             -1,
             newChat,
-            this.user.get(userFrom.uid),
+            this._user.get(userFrom.uid),
             userFrom.isAdmin,
             0
         );
@@ -148,7 +148,7 @@ export default class CDataChatStorage extends ChatStorage {
          */
         for(let i=0;i<users.length;i++){
 
-            const user = this.user.get(users[i].uid);
+            const user = this._user.get(users[i].uid);
             const gcm = new GroupChatMember(
                 -1,
                 newChat,
@@ -211,12 +211,12 @@ export default class CDataChatStorage extends ChatStorage {
                     /*
                         does the user already exist at the server?
                      */
-                    if (this.user.getIndex(uid) === -1) {
+                    if (this._user.getIndex(uid) === -1) {
                         const newUser =  new User(uid, username);
-                        this.user.add(uid,newUser);
+                        this._user.add(uid,newUser);
                         return newUser;
                     }else{
-                        return this.user.get(uid);
+                        return this._user.get(uid);
                     }
                 };
 
@@ -351,12 +351,12 @@ export default class CDataChatStorage extends ChatStorage {
             });
         });
     }
-/*
-    get user() {
-        return this.#_user;
+
+    get user(): BinSearchArray {
+        return this._user;
     }
 
-    set user(value) {
-        this.#_user = value;
-    }*/
+    set user(value: BinSearchArray) {
+        this._user = value;
+    }
 }

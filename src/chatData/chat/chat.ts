@@ -1,34 +1,27 @@
-import {messageTypes} from "../message/message";
+import Message, {messageTypes} from "../message/message";
 import MessageStorage from "../message/messageStorage";
 import NormalMessage from "../message/normalMessage";
 import StatusMessage from "../message/statusMessage";
 
 export abstract class Chat{
 
-    public type:any;
-    public messageStorage:any;
+    private _type:string;
+    private _messageStorage:MessageStorage;
     //wenn -1 --> noch keine Nachrichten im chat
-    public chatId:number;
+    private _chatId:number;
 
-    protected constructor(type:any, id:number) {
+    protected constructor(type:string, id:number) {
 
-        /*if (new.target === Chat)
-            throw new TypeError("Cannot construct Abstract instances directly");
-        if(this.incrementUnreadMessages === undefined)
-            throw new TypeError("Must override function incrementUnreadMessages");
-        if(this.getUnreadMessages === undefined)
-            throw new TypeError("Must override function getUnreadMessages");*/
+        this._type = type;
+        this._chatId = id;
 
-        this.type = type;
-        this.chatId = id;
-
-        this.messageStorage = new MessageStorage(this);
+        this._messageStorage = new MessageStorage(this);
     }
     /*
         neue Message wird zu message-array hinzugefügt
         im Callback wird die msgId zurückgegeben
      */
-    async sendMessage(author:any,message:any,includeSender=false){
+    async sendMessage(author:any,message:Message,includeSender:boolean = false){
         /*
             message gets sent to all users
          */
@@ -49,7 +42,7 @@ export abstract class Chat{
         let message;
         const content = data.content;
 
-        switch(data.type){
+        switch(data._type){
 
             case messageTypes.normalMessage: {
                 message = new NormalMessage(this,author);
@@ -69,7 +62,7 @@ export abstract class Chat{
                     message is saved in DB, mid is saved
                  */
                 await message.initNewMessage(
-                    content.type,
+                    content._type,
                     content.passiveUsers
                 );
                 break;
@@ -78,7 +71,7 @@ export abstract class Chat{
         /*
             message is added to messageStorage
          */
-        this.messageStorage.addNewMessage(message);
+        this._messageStorage.addNewMessage(message);
         /*
             new messages are incremented
          */
@@ -97,7 +90,7 @@ export abstract class Chat{
          */
         if(msgIdStart === -1)
 
-        if(this.messageStorage.loadedAllMessages){
+        if(this._messageStorage.loadedAllMessages){
 
             return({
                 status: 'reached top',
@@ -105,7 +98,7 @@ export abstract class Chat{
             });
         }
 
-        const mid = await this.messageStorage.getMidBelow(msgIdStart);
+        const mid = await this._messageStorage.getMidBelow(msgIdStart);
 
         if(mid === -1)
             return({
@@ -113,10 +106,10 @@ export abstract class Chat{
                 messages: []
             });
         else {
-            const messages = await this.messageStorage.getMessagesByMid(mid, num);
+            const messages = await this._messageStorage.getMessagesByMid(mid, num);
             return ({
                 status:
-                    this.messageStorage.loadedAllMessages
+                    this._messageStorage.loadedAllMessages
                         ? 'reached top'
                         : 'success',
                 messages: messages
@@ -128,28 +121,28 @@ export abstract class Chat{
     abstract sendToAll(author:any,socketMessage:any,messageObject:any,includeSender:boolean): any;
 
     abstract incrementUnreadMessages(num:number): any;
-/*
-    get type() {
-        return this.#_type;
+
+    get type(): string {
+        return this._type;
     }
 
-    set type(value) {
-        this.#_type = value;
+    set type(value: string) {
+        this._type = value;
     }
 
-    get messageStorage() {
-        return this.#_messageStorage;
+    get messageStorage(): MessageStorage {
+        return this._messageStorage;
     }
 
-    set messageStorage(value) {
-        this.#_messageStorage = value;
+    set messageStorage(value: MessageStorage) {
+        this._messageStorage = value;
     }
 
-    get chatId() {
-        return this.#_chatId;
+    get chatId(): number {
+        return this._chatId;
     }
 
-    set chatId(value) {
-        this.#_chatId = value;
-    }*/
+    set chatId(value: number) {
+        this._chatId = value;
+    }
 }

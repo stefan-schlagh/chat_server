@@ -1,10 +1,11 @@
-import {Server} from 'socket.io';
+import {Server, Socket} from 'socket.io';
 import {Server as httpsServer} from 'https';
 import {chatData} from "./chatData/data";
 import {verifyToken} from "./authentication/jwt";
 import {Express} from "express";
 import {Connection} from "mysql2";
 import {logger} from "./util/logger";
+import User from "./chatData/user";
 
 export let chatServer:any;
 export function createChatServer(server:any,con:any,app:any){
@@ -15,27 +16,27 @@ export function createChatServer(server:any,con:any,app:any){
  */
 class ChatServer{
 
-    public server:httpsServer;
-    public con:Connection;
-    public app:Express;
-    public io:Server;
+    private _server:httpsServer;
+    private _con:Connection;
+    private _app:Express;
+    private _io:Server;
 
     constructor(server:httpsServer,con:Connection,app:Express) {
 
-        this.server = server;
-        this.con = con;
-        this.app = app;
+        this._server = server;
+        this._con = con;
+        this._app = app;
 
-        this.io = new Server(server);
+        this._io = new Server(server);
 
         /*
             gets called when a connection is established
          */
-        this.io.on('connection', (socket: { on: (arg0: string, arg1: (data:any) => void) => void; emit: (arg0: string) => void; disconnect: () => void; }) => {
+        this._io.on('connection', (socket:Socket) => {
             /*
                 the user who uses this connection
              */
-            let user:any;
+            let user:User;
 
             socket.on('auth', async (authTokens:string) => {
                 /*
@@ -64,7 +65,7 @@ class ChatServer{
             /*
                 wird aufgerufen, wenn chat gewechselt wird
              */
-            socket.on('change chat', data => {
+            socket.on('change chat', (data:any) => {
                 /*
                     if data is null, no chat should be selected
                  */
@@ -110,36 +111,36 @@ class ChatServer{
     isUserOnline(uid:number){
         return chatData.isUserOnline(uid);
     }
-/*
-    get server() {
+
+    get server(): httpsServer {
         return this._server;
     }
 
-    set server(value) {
+    set server(value: httpsServer) {
         this._server = value;
     }
 
-    get con() {
-        return this.#_con;
+    get con(): Connection {
+        return this._con;
     }
 
-    set con(value) {
-        this.#_con = value;
+    set con(value: Connection) {
+        this._con = value;
     }
 
-    get app() {
-        return this.#_app;
+    get app(): Express {
+        return this._app;
     }
 
-    set app(value) {
-        this.#_app = value;
+    set app(value: Express) {
+        this._app = value;
     }
 
-    get io() {
+    get io(): Server {
         return this._io;
     }
 
-    set io(value) {
+    set io(value: Server) {
         this._io = value;
-    }*/
+    }
 }

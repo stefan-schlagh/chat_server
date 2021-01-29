@@ -4,14 +4,14 @@ import chatData from "../chatData";
 
 export default class NormalChat extends Chat{
 
-    //ncid = this.chatId
-    public user1:any;
-    public user2:any;
+    // TODO
+    private _user1:any;
+    private _user2:any;
     /*
         the unread messages of each user
      */
-    public unreadMessages1:any;
-    public unreadMessages2:any;
+    private _unreadMessages1:number;
+    private _unreadMessages2:number;
 
     constructor(
         chatId:number = -1,
@@ -21,10 +21,10 @@ export default class NormalChat extends Chat{
         unreadMessages2:number = 0
     ) {
         super('normalChat',chatId);
-        this.user1 = user1;
-        this.user2 = user2;
-        this.unreadMessages1 = unreadMessages1;
-        this.unreadMessages2 = unreadMessages2;
+        this._user1 = user1;
+        this._user2 = user2;
+        this._unreadMessages1 = unreadMessages1;
+        this._unreadMessages2 = unreadMessages2;
     }
     /*
         chat is saved in the database
@@ -37,8 +37,8 @@ export default class NormalChat extends Chat{
                 "INSERT " +
                 "INTO normalchat(uid1,uid2)" +
                 "VALUES('" +
-                    this.user1.uid + "','" +
-                    this.user2.uid +
+                    this._user1.uid + "','" +
+                    this._user2.uid +
                 "');";
 
             chatServer.con.query(query_str1,(err:Error) => {
@@ -82,19 +82,19 @@ export default class NormalChat extends Chat{
             es wird der user, der nicht der Sender ist, definiert
          */
 
-        if(this.user1.uid===sentBy.uid){
+        if(this._user1.uid===sentBy.uid){
             /*
                 es wird geschaut, ob Socket definiert ist
              */
-            if(this.user2.socket != null)
-                chatServer.io.to(this.user2.socket.id).emit(emitName,data);
+            if(this._user2.socket != null)
+                chatServer.io.to(this._user2.socket.id).emit(emitName,data);
         }
         else {
             /*
                 es wird geschaut, ob Socket definiert ist
              */
-            if(this.user1.socket != null)
-                chatServer.io.to(this.user1.socket.id).emit(emitName,data);
+            if(this._user1.socket != null)
+                chatServer.io.to(this._user1.socket.id).emit(emitName,data);
         }
     }
     /*
@@ -104,8 +104,8 @@ export default class NormalChat extends Chat{
 
         const query_str =
             "UPDATE normalchat " +
-            "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
-            "unreadMessages2 = " + this.unreadMessages2 + " " +
+            "SET unreadMessages1 = " + this._unreadMessages1 + ", " +
+            "unreadMessages2 = " + this._unreadMessages2 + " " +
             "WHERE ncid = " + this.chatId + ";";
 
         chatServer.con.query(query_str,(err:Error) => {
@@ -118,11 +118,11 @@ export default class NormalChat extends Chat{
      */
     setUnreadMessages(uid:number,unreadMessages:any) {
 
-        if (this.user1.uid === uid)
-            this.unreadMessages1 = unreadMessages;
+        if (this._user1.uid === uid)
+            this._unreadMessages1 = unreadMessages;
 
-        else if (this.user2.uid === uid)
-            this.unreadMessages2 = unreadMessages;
+        else if (this._user2.uid === uid)
+            this._unreadMessages2 = unreadMessages;
 
         this.updateUnreadMessages();
     }
@@ -134,11 +134,11 @@ export default class NormalChat extends Chat{
             is this chat the currentChat of the user?
                 --> do nothing
          */
-        if(!this.user1.isCurrentChat(this)) {
-            this.incrementUnreadMessagesAt(this.user1.uid, num);
+        if(!this._user1.isCurrentChat(this)) {
+            this.incrementUnreadMessagesAt(this._user1.uid, num);
         }
-        if(!this.user2.isCurrentChat(this)) {
-            this.incrementUnreadMessagesAt(this.user2.uid, num);
+        if(!this._user2.isCurrentChat(this)) {
+            this.incrementUnreadMessagesAt(this._user2.uid, num);
         }
     }
     /*
@@ -146,11 +146,11 @@ export default class NormalChat extends Chat{
      */
     incrementUnreadMessagesAt(uid:number,num:number){
 
-        if (this.user1.uid === uid)
-            this.unreadMessages1 += num;
+        if (this._user1.uid === uid)
+            this._unreadMessages1 += num;
 
-        else if (this.user2.uid === uid)
-            this.unreadMessages2 += num;
+        else if (this._user2.uid === uid)
+            this._unreadMessages2 += num;
 
         this.updateUnreadMessages();
     }
@@ -159,27 +159,27 @@ export default class NormalChat extends Chat{
      */
     getUnreadMessages(uid:number){
 
-        if (this.user1.uid === uid)
-            return this.unreadMessages1;
+        if (this._user1.uid === uid)
+            return this._unreadMessages1;
 
-        else if (this.user2.uid === uid)
-            return this.unreadMessages2;
+        else if (this._user2.uid === uid)
+            return this._unreadMessages2;
         else
             return 0;
     }
 
     isAnyoneOnline(){
-        return this.user1.online || this.user2.online;
+        return this._user1.online || this._user2.online;
     }
     removeUsers(uid:number){
         /*
             es wird der user ermittelt, der nicht die uid hat
          */
         let user;
-        if(this.user1.uid === uid)
-            user = this.user2;
-        else if(this.user2 === uid)
-            user = this.user1;
+        if(this._user1.uid === uid)
+            user = this._user2;
+        else if(this._user2 === uid)
+            user = this._user1;
         /*
             wenn keine anderen Chats verhanden, wird user gelöscht
          */
@@ -196,59 +196,59 @@ export default class NormalChat extends Chat{
         }
     }
     getChatName(uidSelf:number){
-        if(this.user1.uid === uidSelf){
-            return this.user2.username;
+        if(this._user1.uid === uidSelf){
+            return this._user2.username;
         }else{
-            return  this.user1.username;
+            return  this._user1.username;
         }
     }
     /*
         all members of the chat get returned
      */
-    getMemberObject(uidSelf:number){
+    getMemberObject(uidSelf:number) {
 
-        if(uidSelf === this.user1.uid){
+        if (uidSelf === this._user1.uid) {
             return [{
-                uid : this.user2.uid,
-                username: this.user2.username
+                uid: this._user2.uid,
+                username: this._user2.username
             }];
-        }else{
+        } else {
             return [{
-                uid : this.user1.uid,
-                username: this.user1.username
+                uid: this._user1.uid,
+                username: this._user1.username
             }];
         }
     }
-/*
-    get user1(){
-        return this.#_user1;
+
+    get user1(): any {
+        return this._user1;
     }
 
-    get user2(){
-        return this.#_user2;
+    set user1(value: any) {
+        this._user1 = value;
     }
 
-    set user1(user1){
-        this.#_user1 = user1;
+    get user2(): any {
+        return this._user2;
     }
 
-    set user2(user2){
-        this.#_user2 = user2;
+    set user2(value: any) {
+        this._user2 = value;
     }
 
-    get unreadMessages1() {
-        return this.#_unreadMessages1;
+    get unreadMessages1(): number {
+        return this._unreadMessages1;
     }
 
-    set unreadMessages1(value) {
-        this.#_unreadMessages1 = value;
+    set unreadMessages1(value: number) {
+        this._unreadMessages1 = value;
     }
 
-    get unreadMessages2() {
-        return this.#_unreadMessages2;
+    get unreadMessages2(): number {
+        return this._unreadMessages2;
     }
 
-    set unreadMessages2(value) {
-        this.#_unreadMessages2 = value;
-    }*/
+    set unreadMessages2(value: number) {
+        this._unreadMessages2 = value;
+    }
 }

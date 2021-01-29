@@ -4,51 +4,51 @@ export default class ChatStorage{
     /*
         chats
      */
-    public normal = new BinSearchArray();
-    public group = new BinSearchArray();
+    private _normal = new BinSearchArray();
+    private _group = new BinSearchArray();
 
     //TODO type chat
     addChat(chat:any){
         if(chat.type === 'normalChat'){
-            this.normal.add(chat.chatId,chat);
+            this._normal.add(chat.chatId,chat);
         }else if(chat.type === 'groupChat'){
-            this.group.add(chat.chatId,chat);
+            this._group.add(chat.chatId,chat);
         }
     }
     //TODO type chat
     removeChat(chat:any){
         if(chat.type === 'normalChat'){
-            this.normal.remove(chat.chatId);
+            this._normal.remove(chat.chatId);
         }else if(chat.type === 'groupChat'){
-            this.group.remove(chat.chatId);
+            this._group.remove(chat.chatId);
         }
     }
     /*
         the sum of how many chats are stored is returned
      */
     length(){
-        return this.normal.length + this.group.length;
+        return this._normal.length + this._group.length;
     }
     /*
         value, index , key
      */
     forEach(callback:any){
 
-        for(let i:number=0;i<this.normal.length;i++){
-            const val = this.normal[i].value;
-            callback(val,i,this.normal[i].key,val.type);
+        for(let i:number=0; i<this._normal.length; i++){
+            const val = this._normal[i].value;
+            callback(val,i,this._normal[i].key,val.type);
         }
-        for(let i=0;i<this.group.length;i++){
-            const val = this.group[i].value;
-            callback(val,i,this.group[i].key,val.type);
+        for(let i=0; i<this._group.length; i++){
+            const val = this._group[i].value;
+            callback(val,i,this._group[i].key,val.type);
         }
     }
     /*
         value, index , key
      */
     forEachGroup(callback:any){
-        for(let i=0;i<this.group.length;i++){
-            callback(this.group[i].value,i,this.group[i].key);
+        for(let i=0; i<this._group.length; i++){
+            callback(this._group[i].value,i,this._group[i].key);
         }
     }
     /*
@@ -61,33 +61,33 @@ export default class ChatStorage{
             is the chat a normalchat?
          */
         if(type === 'normalChat'){
-            const chat = this.normal.get(id);
+            const chat = this._normal.get(id);
             if(chat)
                 return chat;
             /*
                 is the chat a groupChat?
              */
         }else if(type === 'groupChat'){
-            const chat = this.group.get(id);
+            const chat = this._group.get(id);
             if(chat)
                 return chat;
         }
         return null;
     }
-/*
-    get normal() {
-        return this.#_normal;
+
+    get normal(): BinSearchArray {
+        return this._normal;
     }
 
-    set normal(value) {
-        this.#_normal = value;
+    set normal(value: BinSearchArray) {
+        this._normal = value;
     }
 
-    get group() {
-        return this.#_group;
+    get group(): BinSearchArray {
+        return this._group;
     }
 
-    set group(value) {
-        this.#_group = value;
-    }*/
+    set group(value: BinSearchArray) {
+        this._group = value;
+    }
 }

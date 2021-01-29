@@ -1,8 +1,8 @@
 export default class Media {
 
-    public meid:number;
-    public type:any;
-    public pathToFile:any;
+    private _meid:number;
+    private _type:any;
+    private _pathToFile:any;
 
     constructor(meid:number,type:any,pathToFile:any) {
         this.meid = meid;
@@ -17,28 +17,28 @@ export default class Media {
             TODO
          */
     }
-/*
-    get meid() {
+
+    get meid(): number {
         return this._meid;
     }
 
-    set meid(value) {
+    set meid(value: number) {
         this._meid = value;
     }
 
-    get type() {
+    get type(): any {
         return this._type;
     }
 
-    set type(value) {
+    set type(value: any) {
         this._type = value;
     }
 
-    get pathToFile() {
+    get pathToFile(): any {
         return this._pathToFile;
     }
 
-    set pathToFile(value) {
+    set pathToFile(value: any) {
         this._pathToFile = value;
-    }*/
+    }
 }

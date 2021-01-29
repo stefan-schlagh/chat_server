@@ -10,18 +10,18 @@ import StatusMessage,{statusMessageTypes} from "../message/statusMessage";
 export class GroupChat extends Chat{
 
     //BinSearchArray - groupChatMembers
-    public members:BinSearchArray = new BinSearchArray();
-    public chatName:any;
-    public description:any;
-    public isPublic:any;
-    public socketRoomName:any;
+    private _members:BinSearchArray = new BinSearchArray();
+    private _chatName:string;
+    private _description:string;
+    private _isPublic:boolean;
+    private _socketRoomName:string;
 
-    constructor(chatId:number = -1, chatName:any, description:any, isPublic:boolean) {
+    constructor(chatId:number = -1, chatName:string, description:string, isPublic:boolean) {
         super('groupChat',chatId);
-        this.chatName = chatName;
-        this.description = description;
-        this.isPublic = isPublic;
-        this.socketRoomName = randomString(10);
+        this._chatName = chatName;
+        this._description = description;
+        this._isPublic = isPublic;
+        this._socketRoomName = randomString(10);
 
     }
     /*
@@ -31,10 +31,10 @@ export class GroupChat extends Chat{
         /*
             each users socket joins the roo,
          */
-        for(let i=0;i<this.members.length;i++){
-            const user = this.members[i].value.user;
+        for(let i=0; i<this._members.length; i++){
+            const user = this._members[i].value.user;
             if(user.socket){
-                user.socket.join(this.socketRoomName);
+                user.socket.join(this._socketRoomName);
             }
         }
     }
@@ -46,14 +46,14 @@ export class GroupChat extends Chat{
         return await new Promise((resolve,reject) => {
 
             const con = chatServer.con;
-            const isPublic = this.isPublic ? 1 : 0;
+            const isPublic = this._isPublic ? 1 : 0;
 
             const query_str1 =
                 "INSERT " +
                 "INTO groupchat (name,description,isPublic) " +
                 "VALUES (" +
-                    con.escape(this.chatName) + "," +
-                    con.escape(this.description) + "," +
+                    con.escape(this._chatName) + "," +
+                    con.escape(this._description) + "," +
                     isPublic +
                 ")";
 
@@ -85,11 +85,11 @@ export class GroupChat extends Chat{
     /*
         member is added to chat
      */
-    async addGroupChatMember(user:any){
+    async addGroupChatMember(user:User){
         /*
             is there already a groupChatMember for this user?
          */
-        const groupChatMember = this.members.get(user.uid);
+        const groupChatMember = this._members.get(user.uid);
         /*
             if defined --> isStillMember is updated
          */
@@ -115,7 +115,7 @@ export class GroupChat extends Chat{
             /*
                 member is added at chat
              */
-            this.members.add(user.uid, groupChatMember);
+            this._members.add(user.uid, groupChatMember);
         }
         /*
             chat is sent to user
@@ -294,7 +294,7 @@ export class GroupChat extends Chat{
         requested member is returned
      */
     getMember(uid:number){
-        const member = this.members.get(uid);
+        const member = this._members.get(uid);
         if(!member)
             /*
                 member is not in this chat
@@ -339,10 +339,10 @@ export class GroupChat extends Chat{
      */
     getMemberUids(uidC:number){
 
-        const uids = new Array(this.members.length - 1);
+        const uids = new Array(this._members.length - 1);
 
-        for(let i=0;i<this.members.length;i++){
-            const uid = this.members[i].key;
+        for(let i=0; i<this._members.length; i++){
+            const uid = this._members[i].key;
             if(uid !== uidC)
                 uids[i] = uid;
         }
@@ -354,7 +354,7 @@ export class GroupChat extends Chat{
     async loadGroupChatMembers(){
 
         const usersChatDB:any = await this.selectGroupChatMembers();
-        this.members = new BinSearchArray();
+        this._members = new BinSearchArray();
         /*
             loop through users, if not exists --> gets created
          */
@@ -388,7 +388,7 @@ export class GroupChat extends Chat{
                     unreadMessages,
                     isStillMember
                 );
-            this.members.add(
+            this._members.add(
                 newUser.uid,
                 groupChatMember
             );
@@ -396,9 +396,9 @@ export class GroupChat extends Chat{
         /*
             chat gets added to the members
          */
-        for (let j = 0; j < this.members.length; j++) {
+        for (let j = 0; j < this._members.length; j++) {
 
-            const member = this.members[j].value;
+            const member = this._members[j].value;
             /*
                 is the member still member?
              */
@@ -444,7 +444,7 @@ export class GroupChat extends Chat{
         /*
             is the groupChatMember defined?
          */
-        const groupChatMember = this.members.get(uid);
+        const groupChatMember = this._members.get(uid);
 
         if(groupChatMember)
             groupChatMember.setUnreadMessages(unreadMessages);
@@ -455,9 +455,9 @@ export class GroupChat extends Chat{
      */
     incrementUnreadMessages(num:number){
 
-        for(let i=0;i<this.members.length;i++){
+        for(let i=0; i<this._members.length; i++){
 
-            this.members[i].value.incrementUnreadMessages(num);
+            this._members[i].value.incrementUnreadMessages(num);
         }
     }
     /*
@@ -467,7 +467,7 @@ export class GroupChat extends Chat{
         /*
             is the groupChatMember defined?
          */
-        const groupChatMember = this.members.get(uid);
+        const groupChatMember = this._members.get(uid);
 
         if(groupChatMember) {
             groupChatMember.incrementUnreadMessages(num);
@@ -480,7 +480,7 @@ export class GroupChat extends Chat{
         /*
             is the groupChatMember defined?
          */
-        const groupChatMember = this.members.get(uid);
+        const groupChatMember = this._members.get(uid);
 
         if(groupChatMember) {
             return groupChatMember.unreadMessages;
@@ -502,9 +502,9 @@ export class GroupChat extends Chat{
             ...rest
         };
         if(includeSender)
-            chatServer.io.to(this.socketRoomName).emit(emitName,data);
+            chatServer.io.to(this._socketRoomName).emit(emitName,data);
         else
-            sentBy.socket.to(this.socketRoomName).emit(emitName,data);
+            sentBy.socket.to(this._socketRoomName).emit(emitName,data);
     }
     /*
         is called:
@@ -512,28 +512,28 @@ export class GroupChat extends Chat{
      */
     subscribeToRoom(user:any){
         if(user.socket !== null)
-            user.socket.join(this.socketRoomName);
+            user.socket.join(this._socketRoomName);
     }
 
     leaveRoom(user:any){
         if(user.socket !== null)
-            user.socket.leave(this.socketRoomName);
+            user.socket.leave(this._socketRoomName);
     }
     isAnyoneOnline(){
-        for(let i=0;i<this.members.length;i++){
-            if(this.members[i].online)
+        for(let i=0; i<this._members.length; i++){
+            if(this._members[i].online)
                 return true;
         }
         return false;
     }
     removeUsers(uid:number){
-        for(let i=0;i<this.members.length;i++){
+        for(let i=0; i<this._members.length; i++){
 
-            const member = this.members[i].value.user;
+            const member = this._members[i].value.user;
             /*
                 if the uid is not the one of the removing user
              */
-            if(this.members[i].value.uid !== uid) {
+            if(this._members[i].value.uid !== uid) {
                 /*
                     if there are no other chats, the user gets deleted
                  */
@@ -550,7 +550,7 @@ export class GroupChat extends Chat{
         }
     }
     getChatName(){
-        return this.chatName;
+        return this._chatName;
     }
     /*
         all members of the chat get returned
@@ -560,11 +560,11 @@ export class GroupChat extends Chat{
 
         let members = [];
 
-        for(let j=0;j<this.members.length;j++) {
+        for(let j=0; j<this._members.length; j++) {
 
             if (minified) {
 
-                const member = this.members[j].value.user;
+                const member = this._members[j].value.user;
                 if (!(uid === member.uid)) {
                     members.push({
                         uid: member.uid,
@@ -572,7 +572,7 @@ export class GroupChat extends Chat{
                     });
                 }
             }else{
-                const member = this.members[j].value;
+                const member = this._members[j].value;
                 if(member.isStillMember)
                     members.push({
                         uid: member.user.uid,
@@ -586,8 +586,8 @@ export class GroupChat extends Chat{
     }
 
     forEachUser(callback:any){
-        for(let i=0;i<this.members.length;i++){
-            callback(this.members[i].value.user,i,this.members[i].key);
+        for(let i=0; i<this._members.length; i++){
+            callback(this._members[i].value.user,i,this._members[i].key);
         }
     }
     /*
@@ -597,9 +597,9 @@ export class GroupChat extends Chat{
         return({
             type: this.type,
             id: this.chatId,
-            chatName: this.chatName,
-            description: this.description,
-            public: this.isPublic,
+            chatName: this._chatName,
+            description: this._description,
+            public: this._isPublic,
             memberSelf: {
                 isAdmin: memberSelf.isAdmin
             },
@@ -613,8 +613,8 @@ export class GroupChat extends Chat{
 
         let counter = 0;
 
-        for(let i=0;i<this.members.length;i++){
-            if(this.members[i].value.isAdmin)
+        for(let i=0; i<this._members.length; i++){
+            if(this._members[i].value.isAdmin)
                 counter ++;
         }
 
@@ -631,12 +631,12 @@ export class GroupChat extends Chat{
         await new Promise((resolve,reject) => {
 
             const con = chatServer.con;
-            const isPublic = this.isPublic ? 1 : 0;
+            const isPublic = this._isPublic ? 1 : 0;
 
             const query_str1 =
                 "UPDATE groupchat " +
-                "SET name = " + con.escape(this.chatName) + ", " +
-                "description = " + con.escape(this.description) + ", " +
+                "SET name = " + con.escape(this._chatName) + ", " +
+                "description = " + con.escape(this._description) + ", " +
                 "isPublic = " + isPublic + " " +
                 "WHERE gcid = " + this.chatId;
 
@@ -653,43 +653,44 @@ export class GroupChat extends Chat{
 
         //TODO: emit via socket
     }
-/*
-    get members() {
-        return this.#_members;
+
+    get members(): BinSearchArray {
+        return this._members;
     }
 
-    set members(value) {
-        this.#_members = value;
-    }
-    get chatName() {
-        return this.#_chatName;
+    set members(value: BinSearchArray) {
+        this._members = value;
     }
 
-    set chatName(value) {
-        this.#_chatName = value;
+    get chatName(): string {
+        return this._chatName;
     }
 
-    get description() {
-        return this.#_description;
+    set chatName(value: string) {
+        this._chatName = value;
     }
 
-    set description(value) {
-        this.#_description = value;
+    get description(): string {
+        return this._description;
     }
 
-    get isPublic() {
-        return this.#_isPublic;
+    set description(value: string) {
+        this._description = value;
     }
 
-    set isPublic(value) {
-        this.#_isPublic = value;
+    get isPublic(): boolean {
+        return this._isPublic;
     }
 
-    get socketRoomName() {
-        return this.#_socketRoomName;
+    set isPublic(value: boolean) {
+        this._isPublic = value;
     }
 
-    set socketRoomName(value) {
-        this.#_socketRoomName = value;
-    }*/
+    get socketRoomName(): string {
+        return this._socketRoomName;
+    }
+
+    set socketRoomName(value: string) {
+        this._socketRoomName = value;
+    }
 }

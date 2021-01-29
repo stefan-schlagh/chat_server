@@ -1,27 +1,28 @@
 import {chatServer} from "../../chatServer";
 import {statusMessageTypes} from "../message/statusMessage";
+import User from "../user";
 
 export default class GroupChatMember{
 
     // the id in the database
-    public gcmid:number;
+    private _gcmid:number;
     /*
         the parent chat
      */
-    public chat:any;
-    public user:any;
+    private _chat:any;
+    private _user:User;
     /*
         is this groupChatMember admin in the chat?
      */
-    public isAdmin:boolean;
+    private _isAdmin:boolean;
     /*
         the unredMessages for this member in this chat
      */
-    public unreadMessages:number;
+    private _unreadMessages:number;
     /*
         has the member already left the chat?
      */
-    public isStillMember:boolean;
+    private _isStillMember:boolean;
 
     constructor(
         gcmid:number = -1,
@@ -32,12 +33,12 @@ export default class GroupChatMember{
         isStillMember:boolean = true
     ) {
 
-        this.gcmid = gcmid;
-        this.chat = chat;
-        this.user = user;
-        this.isAdmin = isAdmin;
-        this.unreadMessages = unreadMessages;
-        this.isStillMember = isStillMember;
+        this._gcmid = gcmid;
+        this._chat = chat;
+        this._user = user;
+        this._isAdmin = isAdmin;
+        this._unreadMessages = unreadMessages;
+        this._isStillMember = isStillMember;
     }
     /*
         groupChatMember is saved in the database
@@ -51,9 +52,9 @@ export default class GroupChatMember{
                 "INSERT " +
                 "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
                 "VALUES (" +
-                    this.user.uid + ",'" +
-                    this.chat.chatId + "'," +
-                    con.escape(this.isAdmin) +
+                    this._user.uid + ",'" +
+                    this._chat.chatId + "'," +
+                    con.escape(this._isAdmin) +
                     ",1" +
                 ");";
 
@@ -72,8 +73,8 @@ export default class GroupChatMember{
                         if(err)
                             reject(err);
                         else {
-                            this.gcmid = result[0].gcmid;
-                            resolve(this.gcmid)
+                            this._gcmid = result[0]._gcmid;
+                            resolve(this._gcmid)
                         }
                     })
                 }
@@ -87,8 +88,8 @@ export default class GroupChatMember{
 
         const query_str =
             "UPDATE groupchatmember " +
-            "SET unreadMessages = " + this.unreadMessages + " " +
-            "WHERE gcmid = " + this.gcmid + ";";
+            "SET unreadMessages = " + this._unreadMessages + " " +
+            "WHERE gcmid = " + this._gcmid + ";";
 
         chatServer.con.query(query_str,(err:Error) => {
             if(err)
@@ -100,7 +101,7 @@ export default class GroupChatMember{
      */
     setUnreadMessages(unreadMessages:number){
 
-        this.unreadMessages = unreadMessages;
+        this._unreadMessages = unreadMessages;
 
         this.updateUnreadMessages();
     }
@@ -112,9 +113,9 @@ export default class GroupChatMember{
             is the chat the currentChat of the user?
                 --> do nothing
          */
-        if(!this.user.isCurrentChat(this.chat)) {
+        if(!this._user.isCurrentChat(this._chat)) {
 
-            this.unreadMessages += num;
+            this._unreadMessages += num;
             this.updateUnreadMessages();
         }
     }
@@ -125,7 +126,7 @@ export default class GroupChatMember{
         /*
             change adminStatus in object
          */
-        this.isAdmin = value;
+        this._isAdmin = value;
         /*
             update adminStatus in DB
          */
@@ -136,19 +137,19 @@ export default class GroupChatMember{
         const statusMessageType =
             value ?
                 statusMessageTypes.usersMadeAdmin
-                : (userFrom.uid === this.user.uid ?
+                : (userFrom.uid === this._user.uid ?
                     statusMessageTypes.userResignedAdmin
                     : statusMessageTypes.usersRemovedAdmin);
 
-        const statusMessage = await this.chat.addStatusMessage(
+        const statusMessage = await this._chat.addStatusMessage(
             statusMessageType,
             userFrom,
-            [this.user.uid]
+            [this._user.uid]
         );
         /*
             send message to all users
         */
-        await this.chat.sendMessage(
+        await this._chat.sendMessage(
             userFrom,
             statusMessage,
             true
@@ -165,11 +166,11 @@ export default class GroupChatMember{
         /*
             isStillMember is set to false
          */
-        this.isStillMember = false;
+        this._isStillMember = false;
         /*
              admin is set to false
          */
-        this.isAdmin = false;
+        this._isAdmin = false;
         /*
             isStillMember is updated in the Database
          */
@@ -182,7 +183,7 @@ export default class GroupChatMember{
         /*
             isStillMember is set to true
          */
-        this.isStillMember = true;
+        this._isStillMember = true;
         /*
             isStillMember is updated in the Database
          */
@@ -195,14 +196,14 @@ export default class GroupChatMember{
 
         await new Promise((resolve, reject) => {
 
-            const admin = this.isAdmin ? 1 : 0;
-            const isStillMember = this.isStillMember ? 1 : 0;
+            const admin = this._isAdmin ? 1 : 0;
+            const isStillMember = this._isStillMember ? 1 : 0;
 
             const query_str =
                 "UPDATE groupchatmember " +
                 "SET isAdmin = '" + admin + "', " +
                 "isStillMember = '" + isStillMember + "' " +
-                "WHERE gcmid = " + this.gcmid + ";";
+                "WHERE gcmid = " + this._gcmid + ";";
             chatServer.con.query(query_str,(err:Error) => {
                 if(err)
                     reject(err);
@@ -210,52 +211,52 @@ export default class GroupChatMember{
             });
         });
     }
-/*
-    get gcmid() {
-        return this.#_gcmid;
+
+    get gcmid(): number {
+        return this._gcmid;
     }
 
-    set gcmid(value) {
-        this.#_gcmid = value;
+    set gcmid(value: number) {
+        this._gcmid = value;
     }
 
-    get chat() {
-        return this.#_chat;
+    get chat(): any {
+        return this._chat;
     }
 
-    set chat(value) {
-        this.#_chat = value;
+    set chat(value: any) {
+        this._chat = value;
     }
 
-    get user() {
-        return this.#_user;
+    get user(): User {
+        return this._user;
     }
 
-    set user(value) {
-        this.#_user = value;
+    set user(value: User) {
+        this._user = value;
     }
 
-    get isAdmin() {
-        return this.#_isAdmin;
+    get isAdmin(): boolean {
+        return this._isAdmin;
     }
 
-    set isAdmin(value) {
-        this.#_isAdmin = value;
+    set isAdmin(value: boolean) {
+        this._isAdmin = value;
     }
 
-    get unreadMessages() {
-        return this.#_unreadMessages;
+    get unreadMessages(): number {
+        return this._unreadMessages;
     }
 
-    set unreadMessages(value) {
-        this.#_unreadMessages = value;
+    set unreadMessages(value: number) {
+        this._unreadMessages = value;
     }
 
-    get isStillMember() {
-        return this.#_isStillMember;
+    get isStillMember(): boolean {
+        return this._isStillMember;
     }
 
-    set isStillMember(value) {
-        this.#_isStillMember = value;
-    }*/
+    set isStillMember(value: boolean) {
+        this._isStillMember = value;
+    }
 }
