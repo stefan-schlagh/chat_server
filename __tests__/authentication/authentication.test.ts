@@ -1,7 +1,15 @@
 import {login,register,getUserInfo,getPasswordHash,saveUser} from "../../src/authentication/authentication";
-import {hashPassword} from "../../src/authentication/bcryptWrappers";
+import {comparePassword, hashPassword} from "../../src/authentication/bcryptWrappers";
 
 describe('authentication test',() => {
+    describe('bcryptWrappers',() => {
+       it('test bcryptWrappers',async () => {
+           //hash
+           const hash = await hashPassword('secretPassword');
+           //compare
+           expect(await comparePassword('secretPassword',hash)).toEqual(true);
+       })
+    })
     describe('login',() => {
         const escapeFunc = (str:string) => (str);
         it('success',async () => {

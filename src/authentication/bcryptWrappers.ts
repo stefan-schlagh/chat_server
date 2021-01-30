@@ -1,11 +1,10 @@
 import bcrypt from "bcrypt";
 
-//TODO type
-export async function comparePassword(password:any,hash:any):Promise<any>{
+export async function comparePassword(password:string,hash:string):Promise<boolean>{
 
     return new Promise(function(resolve, reject) {
 
-        bcrypt.compare(password, hash, function (err, result) {
+        bcrypt.compare(password, hash, function (err:Error, result:boolean) {
             if(err)
                 reject(err);
 
@@ -13,7 +12,7 @@ export async function comparePassword(password:any,hash:any):Promise<any>{
         });
     });
 }
-export async function hashPassword(password:any):Promise<string>{
+export async function hashPassword(password:string):Promise<string>{
 
     return new Promise(function(resolve, reject) {
 
@@ -21,7 +20,7 @@ export async function hashPassword(password:any):Promise<string>{
         /*
                 salt gets generated
              */
-        bcrypt.genSalt(saltRounds, function (err, salt) {
+        bcrypt.genSalt(saltRounds, function (err:Error, salt:string) {
             if(err)
                 reject(err);
             /*

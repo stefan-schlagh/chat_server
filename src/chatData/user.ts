@@ -4,7 +4,7 @@ import ChatStorage from "./chat/chatStorage";
 import {
     verifyCode,
     verificationCodeTypes,
-    generateVerificationCode, Parts
+    generateVerificationCode, Parts, VerificationCode
 } from "../verification/code";
 import {con} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
@@ -247,7 +247,7 @@ export default class User{
         return this.currentChat.type === chat.type
             && this.currentChat.chatId === chat.chatId;
     }
-    async createPasswordResetCode(){
+    async createPasswordResetCode():Promise<VerificationCode>{
         return await generateVerificationCode(verificationCodeTypes.pwReset,this.uid);
     }
     /*

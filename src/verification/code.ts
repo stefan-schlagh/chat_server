@@ -2,6 +2,7 @@ import crypto from "crypto";
 import {con} from "../app";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
+import {logger} from "../util/logger";
 
 /*
     the types the verificationCode can be
@@ -18,6 +19,15 @@ export enum verificationCodeTypes {
 export interface Parts{
     uid: number,
     code: string
+}
+/*
+    a newly generated verificationCode
+ */
+export interface VerificationCode {
+    // the verificationCode
+    sCode: string,
+    // the id of the code
+    vcid: number
 }
 /*
     000004efbghjgkjkaghfkjhagkhf
@@ -52,6 +62,7 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
             "DELETE " +
             "FROM verificationcode " +
             "WHERE uid = " + parts.uid + " AND DATEDIFF(CURRENT_TIMESTAMP(),date) > 2;";
+        logger.verbose('SQL: %s',query_str);
         con.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
@@ -65,6 +76,7 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
             "FROM verificationcode " +
             "WHERE uid = " + parts.uid + " " +
             "AND type = " + type.valueOf() + ";";
+        logger.verbose('SQL: %s',query_str);
         con.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
@@ -81,13 +93,13 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
     }
     return -1;
 }
-export function toHex(num:number,len:number){
+export function toHex(num:number,len:number):string{
     let sNum = num.toString(16);
     if(sNum.length > len)
         throw new Error("number to  long!");
     return getCharString(len - sNum.length,"0") + sNum;
 }
-export function getCharString(len:number,char:string){
+export function getCharString(len:number,char:string):string{
     let str = "";
     for(let i=0;i<len;i++) {
         str += char;
@@ -98,11 +110,11 @@ export function getCharString(len:number,char:string){
     code is generated and hash is saved into DB
         returns: sCode: uid(4Byte) + code
  */
-export async function generateVerificationCode(type:verificationCodeTypes,uid:number){
+export async function generateVerificationCode(type:verificationCodeTypes,uid:number):Promise<VerificationCode>{
 
-    const code = await generateCode();
+    const code:string = await generateCode();
 
-    const vcid = await saveCodeInDB(type,uid,await hashPassword(code))
+    const vcid:number = await saveCodeInDB(type,uid,await hashPassword(code))
     //sCode and verificationCodeID is returned
     return {
         sCode: toHex(uid, 8) + code,
@@ -110,7 +122,7 @@ export async function generateVerificationCode(type:verificationCodeTypes,uid:nu
     }
 
 }
-export async function generateCode(){
+export async function generateCode():Promise<string>{
     return await new Promise((resolve, reject) => {
         crypto.randomBytes(32, function(err, buffer) {
             if(err)
@@ -119,12 +131,13 @@ export async function generateCode(){
         });
     })
 }
-async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string){
+async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string):Promise<number>{
 
     const query_str =
         "INSERT " +
         "INTO verificationcode(type,uid,hash,date) " +
         "VALUES(" + type.valueOf() + "," + uid + "," + con.escape(hash) + ",CURRENT_TIMESTAMP());";
+    logger.verbose('SQL: %s',query_str);
 
     await new Promise((resolve, reject) => {
         con.query(query_str,async (err:Error,result:any) => {
@@ -139,6 +152,7 @@ async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string){
             "AS 'vcid' " +
             "FROM verificationcode " +
             "WHERE uid = " + uid + ";";
+        logger.verbose('SQL: %s',query_str1);
         con.query(query_str1,(err:Error,result:any) => {
             if(err)
                 reject(err);
