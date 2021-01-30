@@ -14,8 +14,8 @@ USER root
 RUN apt-get update --fix-missing && \
     apt-get upgrade -y && \
     curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash - && \
-    apt-get install -y nodejs && \
-    apt-get install git
+    apt-get install nodejs -y && \
+    apt-get install git -y
 
 RUN npm ci && \
     cd webdriver && \
