@@ -11,7 +11,7 @@ export const logger = createLogger({
         format.splat(),
         format.json()
     ),
-    defaultMeta: { service: 'your-service-name' },
+    defaultMeta: { service: 'chat-server' },
     transports: [
         //
         // - Write to all logs with level `info` and below to `combined.log`.
@@ -24,7 +24,7 @@ export const logger = createLogger({
         }),
         new winston.transports.DailyRotateFile({
             filename: 'log/error-%DATE%.log',
-            datePattern: 'YYYY-MM-DD-HH',
+            datePattern: 'YYYY-MM-DD',
             zippedArchive: true,
             level: "error"
         })

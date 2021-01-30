@@ -4,6 +4,7 @@ import {chatData} from "../data";
 import User from "../user";
 import {Chat} from "../chat/chat";
 import {logger} from "../../util/logger";
+import {StatusMessageContent} from "../../models/message";
 
 export enum statusMessageTypes {
     chatCreated,
@@ -98,19 +99,19 @@ export default class StatusMessage extends Message {
         statusMessage is initialized
             passiveUsers: array of uids
      */
-    async initNewMessage(type:statusMessageTypes, passiveUsers:any){
+    async initNewMessage(data:StatusMessageContent):Promise<void>{
         /*
             message gets saved
          */
         await super.initNewMessageInner();
 
-        this.type = type;
+        this.type = data.type;
         /*
             statusMsg is saved in the Database
             passive users are saved in the database
          */
         await this.saveStatusMsgInDB();
-        await this.savePassiveUsersInDB(passiveUsers);
+        await this.savePassiveUsersInDB(data.passiveUsers);
     }
     /*
         statusMsg is saved in the Database
@@ -152,7 +153,7 @@ export default class StatusMessage extends Message {
     /*
         passive users are saved in the Database
      */
-    async savePassiveUsersInDB(passiveUsers:any){
+    async savePassiveUsersInDB(passiveUsers:number[]){
         /*
             passiveUsers are created
          */
@@ -179,7 +180,6 @@ export default class StatusMessage extends Message {
                     "INSERT " +
                     "INTO stmsgpassiveu(smid,uid) " +
                     "VALUES ";
-                logger.verbose('SQL: %s',query_str);
                 /*
                     rows are added to query
                  */
@@ -188,6 +188,7 @@ export default class StatusMessage extends Message {
                     query_str += "(" + this.smid + "," + this.passiveUsers[i].uid + "), "
                 }
                 query_str += "(" + this.smid + "," + this.passiveUsers[i].uid + ");";
+                logger.verbose('SQL: %s',query_str);
                 /*
                     rows are saved in the database
                  */

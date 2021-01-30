@@ -2,9 +2,12 @@ import Message, {messageTypes} from "../message/message";
 import MessageStorage from "../message/messageStorage";
 import NormalMessage from "../message/normalMessage";
 import StatusMessage from "../message/statusMessage";
+import User from "../user";
+import {MessageData, NormalMessageContent, StatusMessageContent} from "../../models/message";
 
 export abstract class Chat{
 
+    //TODO
     private _type:string;
     private _messageStorage:MessageStorage;
     //wenn -1 --> noch keine Nachrichten im chat
@@ -35,47 +38,41 @@ export abstract class Chat{
     /*
         a new message is added to the chat
      */
-    async addMessage(author:any,data:any){
+    async addMessage(author:User,data:MessageData){
         /*
             message is created & initialized
          */
         let message;
-        const content = data.content;
 
-        switch(data._type){
+        switch(data.type){
 
             case messageTypes.normalMessage: {
+                const content:NormalMessageContent = data.content;
                 message = new NormalMessage(this,author);
                 /*
                     message is saved in DB, mid is saved
                  */
-                await message.initNewMessage(
-                    content.text,
-                    content.mentions,
-                    content.media
-                );
+                await message.initNewMessage(content);
                 break;
             }
             case messageTypes.statusMessage: {
+                const content:StatusMessageContent = data.content;
                 message = new StatusMessage(this,author);
                 /*
                     message is saved in DB, mid is saved
                  */
-                await message.initNewMessage(
-                    content._type,
-                    content.passiveUsers
-                );
+                await message.initNewMessage(content);
                 break;
             }
         }
         /*
             message is added to messageStorage
          */
-        this._messageStorage.addNewMessage(message);
+        this.messageStorage.addNewMessage(message);
         /*
             new messages are incremented
          */
-        this.incrementUnreadMessages(1);
+        await this.incrementUnreadMessages(1);
 
         return message;
     }
@@ -90,7 +87,7 @@ export abstract class Chat{
          */
         if(msgIdStart === -1)
 
-        if(this._messageStorage.loadedAllMessages){
+        if(this.messageStorage.loadedAllMessages){
 
             return({
                 status: 'reached top',
@@ -98,7 +95,7 @@ export abstract class Chat{
             });
         }
 
-        const mid = await this._messageStorage.getMidBelow(msgIdStart);
+        const mid = await this.messageStorage.getMidBelow(msgIdStart);
 
         if(mid === -1)
             return({
@@ -106,7 +103,7 @@ export abstract class Chat{
                 messages: []
             });
         else {
-            const messages = await this._messageStorage.getMessagesByMid(mid, num);
+            const messages = await this.messageStorage.getMessagesByMid(mid, num);
             return ({
                 status:
                     this._messageStorage.loadedAllMessages
@@ -120,7 +117,9 @@ export abstract class Chat{
     //TODO
     abstract sendToAll(author:any,socketMessage:any,messageObject:any,includeSender:boolean): any;
 
-    abstract incrementUnreadMessages(num:number): any;
+    abstract async incrementUnreadMessages(num:number): Promise<void>;
+
+    abstract async setUnreadMessages(uid:number,unreadMessages:number): Promise<void>;
 
     get type(): string {
         return this._type;

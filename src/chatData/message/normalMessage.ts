@@ -4,6 +4,7 @@ import Mention from "./mention";
 import Media from "./media";
 import {chatData} from "../data";
 import {logger} from "../../util/logger";
+import {NormalMessageContent} from "../../models/message";
 
 export default class NormalMessage extends Message {
 
@@ -112,13 +113,13 @@ export default class NormalMessage extends Message {
     /*
         normalMessage is initialized
      */
-    async initNewMessage(text:any,mentions:any,media:any){
+    async initNewMessage(data:NormalMessageContent):Promise<void>{
         /*
             message gets saved
          */
         await super.initNewMessageInner();
 
-        this.text = text;
+        this.text = data.text;
         /*
             message is saved in DB:
                 text
@@ -133,8 +134,8 @@ export default class NormalMessage extends Message {
                     ]
          */
         await this.saveTextInDB();
-        await this.saveMentionsInDB(mentions);
-        await this.saveMediaInDB(media);
+        await this.saveMentionsInDB(data.mentions);
+        await this.saveMediaInDB(data.media);
     }
     /*
         the text is saved in the database

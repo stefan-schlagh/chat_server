@@ -9,24 +9,27 @@ import {
 import {con} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendMail} from "../verification/sendMail";
+import {logger} from "../util/logger";
+import {Chat} from "./chat/chat";
 
 class Emitter extends EventEmitter {}
 
 export default class User{
+    //TODO
     /*
         eventEmitter
      */
-    #_eventEmitter = new Emitter();
-    #_chats = new ChatStorage();
-    #_socket:any;
-    #_uid:any;
-    #_username:any;
-    #_online:any;
-    #_currentChat:any;
+    private _eventEmitter = new Emitter();
+    private _chats:ChatStorage = new ChatStorage();
+    private _socket:any;
+    private _uid:number;
+    private _username:string;
+    private _online:boolean;
+    private _currentChat:Chat;
     /*
         are the chats of this user loaded?
      */
-    #_chatsLoaded = false;
+    private _chatsLoaded:boolean = false;
 
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
@@ -110,7 +113,8 @@ export default class User{
             this.currentChat.sendToAll(
                 this,
                 'started typing',
-                {uid: this.uid}
+                {uid: this.uid},
+                false
             );
     }
     stoppedTyping(){
@@ -121,7 +125,8 @@ export default class User{
             this.currentChat.sendToAll(
                 this,
                 'stopped typing',
-                {uid: this.uid}
+                {uid: this.uid},
+                false
             );
     }
     async sendMessage(data:any){
@@ -269,6 +274,7 @@ export default class User{
                     "UPDATE user " +
                     "SET password = " + con.escape(hash) + " " +
                     "WHERE uid = " + this.uid + ";";
+                logger.verbose('SQL: %s',query_str);
 
                 await new Promise((resolve, reject) => {
                     con.query(query_str, (err:Error) => {
@@ -288,6 +294,8 @@ export default class User{
                 "SELECT isVerified " +
                 "FROM user " +
                 "WHERE uid = " + this.uid + ";";
+            logger.verbose('SQL: %s',query_str);
+
             con.query(query_str,(err:Error,result:any) => {
                 if(err)
                     reject(err);
@@ -308,6 +316,8 @@ export default class User{
                 "INSERT " +
                 "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
                 "VALUES (" + this.uid + "," + vcid + "," + con.escape(email) + ",CURRENT_TIMESTAMP(),0);"
+            logger.verbose('SQL: %s',query_str);
+
             con.query(query_str,(err:Error,result:any) => {
                if(err)
                    reject(err);
@@ -326,6 +336,8 @@ export default class User{
                 "DELETE " +
                 "FROM verificationcode " +
                 "WHERE uid = " + this.uid + ";";
+            logger.verbose('SQL: %s',query_str);
+
             con.query(query_str,(err:Error) => {
                 if(err)
                     reject(err);
@@ -344,6 +356,8 @@ export default class User{
                    "SELECT * " +
                    "FROM emailchange " +
                    "WHERE vcid = " + vcid + ";";
+                logger.verbose('SQL: %s',query_str);
+
                con.query(query_str,(err:Error,result:any) => {
                    if(err)
                        reject(err);
@@ -359,6 +373,8 @@ export default class User{
                     "UPDATE emailchange " +
                     "SET isVerified = 1 " +
                     "WHERE vcid = " + vcid + ";";
+                logger.verbose('SQL: %s',query_str);
+
                 con.query(query_str,(err:Error) => {
                    if(err)
                        reject(err);
@@ -371,6 +387,8 @@ export default class User{
                     "UPDATE user " +
                     "SET email = " + con.escape(result.newEmail) + ",isVerified = 1 " +
                     "WHERE uid = " + this.uid + ";";
+                logger.verbose('SQL: %s',query_str);
+
                 con.query(query_str,(err:Error) => {
                     if(err)
                         reject(err);
@@ -384,73 +402,76 @@ export default class User{
     }
 
     get eventEmitter() {
-        return this.#_eventEmitter;
+        return this._eventEmitter;
     }
 
     set eventEmitter(value) {
-        this.#_eventEmitter = value;
+        this._eventEmitter = value;
     }
 
     get uid() {
-        return this.#_uid;
+        return this._uid;
     }
 
     set uid(value) {
-        this.#_uid = value;
+        this._uid = value;
     }
 
     get username() {
-        return this.#_username;
+        return this._username;
     }
 
     set username(value) {
-        this.#_username = value;
+        this._username = value;
     }
 
     get socket() {
-        return this.#_socket;
+        return this._socket;
     }
 
     set socket(value) {
-        this.#_socket = value;
+        this._socket = value;
     }
 
     get chats() {
-        return this.#_chats;
+        return this._chats;
     }
 
     set chats(value) {
-        this.#_chats = value;
+        this._chats = value;
     }
 
     get online() {
-        return this.#_online;
+        return this._online;
     }
 
     set online(online){
-        this.#_online = online;
+        this._online = online;
     }
 
     get currentChat() {
-        return this.#_currentChat;
+        return this._currentChat;
     }
 
-    set currentChat(value) {
-        this.#_currentChat = value;
+    set currentChat(value:Chat) {
+        this._currentChat = value;
         /*
             unreadMessages at currentChat are set to 0
          */
         if(value) {
 
-            value.setUnreadMessages(this.uid,0);
+            value.setUnreadMessages(this.uid,0)
+                .catch(err => {
+                    logger.error(err);
+                });
         }
     }
 
     get chatsLoaded() {
-        return this.#_chatsLoaded;
+        return this._chatsLoaded;
     }
 
     set chatsLoaded(value) {
-        this.#_chatsLoaded = value;
+        this._chatsLoaded = value;
     }
 }

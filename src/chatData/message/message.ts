@@ -40,10 +40,12 @@ export default abstract class Message{
             date: this.date
         });
     }
+    //data is type of MessageContent
+    abstract async initNewMessage(data:any):Promise<void>;
     /*
         message gets saved in the database
      */
-    async initNewMessageInner(){
+    protected initNewMessageInner(){
 
         return(new Promise((resolve, reject) => {
 

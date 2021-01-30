@@ -5,6 +5,7 @@ import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
 import Message, {messageTypes} from "./message";
 import {Chat} from "../chat/chat";
+import {logger} from "../../util/logger";
 
 export default class MessageStorage {
     /*
@@ -12,15 +13,15 @@ export default class MessageStorage {
      */
     private _loadedAllMessages:boolean = false;
     private _chat:Chat;
-    private _minMid:any;
-    private _maxMid:any;
+    private _minMid:number;
+    private _maxMid:number;
     private _messages = new BinSearchArray();
 
     constructor(chat:any) {
 
         this.chat = chat;
     }
-    async initFirstMessage(){
+    async initFirstMessage():Promise<void>{
         /*
             first message is loaded
          */
@@ -171,6 +172,23 @@ export default class MessageStorage {
             this.loadedAllMessages = true;
             return 0;
         }
+        /*
+            source: https://dzone.com/articles/convert-mysql-datetime-js-date
+         */
+        function mysqlTimeStampToDate(timestamp:string) {
+
+            /*
+                function parses mysql datetime string and returns javascript Date object
+                input has to be in this format: 2007-06-05 15:26:02
+             */
+            const regex=/^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9]) (?:([0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$/;
+            const parts:string[] = timestamp.replace(regex,"$1 $2 $3 $4 $5 $6").split(' ');
+            let partsNumber:number[] = new Array<number>(parts.length);
+            parts.forEach((value:string,index:number) => {
+                partsNumber[index] = parseInt(value);
+            })
+            return new Date(partsNumber[0],partsNumber[1]-1,partsNumber[2],partsNumber[3],partsNumber[4],partsNumber[5]);
+        }
     }
     /*
         messages are selected
@@ -187,6 +205,7 @@ export default class MessageStorage {
                 "WHERE isGroupChat = '" + isGroupChat + "' && cid = '" + this.chat.chatId + "' && mid < " + this.minMid + " " +
                 "ORDER BY mid DESC " +
                 "LIMIT " + num + ";";
+            logger.verbose('SQL: %s',query_str);
 
             chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
@@ -200,7 +219,7 @@ export default class MessageStorage {
     /*
         a new message is added, should be initialized already
      */
-    addNewMessage(message:Message){
+    addNewMessage(message:Message): void{
 
         this.messages.add(message.mid,message);
         this.maxMid = message.mid;
@@ -214,7 +233,7 @@ export default class MessageStorage {
     /*
         the message in this chat with the highest messageId gets searched
      */
-    async getMaxMid(){
+    async getMaxMid(): Promise<number>{
 
         return new Promise((resolve,reject) => {
 
@@ -225,6 +244,7 @@ export default class MessageStorage {
                 "AS 'mid' " +
                 "FROM message " +
                 "WHERE isGroupChat = '" + isGroupChat + "' && cid = '" + this.chat.chatId + "';";
+            logger.verbose('SQL: %s',query_str1);
 
             chatServer.con.query(query_str1,(err:Error,result:any) => {
                 if(err)
@@ -246,8 +266,9 @@ export default class MessageStorage {
                         "SELECT max(mid) " +
                         "AS 'mid' " +
                         "FROM message;";
+                    logger.verbose('SQL: %s',query_str2);
 
-                    chatServer.con.query(query_str1,(err:Error,result:any) => {
+                    chatServer.con.query(query_str2,(err:Error,result:any) => {
                         if(err)
                             reject(err);
                         /*
@@ -291,7 +312,7 @@ export default class MessageStorage {
     /*
         the mid below the given is returned
      */
-    async getMidBelow(mid:number){
+    async getMidBelow(mid:number):Promise<number>{
 
         const index = this.messages.getIndex(mid);
 
@@ -331,19 +352,19 @@ export default class MessageStorage {
         this._chat = value;
     }
 
-    get minMid(): any {
+    get minMid(): number {
         return this._minMid;
     }
 
-    set minMid(value: any) {
+    set minMid(value: number) {
         this._minMid = value;
     }
 
-    get maxMid(): any {
+    get maxMid(): number {
         return this._maxMid;
     }
 
-    set maxMid(value: any) {
+    set maxMid(value: number) {
         this._maxMid = value;
     }
 

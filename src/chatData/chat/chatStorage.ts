@@ -56,7 +56,7 @@ export default class ChatStorage{
             type: the type of the chat
             id: the id of the chat
      */
-    getChat(type:any,id:number){
+    getChat(type:string,id:number){
         /*
             is the chat a normalchat?
          */

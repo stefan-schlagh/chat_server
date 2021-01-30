@@ -1,3 +1,4 @@
+//TODO generic
 export default class BinSearchArray extends Array{
 
     getIndex(key:number){

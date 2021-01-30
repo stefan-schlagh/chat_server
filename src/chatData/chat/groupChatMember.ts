@@ -1,6 +1,7 @@
 import {chatServer} from "../../chatServer";
 import {statusMessageTypes} from "../message/statusMessage";
 import User from "../user";
+import {logger} from "../../util/logger";
 
 export default class GroupChatMember{
 
@@ -43,7 +44,7 @@ export default class GroupChatMember{
     /*
         groupChatMember is saved in the database
      */
-    async saveGroupChatMemberInDB(){
+    async saveGroupChatMemberInDB():Promise<number>{
 
         return new Promise((resolve,reject) => {
 
@@ -52,11 +53,12 @@ export default class GroupChatMember{
                 "INSERT " +
                 "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
                 "VALUES (" +
-                    this._user.uid + ",'" +
-                    this._chat.chatId + "'," +
-                    con.escape(this._isAdmin) +
+                    this.user.uid + ",'" +
+                    this.chat.chatId + "'," +
+                    con.escape(this.isAdmin) +
                     ",1" +
                 ");";
+            logger.verbose('SQL: %s',query_str1);
 
             con.query(query_str1,(err:Error) => {
                 if(err)
@@ -68,13 +70,15 @@ export default class GroupChatMember{
                     const query_str2 =
                         "SELECT max(gcmid) " +
                         "AS 'gcmid' " +
-                        "FROM groupchatmember";
+                        "FROM groupchatmember;";
+                    logger.verbose('SQL: %s',query_str2);
+
                     con.query(query_str2,(err:Error,result:any,fields:any) => {
                         if(err)
                             reject(err);
                         else {
-                            this._gcmid = result[0]._gcmid;
-                            resolve(this._gcmid)
+                            this.gcmid = result[0].gcmid;
+                            resolve(this.gcmid)
                         }
                     })
                 }
@@ -84,39 +88,43 @@ export default class GroupChatMember{
     /*
         unread messages are updated in the Database
      */
-    updateUnreadMessages(){
+    async updateUnreadMessages():Promise<void>{
 
-        const query_str =
-            "UPDATE groupchatmember " +
-            "SET unreadMessages = " + this._unreadMessages + " " +
-            "WHERE gcmid = " + this._gcmid + ";";
+        return new Promise((resolve, reject) => {
+            const query_str =
+                "UPDATE groupchatmember " +
+                "SET unreadMessages = " + this.unreadMessages + " " +
+                "WHERE gcmid = " + this.gcmid + ";";
+            logger.verbose('SQL: %s',query_str);
 
-        chatServer.con.query(query_str,(err:Error) => {
-            if(err)
-                throw err;
+            chatServer.con.query(query_str,(err:Error) => {
+                if(err)
+                    reject(err);
+                resolve();
+            });
         });
     }
     /*
         unreadMessages of this member are set
      */
-    setUnreadMessages(unreadMessages:number){
+    async setUnreadMessages(unreadMessages:number):Promise<void>{
 
-        this._unreadMessages = unreadMessages;
+        this.unreadMessages = unreadMessages;
 
-        this.updateUnreadMessages();
+        await this.updateUnreadMessages();
     }
     /*
         unreadMessages of this member are incremented
      */
-    incrementUnreadMessages(num:number){
+    async incrementUnreadMessages(num:number):Promise<void>{
         /*
             is the chat the currentChat of the user?
                 --> do nothing
          */
-        if(!this._user.isCurrentChat(this._chat)) {
+        if(!this._user.isCurrentChat(this.chat)) {
 
-            this._unreadMessages += num;
-            this.updateUnreadMessages();
+            this.unreadMessages += num;
+            await this.updateUnreadMessages();
         }
     }
     /*
@@ -126,7 +134,7 @@ export default class GroupChatMember{
         /*
             change adminStatus in object
          */
-        this._isAdmin = value;
+        this.isAdmin = value;
         /*
             update adminStatus in DB
          */
@@ -137,19 +145,19 @@ export default class GroupChatMember{
         const statusMessageType =
             value ?
                 statusMessageTypes.usersMadeAdmin
-                : (userFrom.uid === this._user.uid ?
+                : (userFrom.uid === this.user.uid ?
                     statusMessageTypes.userResignedAdmin
                     : statusMessageTypes.usersRemovedAdmin);
 
-        const statusMessage = await this._chat.addStatusMessage(
+        const statusMessage = await this.chat.addStatusMessage(
             statusMessageType,
             userFrom,
-            [this._user.uid]
+            [this.user.uid]
         );
         /*
             send message to all users
         */
-        await this._chat.sendMessage(
+        await this.chat.sendMessage(
             userFrom,
             statusMessage,
             true
@@ -162,15 +170,15 @@ export default class GroupChatMember{
     /*
         groupChatMember is deleted in the database
      */
-    async deleteGroupChatMember(){
+    async deleteGroupChatMember():Promise<void>{
         /*
             isStillMember is set to false
          */
-        this._isStillMember = false;
+        this.isStillMember = false;
         /*
              admin is set to false
          */
-        this._isAdmin = false;
+        this.isAdmin = false;
         /*
             isStillMember is updated in the Database
          */
@@ -179,11 +187,11 @@ export default class GroupChatMember{
     /*
         delete is undone
      */
-    async undoDelete(){
+    async undoDelete():Promise<void>{
         /*
             isStillMember is set to true
          */
-        this._isStillMember = true;
+        this.isStillMember = true;
         /*
             isStillMember is updated in the Database
          */
@@ -192,18 +200,20 @@ export default class GroupChatMember{
     /*
         groupChatMember is updated in the DB
      */
-    async update(){
+    async update():Promise<void>{
 
         await new Promise((resolve, reject) => {
 
-            const admin = this._isAdmin ? 1 : 0;
-            const isStillMember = this._isStillMember ? 1 : 0;
+            const admin = this.isAdmin ? 1 : 0;
+            const isStillMember = this.isStillMember ? 1 : 0;
 
             const query_str =
                 "UPDATE groupchatmember " +
                 "SET isAdmin = '" + admin + "', " +
                 "isStillMember = '" + isStillMember + "' " +
-                "WHERE gcmid = " + this._gcmid + ";";
+                "WHERE gcmid = " + this.gcmid + ";";
+            logger.verbose('SQL: %s',query_str);
+
             chatServer.con.query(query_str,(err:Error) => {
                 if(err)
                     reject(err);

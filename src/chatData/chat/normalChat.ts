@@ -1,6 +1,7 @@
 import {Chat} from "./chat";
 import {chatServer} from "../../chatServer";
 import chatData from "../chatData";
+import {logger} from "../../util/logger";
 
 export default class NormalChat extends Chat{
 
@@ -40,6 +41,7 @@ export default class NormalChat extends Chat{
                     this._user1.uid + "','" +
                     this._user2.uid +
                 "');";
+            logger.verbose('SQL: %s',query_str1);
 
             chatServer.con.query(query_str1,(err:Error) => {
                 /*
@@ -52,6 +54,7 @@ export default class NormalChat extends Chat{
                     const query_str2 =
                         "SELECT max(ncid) AS 'ncid' " +
                         "FROM normalchat;";
+                    logger.verbose('SQL: %s',query_str2);
 
                     chatServer.con.query(query_str2,(err:Error,result:any,fields:any) => {
 
@@ -100,13 +103,14 @@ export default class NormalChat extends Chat{
     /*
         the number of unread messages in the database is updated
      */
-    updateUnreadMessages(){
+    async updateUnreadMessages():Promise<void> {
 
         const query_str =
             "UPDATE normalchat " +
             "SET unreadMessages1 = " + this._unreadMessages1 + ", " +
             "unreadMessages2 = " + this._unreadMessages2 + " " +
             "WHERE ncid = " + this.chatId + ";";
+        logger.verbose('SQL: %s',query_str);
 
         chatServer.con.query(query_str,(err:Error) => {
             if(err)
@@ -116,41 +120,41 @@ export default class NormalChat extends Chat{
     /*
         unreadMessages of the user with this uid are set
      */
-    setUnreadMessages(uid:number,unreadMessages:any) {
+    async setUnreadMessages(uid:number,unreadMessages:number) {
 
-        if (this._user1.uid === uid)
-            this._unreadMessages1 = unreadMessages;
+        if (this.user1.uid === uid)
+            this.unreadMessages1 = unreadMessages;
 
-        else if (this._user2.uid === uid)
-            this._unreadMessages2 = unreadMessages;
+        else if (this.user2.uid === uid)
+            this.unreadMessages2 = unreadMessages;
 
-        this.updateUnreadMessages();
+        await this.updateUnreadMessages();
     }
     /*
         unreadMessages are incremented at all users
      */
-    incrementUnreadMessages(num:number){
+    async incrementUnreadMessages(num:number):Promise<void> {
         /*
             is this chat the currentChat of the user?
                 --> do nothing
          */
         if(!this._user1.isCurrentChat(this)) {
-            this.incrementUnreadMessagesAt(this._user1.uid, num);
+            await this.incrementUnreadMessagesAt(this.user1.uid, num);
         }
         if(!this._user2.isCurrentChat(this)) {
-            this.incrementUnreadMessagesAt(this._user2.uid, num);
+            await this.incrementUnreadMessagesAt(this.user2.uid, num);
         }
     }
     /*
         unreadMessages are increment at the user with this uid
      */
-    incrementUnreadMessagesAt(uid:number,num:number){
+    async incrementUnreadMessagesAt(uid:number,num:number):Promise<void> {
 
-        if (this._user1.uid === uid)
-            this._unreadMessages1 += num;
+        if (this.user1.uid === uid)
+            this.unreadMessages1 += num;
 
-        else if (this._user2.uid === uid)
-            this._unreadMessages2 += num;
+        else if (this.user2.uid === uid)
+            this.unreadMessages2 += num;
 
         this.updateUnreadMessages();
     }
@@ -159,27 +163,27 @@ export default class NormalChat extends Chat{
      */
     getUnreadMessages(uid:number){
 
-        if (this._user1.uid === uid)
-            return this._unreadMessages1;
+        if (this.user1.uid === uid)
+            return this.unreadMessages1;
 
-        else if (this._user2.uid === uid)
-            return this._unreadMessages2;
+        else if (this.user2.uid === uid)
+            return this.unreadMessages2;
         else
             return 0;
     }
 
     isAnyoneOnline(){
-        return this._user1.online || this._user2.online;
+        return this.user1.online || this.user2.online;
     }
     removeUsers(uid:number){
         /*
             es wird der user ermittelt, der nicht die uid hat
          */
         let user;
-        if(this._user1.uid === uid)
-            user = this._user2;
-        else if(this._user2 === uid)
-            user = this._user1;
+        if(this.user1.uid === uid)
+            user = this.user2;
+        else if(this.user2 === uid)
+            user = this.user1;
         /*
             wenn keine anderen Chats verhanden, wird user gelöscht
          */
@@ -195,11 +199,11 @@ export default class NormalChat extends Chat{
             }
         }
     }
-    getChatName(uidSelf:number){
-        if(this._user1.uid === uidSelf){
-            return this._user2.username;
+    getChatName(uidSelf:number):Promise<string> {
+        if(this.user1.uid === uidSelf){
+            return this.user2.username;
         }else{
-            return  this._user1.username;
+            return this.user1.username;
         }
     }
     /*
@@ -207,10 +211,10 @@ export default class NormalChat extends Chat{
      */
     getMemberObject(uidSelf:number) {
 
-        if (uidSelf === this._user1.uid) {
+        if (uidSelf === this.user1.uid) {
             return [{
-                uid: this._user2.uid,
-                username: this._user2.username
+                uid: this.user2.uid,
+                username: this.user2.username
             }];
         } else {
             return [{

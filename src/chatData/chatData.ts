@@ -53,7 +53,7 @@ class ChatData{
 
             returns: messages
      */
-    async loadMessages(user:any,type:any,id:number,lastMsgId:number,num:number){
+    async loadMessages(user:User,type:string,id:number,lastMsgId:number,num:number){
         /*
             does the chat exist?
          */
@@ -74,7 +74,7 @@ class ChatData{
         user is unloaded. this happens when the client disconnects
             user: the user
      */
-    unloadUser(user:any){
+    unloadUser(user:User){
 
         if(user) {
             /*

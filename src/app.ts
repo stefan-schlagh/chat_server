@@ -36,6 +36,7 @@ import pwResetRouter from './routes/passwordReset';
 
 import {Connection, createConnection} from 'mysql2';
 import {chatServer, createChatServer} from './chatServer';
+import {logger} from "./util/logger";
 /*
     express-server is initialized
  */
@@ -59,7 +60,7 @@ export function startServer(){
         transports: [
             new winston.transports.DailyRotateFile({
                 filename: 'log/http-%DATE%.log',
-                datePattern: 'YYYY-MM-DD-HH',
+                datePattern: 'YYYY-MM-DD',
                 zippedArchive: true
             })
         ],
@@ -110,7 +111,10 @@ export function startServer(){
         charset : 'utf8mb4'
     });
     con.connect(function(err:Error) {
-        if (err) throw err;
+        if (err) {
+            logger.error(err);
+            throw err;
+        }
     });
     /*
         chatServer is created
