@@ -16,11 +16,13 @@ import express_enforces_ssl from 'express-enforces-ssl';
 import https, {Server as sServer} from 'https';
 import express, {Express} from 'express';
 import { Request, Response } from "express";
+// @ts-ignore
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import compression from 'compression';
+// @ts-ignore
 import winston, {format} from 'winston';
 import expressWinston from 'express-winston';
 import 'winston-daily-rotate-file';
@@ -93,15 +95,6 @@ export function startServer(){
     app.use(cors());
     app.use(cookieParser());
     app.use(compression());
-    /*
-        Routers for express
-     */
-    app.use('/auth',authRouter);
-    app.use('/user',userRouter);
-    app.use('/group',groupRouter);
-    app.use('/chats',chatRouter);
-    app.use('/message',messageRouter);
-    app.use('/pwReset',pwResetRouter);
 
     con = createConnection({
         host: process.env.DB_HOST,
@@ -119,12 +112,26 @@ export function startServer(){
     /*
         chatServer is created
      */
-    createChatServer(httpsServer, con, app);
+    if(process.env.NODE_ENV !== "test") {
+        createChatServer(httpsServer, con, app);
+    }else{
+        createChatServer(httpServer, con, app);
+    }
+
+    /*
+        Routers for express
+     */
+    app.use('/auth',authRouter);
+    app.use('/user',userRouter);
+    app.use('/group',groupRouter);
+    app.use('/chats',chatRouter);
+    app.use('/message',messageRouter);
+    app.use('/pwReset',pwResetRouter);
 
     app.get('/', function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });
     });
-    app.get('*', function (req: Request, res: Response) {
+    app.get(['/chat*','/login*','/register*','/about*'], function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });
     });
 
@@ -135,10 +142,14 @@ export function startServer(){
         console.log('Express https server listening on port ' + httpsPort);
     });
 
+    logger.info('app created');
+
 }
 export function closeServer(){
     chatServer.io.close();
     httpServer.close();
     httpsServer.close();
     con.end();
+
+    logger.info('chatServer closed');
 }

@@ -16,23 +16,30 @@ export function createChatServer(server:any,con:any,app:any){
  */
 class ChatServer{
 
-    private _server:httpsServer;
+    private _server:any;
     private _con:Connection;
     private _app:Express;
     private _io:Server;
 
-    constructor(server:httpsServer,con:Connection,app:Express) {
+    constructor(server:any,con:Connection,app:Express) {
 
-        this._server = server;
-        this._con = con;
-        this._app = app;
+        this.server = server;
+        this.con = con;
+        this.app = app;
 
-        this._io = new Server(server);
-
+        //@ts-ignore
+        this.io = new Server(server);/*,{
+            cors: {
+                origin: '*:*'
+            }
+        });*/
         /*
             gets called when a connection is established
          */
-        this._io.on('connection', (socket:Socket) => {
+        //TODO log socket id
+        this.io.on('connection', (socket:Socket) => {
+
+            logger.info('Socket: new connection initialized');
             /*
                 the user who uses this connection
              */
@@ -104,6 +111,8 @@ class ChatServer{
                 logger.log('info','disconnected');
             });
         });
+
+        logger.info('chatServer created');
     }
     /*
         returns if the user is online
@@ -112,11 +121,11 @@ class ChatServer{
         return chatData.isUserOnline(uid);
     }
 
-    get server(): httpsServer {
+    get server(): any {
         return this._server;
     }
 
-    set server(value: httpsServer) {
+    set server(value: any) {
         this._server = value;
     }
 
