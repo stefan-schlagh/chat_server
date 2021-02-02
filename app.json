@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "chatServer",
+      "script": "npm",
+      "args": "start"
+    }
+  ]
+}

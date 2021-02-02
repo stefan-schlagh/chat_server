@@ -2,19 +2,25 @@
   "name": "chat_server",
   "version": "1.0.0",
   "description": "",
-  "main": "modules/app.js",
-  "type": "module",
-  "scripts": {
-    "start": "node index.js",
-    "test": "jest --forceExit --maxWorkers=1",
-    "webdriver": "npm test --prefix webdriver"
-  },
+  "main": "dist/src/index.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "scripts": {
+    "obsolete:prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
+    "clean": "rimraf /dist",
+    "build": "npm run clean && tsc",
+    "lint": "tsc --noEmit && eslint '{src,__test__}/**/*.{js,ts,tsx}' --quiet --fix",
+    "prestart": "npm run build",
+    "start": "node .",
+    "dev:server": "nodemon",
+    "dev:server-debug": "node -r ts-node/register --inspect=5858 src/index.ts",
+    "test": "jest --maxWorkers=1",
+    "dev:tdd": "node --inspect=5859 node_modules/.bin/jest --runInBand --watch",
+    "webdriver": "npm test --prefix webdriver"
+  },
   "dependencies": {
     "bcrypt": "^5.0.0",
-    "binsearcharray": "^1.0.3",
     "body-parser": "^1.19.0",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.5",
@@ -22,25 +28,51 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-enforces-ssl": "^1.1.0",
+    "express-winston": "^4.0.5",
     "helmet": "^4.4.1",
     "jsonwebtoken": "^8.5.1",
     "mysql2": "^2.2.5",
     "nodemailer": "^6.4.17",
-    "socket.io": "^3.0.5"
+    "socket.io": "^3.0.5",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.10",
-    "@babel/preset-env": "^7.12.11",
-    "babel-jest": "^26.6.3",
-    "jest": "^26.6.3",
-    "socket.io-client": "^3.0.5",
-    "supertest": "^6.0.1"
+    "@types/bcrypt": "^3.0.0",
+    "@types/body-parser": "^1.19.0",
+    "@types/compression": "^1.7.0",
+    "@types/cookie-parser": "^1.4.2",
+    "@types/cors": "^2.8.9",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.17.1",
+    "@types/express-enforces-ssl": "^1.1.1",
+    "@types/jest": "^24.0.18",
+    "@types/jsonwebtoken": "^8.5.0",
+    "@types/mysql2": "github:types/mysql2",
+    "@types/node": "^12.7.12",
+    "@types/nodemailer": "^6.4.0",
+    "@types/socket.io": "^2.1.13",
+    "@types/supertest": "^2.0.8",
+    "@typescript-eslint/eslint-plugin": "^2.3.3",
+    "@typescript-eslint/parser": "^2.3.3",
+    "eslint": "^6.5.1",
+    "eslint-config-prettier": "^6.4.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "husky": "^3.0.8",
+    "jest": "^22.4.4",
+    "lint-staged": "^9.4.2",
+    "nodemon": "^2.0.7",
+    "prettier": "^1.18.2",
+    "rimraf": "^3.0.2",
+    "supertest": "^4.0.2",
+    "ts-jest": "^22.4.2",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.4"
   },
-  "jest": {
-    "testEnvironment": "node",
-    "coveragePathIgnorePatterns": [
-      "/node_modules/"
-    ],
-    "modulePathIgnorePatterns": ["webdriver"]
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "eslint --fix --quiet",
+      "git add"
+    ]
   }
 }
