@@ -8,6 +8,7 @@ import GroupChatMember from "./groupChatMember";
 import StatusMessage,{statusMessageTypes} from "../message/statusMessage";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
+import {SimpleUser} from "../../models/user";
 
 export class GroupChat extends Chat{
 
@@ -480,7 +481,7 @@ export class GroupChat extends Chat{
     /*
         unread Messages of the user with this uid are returned
      */
-    getUnreadMessages(uid:number){
+    getUnreadMessages(uid:number):number {
         /*
             is the groupChatMember defined?
          */
@@ -523,13 +524,20 @@ export class GroupChat extends Chat{
         if(user.socket !== null)
             user.socket.leave(this.socketRoomName);
     }
-    isAnyoneOnline(){
+    /*
+        returns if there is someone online in this chat
+     */
+    isAnyoneOnline():boolean {
         for(let i=0; i<this.members.length; i++){
             if(this.members[i].online)
                 return true;
         }
         return false;
     }
+    /*
+        remove all users from the chat, gets called when chat gets unloaded
+            uid: the requesting user
+     */
     removeUsers(uid:number){
         for(let i=0; i<this.members.length; i++){
 
@@ -553,14 +561,16 @@ export class GroupChat extends Chat{
             }
         }
     }
-    getChatName(){
+    // the name of the chat gets returned
+    getChatName(uidSelf:number){
         return this.chatName;
     }
     /*
         all members of the chat get returned
             minified: show only the most important information
      */
-    getMemberObject(uid:number,minified = true){
+    //TODO unminified extra method
+    getMemberObject(uid:number,minified = true):any {
 
         let members = [];
 

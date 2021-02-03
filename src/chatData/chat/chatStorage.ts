@@ -1,64 +1,53 @@
-import BinSearchArray from "../../util/binsearcharray";
 import {Chat} from "./chat";
 
 export default class ChatStorage{
     /*
         chats
      */
-    //TODO Map
-    private _normal = new BinSearchArray();
-    private _group = new BinSearchArray();
+    private _normal = new Map<number,Chat>();
+    private _group = new Map<number,Chat>();
 
     // add chat to the list
-    addChat(chat:Chat){
+    addChat(chat:Chat):void {
         if(chat.type === 'normalChat'){
-            this.normal.add(chat.chatId,chat);
+            this.normal.set(chat.chatId,chat);
         }else if(chat.type === 'groupChat'){
-            this.group.add(chat.chatId,chat);
+            this.group.set(chat.chatId,chat);
         }
     }
     // remove chat from the list
-    removeChat(chat:Chat){
+    removeChat(chat:Chat):void {
         if(chat.type === 'normalChat'){
-            this.normal.remove(chat.chatId);
+            this.normal.delete(chat.chatId);
         }else if(chat.type === 'groupChat'){
-            this.group.remove(chat.chatId);
+            this.group.delete(chat.chatId);
         }
     }
     /*
         the sum of how many chats are stored is returned
      */
-    length(){
-        return this.normal.length + this.group.length;
+    length():number {
+        return this.normal.size + this.group.size;
     }
     /*
         value, index , key
      */
-    forEach(callback:any){
+    forEach(callback: (value:Chat,key:number) => void):void {
 
-        for(let i:number=0; i<this.normal.length; i++){
-            const val = this.normal[i].value;
-            callback(val,i,this.normal[i].key,val.type);
-        }
-        for(let i=0; i<this.group.length; i++){
-            const val = this.group[i].value;
-            callback(val,i,this.group[i].key,val.type);
-        }
-    }
-    /*
-        value, index , key
-     */
-    forEachGroup(callback:any){
-        for(let i=0; i<this.group.length; i++){
-            callback(this.group[i].value,i,this.group[i].key);
-        }
+        this.normal.forEach((value:Chat,key:number) => {
+            callback(value,key);
+        });
+
+        this.group.forEach((value:Chat,key:number) => {
+           callback(value,key);
+        });
     }
     /*
         the requested chat gets returned
             type: the type of the chat
             id: the id of the chat
      */
-    getChat(type:string,id:number){
+    getChat(type:string,id:number):Chat {
         /*
             is the chat a normalchat?
          */
@@ -77,19 +66,19 @@ export default class ChatStorage{
         return null;
     }
 
-    get normal(): BinSearchArray {
+    get normal(): Map<number,Chat> {
         return this._normal;
     }
 
-    set normal(value: BinSearchArray) {
+    set normal(value: Map<number,Chat>) {
         this._normal = value;
     }
 
-    get group(): BinSearchArray {
+    get group(): Map<number,Chat> {
         return this._group;
     }
 
-    set group(value: BinSearchArray) {
+    set group(value: Map<number,Chat>) {
         this._group = value;
     }
 }

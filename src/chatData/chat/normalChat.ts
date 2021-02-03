@@ -3,6 +3,7 @@ import {chatServer} from "../../chatServer";
 import chatData from "../chatData";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
+import {SimpleUser} from "../../models/user";
 
 export default class NormalChat extends Chat{
 
@@ -86,12 +87,12 @@ export default class NormalChat extends Chat{
             es wird der user, der nicht der Sender ist, definiert
          */
 
-        if(this._user1.uid === sentBy.uid){
+        if(this.user1.uid === sentBy.uid){
             /*
                 es wird geschaut, ob Socket definiert ist
              */
-            if(this._user2.socket != null)
-                chatServer.io.to(this._user2.socket.id).emit(emitName,data);
+            if(this.user2.socket != null)
+                chatServer.io.to(this.user2.socket.id).emit(emitName,data);
         }
         else {
             /*
@@ -157,12 +158,12 @@ export default class NormalChat extends Chat{
         else if (this.user2.uid === uid)
             this.unreadMessages2 += num;
 
-        this.updateUnreadMessages();
+        await this.updateUnreadMessages();
     }
     /*
         unread Messages of the user with this uid are returned
      */
-    getUnreadMessages(uid:number){
+    getUnreadMessages(uid:number):number {
 
         if (this.user1.uid === uid)
             return this.unreadMessages1;
@@ -172,35 +173,42 @@ export default class NormalChat extends Chat{
         else
             return 0;
     }
-
-    isAnyoneOnline(){
+    /*
+        returns if there is someone online in this chat
+     */
+    isAnyoneOnline():boolean {
         return this.user1.online || this.user2.online;
     }
+    /*
+        remove all users from the chat, gets called when chat gets unloaded
+            uid: the requesting user
+     */
     removeUsers(uid:number){
         /*
-            es wird der user ermittelt, der nicht die uid hat
+            the user who does not have the uid is identified
          */
         let user;
         if(this.user1.uid === uid)
             user = this.user2;
         else if(this.user2 === uid)
             user = this.user1;
-        /*
-            wenn keine anderen Chats verhanden, wird user gelöscht
-         */
         if(user !== undefined) {
+            /*
+                if no other chats, user is deleted
+             */
             if (user.chats.length <= 1) {
                 chatData.user.delete(user.uid);
             }
             /*
-                sonst wird chat entfernt
+                otherwise, chat gets removed
              */
             else {
                 user.removeUnloadedChat(this);
             }
         }
     }
-    getChatName(uidSelf:number):Promise<string> {
+    // the name of the chat gets returned
+    getChatName(uidSelf:number):string {
         if(this.user1.uid === uidSelf){
             return this.user2.username;
         }else{
@@ -210,7 +218,7 @@ export default class NormalChat extends Chat{
     /*
         all members of the chat get returned
      */
-    getMemberObject(uidSelf:number) {
+    getMemberObject(uidSelf:number):SimpleUser[] {
 
         if (uidSelf === this.user1.uid) {
             return [{
@@ -219,8 +227,8 @@ export default class NormalChat extends Chat{
             }];
         } else {
             return [{
-                uid: this._user1.uid,
-                username: this._user1.username
+                uid: this.user1.uid,
+                username: this.user1.username
             }];
         }
     }

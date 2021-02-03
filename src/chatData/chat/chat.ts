@@ -4,6 +4,7 @@ import NormalMessage from "../message/normalMessage";
 import StatusMessage from "../message/statusMessage";
 import User from "../user";
 import {MessageData, NormalMessageContent, StatusMessageContent} from "../../models/message";
+import {SimpleUser} from "../../models/user";
 
 export abstract class Chat{
 
@@ -116,10 +117,24 @@ export abstract class Chat{
 
     //TODO
     abstract sendToAll(author:any,socketMessage:any,messageObject:any,includeSender:boolean): any;
-
+    // increment the unread messages by the number
     abstract async incrementUnreadMessages(num:number): Promise<void>;
-
+    // set the unreadMessages of the user with this uid to the specified number
     abstract async setUnreadMessages(uid:number,unreadMessages:number): Promise<void>;
+    // returns if there is someone online in this chat
+    abstract isAnyoneOnline():boolean;
+    /*
+        remove all users from the chat, gets called when chat gets unloaded
+            uid: the requesting user
+     */
+    abstract removeUsers(uid:number):void;
+    // all members of the chat get returned
+    //TODO type (simpleUser)
+    abstract getMemberObject(uidSelf:number):any;
+    // the name of the chat gets returned
+    abstract getChatName(uidSelf:number):string;
+    // unread Messages of the user with this uid are returned
+    abstract getUnreadMessages(uid:number):number;
 
     get type(): string {
         return this._type;

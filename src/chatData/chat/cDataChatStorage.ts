@@ -99,7 +99,7 @@ export default class CDataChatStorage extends ChatStorage {
          */
         const ncid:any = await newChat.saveChatInDB();
 
-        this.normal.add(ncid,newChat);
+        this.normal.set(ncid,newChat);
         /*
             chats are added to the users
          */
@@ -175,7 +175,7 @@ export default class CDataChatStorage extends ChatStorage {
             members.add(user.uid,gcm);
         }
         newChat.members = members;
-        this.group.add(newChat.chatId,newChat);
+        this.group.set(newChat.chatId,newChat);
         /*
             statusMessages are added
          */
@@ -205,7 +205,7 @@ export default class CDataChatStorage extends ChatStorage {
             /*
                 is the chat already loaded?
              */
-            if(this.normal.getIndex(normalChatDB.ncid) !== -1){
+            if(this.normal.has(normalChatDB.ncid)){
                 /*
                     if chat is already loaded, it gets added to user
                  */
@@ -248,7 +248,7 @@ export default class CDataChatStorage extends ChatStorage {
                 /*
                     chat wird bei array, das alle chats beinhaltet hinzugefügt
                  */
-                this.normal.add(normalChatDB.ncid,newChat);
+                this.normal.set(normalChatDB.ncid,newChat);
             }
         }
     }
@@ -296,7 +296,7 @@ export default class CDataChatStorage extends ChatStorage {
             /*
                 is chat already loaded?
              */
-            if (this.group.getIndex(groupChatDB.gcid) !== -1) {
+            if (this.group.has(groupChatDB.gcid)) {
                 /*
                     if chat is already loaded, it gets added to user
                  */
@@ -327,7 +327,7 @@ export default class CDataChatStorage extends ChatStorage {
                 /*
                     chat gets added in chatData
                  */
-                this.group.add(newChat.chatId, newChat);
+                this.group.set(newChat.chatId, newChat);
             }
         }
     }

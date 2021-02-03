@@ -12,6 +12,7 @@ import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {Chat} from "./chat/chat";
 import {MessageData} from "../models/message";
+import {GroupChat} from "./chat/groupChat";
 
 class Emitter extends EventEmitter {}
 
@@ -58,7 +59,7 @@ export default class User{
         /*
             subscribe to all socket-rooms in the chats
         */
-        this.chats.forEachGroup((chat:any,index:number,key:number) => {
+        this.chats.group.forEach((chat:GroupChat) => {
             chat.subscribeToRoom(this);
         });
 
@@ -83,23 +84,23 @@ export default class User{
             let userInfoNeeded = false;
             let i = 0;
 
-            this.chats.forEach((item:any,index:number,key:number,type:any) => {
+            this.chats.forEach((value:Chat,key) => {
                 i++;
                 /*
                     is there anyone online at the chat?
                  */
-                if(item.isAnyoneOnline())
+                if(value.isAnyoneOnline())
                     userInfoNeeded = true;
                 else {
                     /*
                         chat is deleted
                      */
-                    const chat = chatData.chats.getChat(type,key);
+                    const chat = chatData.chats.getChat(value.type,key);
                     chat.removeUsers(this.uid);
                     chatData.chats.removeChat(chat);
                 }
-                if (type === 'groupChat')
-                    item.leaveRoom(this);
+                if (value.type === 'groupChat')
+                    (value as GroupChat).leaveRoom(this);
                 if(i === this.chats.length())
                     resolve(userInfoNeeded);
             });
@@ -184,7 +185,7 @@ export default class User{
             if(this.chats.length() === 0)
                 resolve(rc);
 
-            this.chats.forEach((chat:any,index:number,key:number) => {
+            this.chats.forEach((value:Chat,key:number) => {
 
                 try {
                     /*
@@ -192,24 +193,24 @@ export default class User{
                             is the user still member in this chat?
                             TODO
                      */
-                    if (chat.type === "groupChat") {
+                    if (value.type === "groupChat") {
 
-                        chat.getMember(this.uid);
+                        (value as GroupChat).getMember(this.uid);
                     }
 
-                    const members = chat.getMemberObject(this.uid);
-                    const chatName = chat.getChatName(this.uid);
-                    const fm = chat.messageStorage.getNewestMessageObject();
+                    const members = value.getMemberObject(this.uid);
+                    const chatName = value.getChatName(this.uid);
+                    const fm = value.messageStorage.getNewestMessageObject();
                     /*
                         Objekt wird erstellt und zum Array hinzugefügt
                      */
                     rc.push({
-                        type: chat.type,
+                        type: value.type,
                         id: key,
                         chatName: chatName,
                         members: members,
                         firstMessage: fm,
-                        unreadMessages: chat.getUnreadMessages(this.uid)
+                        unreadMessages: value.getUnreadMessages(this.uid)
                     });
 
                 }catch(e) {
