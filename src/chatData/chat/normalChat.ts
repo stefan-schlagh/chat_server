@@ -2,6 +2,7 @@ import {Chat} from "./chat";
 import {chatServer} from "../../chatServer";
 import chatData from "../chatData";
 import {logger} from "../../util/logger";
+import {pool} from "../../app";
 
 export default class NormalChat extends Chat{
 
@@ -22,10 +23,10 @@ export default class NormalChat extends Chat{
         unreadMessages2:number = 0
     ) {
         super('normalChat',chatId);
-        this._user1 = user1;
-        this._user2 = user2;
-        this._unreadMessages1 = unreadMessages1;
-        this._unreadMessages2 = unreadMessages2;
+        this.user1 = user1;
+        this.user2 = user2;
+        this.unreadMessages1 = unreadMessages1;
+        this.unreadMessages2 = unreadMessages2;
     }
     /*
         chat is saved in the database
@@ -38,12 +39,12 @@ export default class NormalChat extends Chat{
                 "INSERT " +
                 "INTO normalchat(uid1,uid2)" +
                 "VALUES('" +
-                    this._user1.uid + "','" +
-                    this._user2.uid +
+                    this.user1.uid + "','" +
+                    this.user2.uid +
                 "');";
             logger.verbose('SQL: %s',query_str1);
 
-            chatServer.con.query(query_str1,(err:Error) => {
+            pool.query(query_str1,(err:Error) => {
                 /*
                     if no error has occured, the chatID gets requested
                  */
@@ -56,7 +57,7 @@ export default class NormalChat extends Chat{
                         "FROM normalchat;";
                     logger.verbose('SQL: %s',query_str2);
 
-                    chatServer.con.query(query_str2,(err:Error,result:any,fields:any) => {
+                    pool.query(query_str2,(err:Error,result:any,fields:any) => {
 
                         if(err){
                             reject(err);
@@ -85,7 +86,7 @@ export default class NormalChat extends Chat{
             es wird der user, der nicht der Sender ist, definiert
          */
 
-        if(this._user1.uid===sentBy.uid){
+        if(this._user1.uid === sentBy.uid){
             /*
                 es wird geschaut, ob Socket definiert ist
              */
@@ -107,12 +108,12 @@ export default class NormalChat extends Chat{
 
         const query_str =
             "UPDATE normalchat " +
-            "SET unreadMessages1 = " + this._unreadMessages1 + ", " +
-            "unreadMessages2 = " + this._unreadMessages2 + " " +
+            "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
+            "unreadMessages2 = " + this.unreadMessages2 + " " +
             "WHERE ncid = " + this.chatId + ";";
         logger.verbose('SQL: %s',query_str);
 
-        chatServer.con.query(query_str,(err:Error) => {
+        pool.query(query_str,(err:Error) => {
             if(err)
                 throw err;
         });

@@ -1,8 +1,7 @@
 import express from 'express';
-import {login} from "../authentication/authentication";
-import {chatServer} from "../chatServer";
-import {register} from "../authentication/authentication";
+import {login,register} from "../authentication/authentication";
 import {logger} from "../util/logger";
+import {pool} from "../app";
 
 const router = express.Router();
 
@@ -14,7 +13,7 @@ router.post('/login',(req,res) => {
     let username = req.body.username;
     let password = req.body.password;
 
-    login(username,password,chatServer.con)
+    login(username,password,pool)
         .then(result => {
             res.send(result);
         })
@@ -32,8 +31,7 @@ router.post('/register',(req,res) => {
     let username = req.body.username;
     let password = req.body.password;
 
-    const con = chatServer.con;
-    register(username,password,con)
+    register(username,password,pool)
         .then(result => {
             res.send(result);
         })

@@ -5,6 +5,7 @@ import GroupChatMember from "./groupChatMember";
 import {chatServer} from "../../chatServer";
 import User from "../user";
 import ChatStorage from "./chatStorage";
+import {pool} from "../../app";
 
 export default class CDataChatStorage extends ChatStorage {
 
@@ -41,7 +42,7 @@ export default class CDataChatStorage extends ChatStorage {
                 "FROM groupchat " +
                 "WHERE gcid = " + gcid + ";";
 
-            chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 else if(!result || result.length === 0)
@@ -274,7 +275,7 @@ export default class CDataChatStorage extends ChatStorage {
                 "ON nc.uid2 = u2.uid " +
                 "WHERE uid1 = '" + uid + "' OR uid2 = '" + uid + "';";
 
-            chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 resolve(result);
@@ -336,7 +337,6 @@ export default class CDataChatStorage extends ChatStorage {
 
         return new Promise((resolve, reject) => {
 
-            const con = chatServer.con;
             const query_str =
                 "SELECT * " +
                 "FROM groupchatmember gcm " +
@@ -344,7 +344,7 @@ export default class CDataChatStorage extends ChatStorage {
                 "ON gcm.gcid = gc.gcid " +
                 "WHERE gcm.uid = '" + uid + "';";
 
-            con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 resolve(result);

@@ -1,4 +1,4 @@
-import {chatServer} from "../../chatServer";
+import {pool} from "../../app";
 
 /*
     A user gets requested
@@ -14,7 +14,7 @@ export async function getUser(uidFrom:number,uidReq:number){
             "FROM user " +
             "WHERE uid = " + uidReq + ";";
 
-        chatServer.con.query(query_str, function (err:Error, rows:any, fields:any) {
+        pool.query(query_str, function (err:Error, rows:any, fields:any) {
             // Call reject on error states,
             // call resolve with results
             if (err) {
@@ -79,10 +79,10 @@ export async function selectUsersNoChat(uid:number,search:string,limit:number,st
                     "SELECT uid2 " +
                     "FROM normalchat " +
                     "WHERE uid1 = " + uid + " OR uid2 = " + uid + " )) " +
-            "AND username LIKE " + chatServer.con.escape('%' + search + '%') + " " +
+            "AND username LIKE " + pool.escape('%' + search + '%') + " " +
             "LIMIT " + start + "," + limit + ";";
 
-        chatServer.con.query(query_str, function (err:Error, rows:any, fields:any) {
+        pool.query(query_str, function (err:Error, rows:any, fields:any) {
             // Call reject on error states,
             // call resolve with results
             if (err) {
@@ -103,10 +103,10 @@ export async function selectAllUsers(uid:number,search:string,limit:number,start
             "SELECT uid, username " +
             "FROM user " +
             "WHERE NOT uid = '" + uid + "' " +
-            "AND username LIKE " + chatServer.con.escape('%' + search + '%') + " " +
+            "AND username LIKE " + pool.escape('%' + search + '%') + " " +
             "LIMIT " + start + "," + limit + ";";
 
-        chatServer.con.query(query_str, function (err:Error, rows:any, fields:any) {
+        pool.query(query_str, function (err:Error, rows:any, fields:any) {
             // Call reject on error states,
             // call resolve with results
             if (err) {
@@ -143,10 +143,10 @@ export async function selectUsersNotInGroup(
                 "WHERE gcm.gcid = " + gcid + " " +
                 "AND isStillMember = 1 " +
             ")" +
-            "AND u.username LIKE " + chatServer.con.escape('%' + search + '%') +
+            "AND u.username LIKE " + pool.escape('%' + search + '%') +
             "LIMIT " + start + "," + limit + ";";
 
-        chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+        pool.query(query_str,(err:Error,result:any,fields:any) => {
             if(err)
                 reject(err);
             if(result) {

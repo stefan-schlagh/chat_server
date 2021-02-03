@@ -1,7 +1,7 @@
-import {chatServer} from "../../chatServer";
 import {statusMessageTypes} from "../message/statusMessage";
 import User from "../user";
 import {logger} from "../../util/logger";
+import {pool} from "../../app";
 
 export default class GroupChatMember{
 
@@ -48,19 +48,18 @@ export default class GroupChatMember{
 
         return new Promise((resolve,reject) => {
 
-            const con = chatServer.con;
             const query_str1 =
                 "INSERT " +
                 "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
                 "VALUES (" +
                     this.user.uid + ",'" +
                     this.chat.chatId + "'," +
-                    con.escape(this.isAdmin) +
+                    pool.escape(this.isAdmin) +
                     ",1" +
                 ");";
             logger.verbose('SQL: %s',query_str1);
 
-            con.query(query_str1,(err:Error) => {
+            pool.query(query_str1,(err:Error) => {
                 if(err)
                     reject(err);
                 else {
@@ -73,7 +72,7 @@ export default class GroupChatMember{
                         "FROM groupchatmember;";
                     logger.verbose('SQL: %s',query_str2);
 
-                    con.query(query_str2,(err:Error,result:any,fields:any) => {
+                    pool.query(query_str2,(err:Error,result:any,fields:any) => {
                         if(err)
                             reject(err);
                         else {
@@ -97,7 +96,7 @@ export default class GroupChatMember{
                 "WHERE gcmid = " + this.gcmid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error) => {
+            pool.query(query_str,(err:Error) => {
                 if(err)
                     reject(err);
                 resolve();
@@ -214,7 +213,7 @@ export default class GroupChatMember{
                 "WHERE gcmid = " + this.gcmid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error) => {
+            pool.query(query_str,(err:Error) => {
                 if(err)
                     reject(err);
                 resolve();

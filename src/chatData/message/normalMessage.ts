@@ -1,10 +1,10 @@
 import Message,{messageTypes} from "./message";
-import {chatServer} from "../../chatServer";
 import Mention from "./mention";
 import Media from "./media";
 import {chatData} from "../data";
 import {logger} from "../../util/logger";
 import {NormalMessageContent} from "../../models/message";
+import {pool} from "../../app";
 
 export default class NormalMessage extends Message {
 
@@ -39,7 +39,7 @@ export default class NormalMessage extends Message {
                 "WHERE mid = " + this.mid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error,result:any) => {
+            pool.query(query_str,(err:Error,result:any) => {
                 if(err)
                     reject(err);
                 try {
@@ -63,7 +63,7 @@ export default class NormalMessage extends Message {
                 "WHERE nmid = " + this.nmid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str, (err:Error, result:any, fields:any) => {
+            pool.query(query_str, (err:Error, result:any, fields:any) => {
                 if (err)
                     reject(err);
                 /*
@@ -93,7 +93,7 @@ export default class NormalMessage extends Message {
                 "WHERE nmid = " + this.nmid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                if(err)
                    reject(err);
 
@@ -144,14 +144,14 @@ export default class NormalMessage extends Message {
 
         return new Promise((resolve, reject) => {
 
-            const text = chatServer.con.escape(this.text);
+            const text = pool.escape(this.text);
             const query_str1 =
                "INSERT " +
                "INTO normalmessage(mid,text) " +
                "VALUES (" + this.mid + "," + text + ");";
             logger.verbose('SQL: %s',query_str1);
 
-            chatServer.con.query(query_str1,(err:Error,result:any,fields:any) => {
+            pool.query(query_str1,(err:Error,result:any,fields:any) => {
                 if (err)
                     reject(err);
                 /*
@@ -162,7 +162,7 @@ export default class NormalMessage extends Message {
                     "FROM normalmessage;";
                 logger.verbose('SQL: %s',query_str2);
 
-                chatServer.con.query(query_str2,(err:Error,result:any,fields:any) => {
+                pool.query(query_str2,(err:Error,result:any,fields:any) => {
                     if (err)
                         reject(err);
                     try {

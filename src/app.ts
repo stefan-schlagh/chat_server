@@ -36,7 +36,7 @@ import chatRouter from './routes/chats';
 import messageRouter from './routes/message';
 import pwResetRouter from './routes/passwordReset';
 
-import {Connection, createConnection} from 'mysql2';
+import {Pool, createPool} from 'mysql2';
 import {chatServer, createChatServer} from './chatServer';
 import {logger} from "./util/logger";
 /*
@@ -46,7 +46,7 @@ const httpPort = process.env.NODE_HTTP_PORT;
 const httpsPort = process.env.NODE_HTTPS_PORT;
 
 export let app:Express;
-export let con:Connection;
+export let pool:Pool;
 let httpServer:Server;
 let httpsServer:sServer;
 
@@ -96,26 +96,26 @@ export function startServer(){
     app.use(cookieParser());
     app.use(compression());
 
-    con = createConnection({
+    pool = createPool({
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
         charset : 'utf8mb4'
     });
-    con.connect(function(err:Error) {
+    /*pool.connect(function(err:Error) {
         if (err) {
             logger.error(err);
             throw err;
         }
-    });
+    });*/
     /*
         chatServer is created
      */
     if(process.env.NODE_ENV !== "test") {
-        createChatServer(httpsServer, con, app);
+        createChatServer(httpsServer, pool, app);
     }else{
-        createChatServer(httpServer, con, app);
+        createChatServer(httpServer, pool, app);
     }
 
     /*
@@ -149,7 +149,7 @@ export function closeServer(){
     chatServer.io.close();
     httpServer.close();
     httpsServer.close();
-    con.end();
+    pool.end();
 
     logger.info('chatServer closed');
 }
