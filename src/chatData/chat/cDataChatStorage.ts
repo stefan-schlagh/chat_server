@@ -179,11 +179,11 @@ export default class CDataChatStorage extends ChatStorage {
         /*
             statusMessages are added
          */
-        await newChat.createStatusMessagesStart(userFrom);
+        await newChat.createStatusMessagesStart(gcmSelf.user);
         /*
             chat gets added to the members
          */
-        newChat.forEachUser((user:any,index:number,key:number) => {
+        newChat.forEachUser((user:User,key:number) => {
             user.addLoadedChat(newChat);
             user.addNewChat(newChat);
         });

@@ -166,7 +166,7 @@ export default class StatusMessage extends Message {
             const uid = passiveUsers[i];
             const user = chatData.user.get(uid);
             if(!user)
-                throw new Error('user not defined');
+                throw new Error('user not defined! uid: ' + uid);
             /*
                 user is added to array
              */

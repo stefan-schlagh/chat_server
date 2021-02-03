@@ -129,8 +129,7 @@ export abstract class Chat{
      */
     abstract removeUsers(uid:number):void;
     // all members of the chat get returned
-    //TODO type (simpleUser)
-    abstract getMemberObject(uidSelf:number):any;
+    abstract getMemberObject(uidSelf:number):SimpleUser[];
     // the name of the chat gets returned
     abstract getChatName(uidSelf:number):string;
     // unread Messages of the user with this uid are returned
