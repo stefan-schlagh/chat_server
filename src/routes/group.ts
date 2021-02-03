@@ -4,6 +4,7 @@ import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
 import {logger} from "../util/logger";
 import {GroupChatMemberData} from "../models/chat";
+import {chatTypes} from "../chatData/chat/chat";
 
 const router = express.Router();
 
@@ -368,7 +369,7 @@ function getChat(shouldBeLoaded:boolean){
         if(shouldBeLoaded) {
             try {
                 const gcid = parseInt(req.params.gcid);
-                req.chat = chatData.getChat('groupChat', gcid);
+                req.chat = chatData.getChat(chatTypes.groupChat, gcid);
                 next();
             } catch (err) {
                 /*

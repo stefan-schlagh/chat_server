@@ -1,4 +1,4 @@
-import {Chat} from "./chat";
+import {Chat, chatTypes} from "./chat";
 
 export default class ChatStorage{
     /*
@@ -9,17 +9,17 @@ export default class ChatStorage{
 
     // add chat to the list
     addChat(chat:Chat):void {
-        if(chat.type === 'normalChat'){
+        if(chat.type === chatTypes.normalChat){
             this.normal.set(chat.chatId,chat);
-        }else if(chat.type === 'groupChat'){
+        }else if(chat.type === chatTypes.groupChat){
             this.group.set(chat.chatId,chat);
         }
     }
     // remove chat from the list
     removeChat(chat:Chat):void {
-        if(chat.type === 'normalChat'){
+        if(chat.type === chatTypes.normalChat){
             this.normal.delete(chat.chatId);
-        }else if(chat.type === 'groupChat'){
+        }else if(chat.type === chatTypes.groupChat){
             this.group.delete(chat.chatId);
         }
     }
@@ -47,18 +47,18 @@ export default class ChatStorage{
             type: the type of the chat
             id: the id of the chat
      */
-    getChat(type:string,id:number):Chat {
+    getChat(type:chatTypes,id:number):Chat {
         /*
             is the chat a normalchat?
          */
-        if(type === 'normalChat'){
+        if(type === chatTypes.normalChat){
             const chat = this.normal.get(id);
             if(chat)
                 return chat;
             /*
                 is the chat a groupChat?
              */
-        }else if(type === 'groupChat'){
+        }else if(type === chatTypes.groupChat){
             const chat = this.group.get(id);
             if(chat)
                 return chat;

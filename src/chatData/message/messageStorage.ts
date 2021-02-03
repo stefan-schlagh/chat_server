@@ -3,7 +3,7 @@ import {chatData} from "../data";
 import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
 import Message, {messageTypes} from "./message";
-import {Chat} from "../chat/chat";
+import {Chat, chatTypes} from "../chat/chat";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 
@@ -197,7 +197,7 @@ export default class MessageStorage {
 
         return new Promise((resolve,reject) => {
 
-            const isGroupChat = this.chat.type === 'groupChat' ? 1 : 0;
+            const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
 
             const query_str =
                 "SELECT * " +
@@ -237,7 +237,7 @@ export default class MessageStorage {
 
         return new Promise((resolve,reject) => {
 
-            const isGroupChat = this.chat.type === 'groupChat' ? 1 : 0;
+            const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
 
             const query_str1 =
                 "SELECT max(mid) " +

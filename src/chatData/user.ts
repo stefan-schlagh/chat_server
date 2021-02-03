@@ -2,22 +2,24 @@ import EventEmitter from 'events';
 import chatData from "./chatData";
 import ChatStorage from "./chat/chatStorage";
 import {
-    verifyCode,
+    generateVerificationCode,
+    Parts,
+    VerificationCode,
     verificationCodeTypes,
-    generateVerificationCode, Parts, VerificationCode
+    verifyCode
 } from "../verification/code";
 import {pool} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
-import {Chat} from "./chat/chat";
+import {Chat, chatTypes} from "./chat/chat";
 import {MessageData} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
 
 class Emitter extends EventEmitter {}
 
 export default class User{
-    //TODO
+    //TODO types
     /*
         eventEmitter
      */
@@ -99,7 +101,7 @@ export default class User{
                     chat.removeUsers(this.uid);
                     chatData.chats.removeChat(chat);
                 }
-                if (value.type === 'groupChat')
+                if (value.type === chatTypes.groupChat)
                     (value as GroupChat).leaveRoom(this);
                 if(i === this.chats.length())
                     resolve(userInfoNeeded);
@@ -193,7 +195,7 @@ export default class User{
                             is the user still member in this chat?
                             TODO
                      */
-                    if (value.type === "groupChat") {
+                    if (value.type === chatTypes.groupChat) {
 
                         (value as GroupChat).getMember(this.uid);
                     }
@@ -205,7 +207,7 @@ export default class User{
                         Objekt wird erstellt und zum Array hinzugefügt
                      */
                     rc.push({
-                        type: value.type,
+                        type: value.getChatTypeString(),
                         id: key,
                         chatName: chatName,
                         members: members,
@@ -228,14 +230,14 @@ export default class User{
         a new chat gets added to the user
         this also gets emitted to the client
      */
-    addNewChat(chat:any){
+    addNewChat(chat:Chat) {
 
         if(this.socket !== null) {
             /*
                 info gets emitted to the server
              */
             const data = {
-                type: chat.type,
+                type: chat.getChatTypeString(),
                 id: chat.chatId,
                 chatName: chat.getChatName(this.uid),
                 members: chat.getMemberObject(this.uid),

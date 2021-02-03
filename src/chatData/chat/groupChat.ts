@@ -1,11 +1,11 @@
 import BinSearchArray from "../../util/binsearcharray";
-import {Chat} from "./chat";
+import {Chat, chatTypes} from "./chat";
 import chatData from "../chatData";
 import {randomString} from "../../util/random";
 import {chatServer} from "../../chatServer";
 import User from "../user";
 import GroupChatMember from "./groupChatMember";
-import StatusMessage,{statusMessageTypes} from "../message/statusMessage";
+import StatusMessage, {statusMessageTypes} from "../message/statusMessage";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
@@ -21,7 +21,7 @@ export class GroupChat extends Chat{
     private _socketRoomName:string;
 
     constructor(chatId:number = -1, chatName:string, description:string, isPublic:boolean) {
-        super('groupChat',chatId);
+        super(chatTypes.groupChat,chatId);
         this._chatName = chatName;
         this._description = description;
         this._isPublic = isPublic;
@@ -512,7 +512,7 @@ export class GroupChat extends Chat{
     /*
         event is emitted to all participants of the chat
      */
-    sendToAll(sentBy:any,emitName:any,rest:any,includeSender:boolean = false):void {
+    sendToAll(sentBy:User,socketMessage:string,messageObject:any,includeSender:boolean = false):void {
         /*
             msg gets emitted to all users
          */
@@ -521,12 +521,12 @@ export class GroupChat extends Chat{
                 type: this.type,
                 id: this.chatId
             },
-            ...rest
+            ...messageObject
         };
         if(includeSender)
-            chatServer.io.to(this.socketRoomName).emit(emitName,data);
+            chatServer.io.to(this.socketRoomName).emit(socketMessage,data);
         else
-            sentBy.socket.to(this.socketRoomName).emit(emitName,data);
+            sentBy.socket.to(this.socketRoomName).emit(socketMessage,data);
     }
     /*
         is called:
@@ -633,7 +633,7 @@ export class GroupChat extends Chat{
      */
     getGroupChatInfo(memberSelf:GroupChatMember):GroupChatInfo {
         return({
-            type: this.type,
+            type: this.getChatTypeString(),
             id: this.chatId,
             chatName: this.chatName,
             description: this.description,

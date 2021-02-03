@@ -7,7 +7,7 @@ import ChatStorage from "./chatStorage";
 import {pool} from "../../app";
 import {ChatData} from "../chatData";
 import {logger} from "../../util/logger";
-import {Chat} from "./chat";
+import {Chat, chatTypes} from "./chat";
 import {MessageData} from "../../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
 
@@ -26,7 +26,7 @@ export default class CDataChatStorage extends ChatStorage {
      */
     async getGroupChat(gcid:number):Promise<Chat> {
 
-        const chat = this.getChat('groupChat',gcid);
+        const chat = this.getChat(chatTypes.groupChat, gcid);
 
         if(chat){
             return chat;
@@ -174,7 +174,9 @@ export default class CDataChatStorage extends ChatStorage {
 
             members.add(user.uid,gcm);
         }
+        //set members
         newChat.members = members;
+        // add groupChat to list
         this.group.set(newChat.chatId,newChat);
         /*
             statusMessages are added

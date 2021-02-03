@@ -5,7 +5,7 @@ import {pool} from "../app";
 import {logger} from "../util/logger";
 import {MessageData} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
-import {Chat} from "./chat/chat";
+import {Chat, chatTypes, getChatType} from "./chat/chat";
 
 export class ChatData{
 
@@ -29,7 +29,7 @@ export class ChatData{
             user.currentChat = null;
         }
         else {
-            const newChat = this.chats.getChat(type, id);
+            const newChat = this.chats.getChat(getChatType(type), id);
             if (newChat){
                 user.currentChat = newChat;
             }else{
@@ -57,7 +57,7 @@ export class ChatData{
             returns: messages
      */
     //TODO return type
-    async loadMessages(user:User,type:string,id:number,lastMsgId:number,num:number){
+    async loadMessages(user:User,type:chatTypes,id:number,lastMsgId:number,num:number){
         /*
             does the chat exist?
          */
@@ -204,7 +204,7 @@ export class ChatData{
     /*
         requested chat is returned
      */
-    getChat(type:string,id:number):Chat {
+    getChat(type:chatTypes,id:number):Chat {
         const chat = this.chats.getChat(type,id);
         if(!chat)
             throw new Error('chat does not exist');

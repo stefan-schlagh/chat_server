@@ -1,15 +1,15 @@
-import {Chat} from "./chat";
+import {Chat, chatTypes} from "./chat";
 import {chatServer} from "../../chatServer";
 import chatData from "../chatData";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
+import User from "../user";
 
 export default class NormalChat extends Chat{
 
-    // TODO
-    private _user1:any;
-    private _user2:any;
+    private _user1:User;
+    private _user2:User;
     /*
         the unread messages of each user
      */
@@ -18,12 +18,12 @@ export default class NormalChat extends Chat{
 
     constructor(
         chatId:number = -1,
-        user1:any,
-        user2:any,
+        user1:User,
+        user2:User,
         unreadMessages1:number = 0,
         unreadMessages2:number = 0
     ) {
-        super('normalChat',chatId);
+        super(chatTypes.normalChat,chatId);
         this.user1 = user1;
         this.user2 = user2;
         this.unreadMessages1 = unreadMessages1;
@@ -32,7 +32,7 @@ export default class NormalChat extends Chat{
     /*
         chat is saved in the database
      */
-    async saveChatInDB(){
+    async saveChatInDB():Promise<number> {
 
         return new Promise((resolve,reject) => {
 
@@ -74,14 +74,14 @@ export default class NormalChat extends Chat{
     /*
         event is emitted to all participants of the chat
      */
-    sendToAll(sentBy:any,emitName:any,rest:any){
+    sendToAll(sentBy:User,socketMessage:string,messageObject:any):void {
         const data = {
             chat: {
                 type: this.type,
                 id: this.chatId,
             },
             uid: sentBy.uid,
-            ...rest
+            ...messageObject
         };
         /*
             es wird der user, der nicht der Sender ist, definiert
@@ -92,14 +92,14 @@ export default class NormalChat extends Chat{
                 es wird geschaut, ob Socket definiert ist
              */
             if(this.user2.socket != null)
-                chatServer.io.to(this.user2.socket.id).emit(emitName,data);
+                chatServer.io.to(this.user2.socket.id).emit(socketMessage,data);
         }
         else {
             /*
                 es wird geschaut, ob Socket definiert ist
              */
             if(this._user1.socket != null)
-                chatServer.io.to(this._user1.socket.id).emit(emitName,data);
+                chatServer.io.to(this._user1.socket.id).emit(socketMessage,data);
         }
     }
     /*
@@ -122,7 +122,7 @@ export default class NormalChat extends Chat{
     /*
         unreadMessages of the user with this uid are set
      */
-    async setUnreadMessages(uid:number,unreadMessages:number) {
+    async setUnreadMessages(uid:number,unreadMessages:number):Promise<void> {
 
         if (this.user1.uid === uid)
             this.unreadMessages1 = unreadMessages;
@@ -183,20 +183,20 @@ export default class NormalChat extends Chat{
         remove all users from the chat, gets called when chat gets unloaded
             uid: the requesting user
      */
-    removeUsers(uid:number){
+    removeUsers(uid:number):void {
         /*
             the user who does not have the uid is identified
          */
         let user;
         if(this.user1.uid === uid)
             user = this.user2;
-        else if(this.user2 === uid)
+        else if(this.user2.uid === uid)
             user = this.user1;
         if(user !== undefined) {
             /*
                 if no other chats, user is deleted
              */
-            if (user.chats.length <= 1) {
+            if (user.chats.length() <= 1) {
                 chatData.user.delete(user.uid);
             }
             /*
@@ -233,19 +233,19 @@ export default class NormalChat extends Chat{
         }
     }
 
-    get user1(): any {
+    get user1(): User {
         return this._user1;
     }
 
-    set user1(value: any) {
+    set user1(value: User) {
         this._user1 = value;
     }
 
-    get user2(): any {
+    get user2(): User {
         return this._user2;
     }
 
-    set user2(value: any) {
+    set user2(value: User) {
         this._user2 = value;
     }
 
