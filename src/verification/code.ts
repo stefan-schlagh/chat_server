@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import {con} from "../app";
+import {pool} from "../app";
 import {comparePassword,hashPassword} from "../authentication/bcryptWrappers";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {logger} from "../util/logger";
@@ -63,7 +63,8 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
             "FROM verificationcode " +
             "WHERE uid = " + parts.uid + " AND DATEDIFF(CURRENT_TIMESTAMP(),date) > 2;";
         logger.verbose('SQL: %s',query_str);
-        con.query(query_str,(err:Error,result:any) => {
+
+        pool.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
             resolve(result);
@@ -77,7 +78,8 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
             "WHERE uid = " + parts.uid + " " +
             "AND type = " + type.valueOf() + ";";
         logger.verbose('SQL: %s',query_str);
-        con.query(query_str,(err:Error,result:any) => {
+
+        pool.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
             resolve(result);
@@ -136,11 +138,11 @@ async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string):P
     const query_str =
         "INSERT " +
         "INTO verificationcode(type,uid,hash,date) " +
-        "VALUES(" + type.valueOf() + "," + uid + "," + con.escape(hash) + ",CURRENT_TIMESTAMP());";
+        "VALUES(" + type.valueOf() + "," + uid + "," + pool.escape(hash) + ",CURRENT_TIMESTAMP());";
     logger.verbose('SQL: %s',query_str);
 
     await new Promise((resolve, reject) => {
-        con.query(query_str,async (err:Error,result:any) => {
+        pool.query(query_str,async (err:Error,result:any) => {
            if(err)
                reject(err);
            resolve();
@@ -153,7 +155,8 @@ async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string):P
             "FROM verificationcode " +
             "WHERE uid = " + uid + ";";
         logger.verbose('SQL: %s',query_str1);
-        con.query(query_str1,(err:Error,result:any) => {
+
+        pool.query(query_str1,(err:Error,result:any) => {
             if(err)
                 reject(err);
             else if(isResultEmpty(result))

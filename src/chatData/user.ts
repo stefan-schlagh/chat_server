@@ -6,7 +6,7 @@ import {
     verificationCodeTypes,
     generateVerificationCode, Parts, VerificationCode
 } from "../verification/code";
-import {con} from "../app";
+import {pool} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
@@ -272,12 +272,12 @@ export default class User{
 
                 const query_str =
                     "UPDATE user " +
-                    "SET password = " + con.escape(hash) + " " +
+                    "SET password = " + pool.escape(hash) + " " +
                     "WHERE uid = " + this.uid + ";";
                 logger.verbose('SQL: %s',query_str);
 
                 await new Promise((resolve, reject) => {
-                    con.query(query_str, (err:Error) => {
+                    pool.query(query_str, (err:Error) => {
                         if (err)
                             reject(err);
                         resolve();
@@ -296,7 +296,7 @@ export default class User{
                 "WHERE uid = " + this.uid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            con.query(query_str,(err:Error,result:any) => {
+            pool.query(query_str,(err:Error,result:any) => {
                 if(err)
                     reject(err);
                 resolve(result);
@@ -315,10 +315,10 @@ export default class User{
             const query_str =
                 "INSERT " +
                 "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
-                "VALUES (" + this.uid + "," + vcid + "," + con.escape(email) + ",CURRENT_TIMESTAMP(),0);"
+                "VALUES (" + this.uid + "," + vcid + "," + pool.escape(email) + ",CURRENT_TIMESTAMP(),0);"
             logger.verbose('SQL: %s',query_str);
 
-            con.query(query_str,(err:Error,result:any) => {
+            pool.query(query_str,(err:Error,result:any) => {
                if(err)
                    reject(err);
                if(isResultEmpty(result))
@@ -338,7 +338,7 @@ export default class User{
                 "WHERE uid = " + this.uid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            con.query(query_str,(err:Error) => {
+            pool.query(query_str,(err:Error) => {
                 if(err)
                     reject(err);
                 resolve();
@@ -358,7 +358,7 @@ export default class User{
                    "WHERE vcid = " + vcid + ";";
                 logger.verbose('SQL: %s',query_str);
 
-               con.query(query_str,(err:Error,result:any) => {
+                pool.query(query_str,(err:Error,result:any) => {
                    if(err)
                        reject(err);
                    else if(isResultEmpty(result))
@@ -375,7 +375,7 @@ export default class User{
                     "WHERE vcid = " + vcid + ";";
                 logger.verbose('SQL: %s',query_str);
 
-                con.query(query_str,(err:Error) => {
+                pool.query(query_str,(err:Error) => {
                    if(err)
                        reject(err);
                    resolve();
@@ -385,11 +385,11 @@ export default class User{
             await new Promise((resolve, reject) => {
                 const query_str =
                     "UPDATE user " +
-                    "SET email = " + con.escape(result.newEmail) + ",isVerified = 1 " +
+                    "SET email = " + pool.escape(result.newEmail) + ",isVerified = 1 " +
                     "WHERE uid = " + this.uid + ";";
                 logger.verbose('SQL: %s',query_str);
 
-                con.query(query_str,(err:Error) => {
+                pool.query(query_str,(err:Error) => {
                     if(err)
                         reject(err);
                     resolve();

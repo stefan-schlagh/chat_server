@@ -1,11 +1,11 @@
 import BinSearchArray from "../../util/binsearcharray";
-import {chatServer} from "../../chatServer";
 import {chatData} from "../data";
 import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
 import Message, {messageTypes} from "./message";
 import {Chat} from "../chat/chat";
 import {logger} from "../../util/logger";
+import {pool} from "../../app";
 
 export default class MessageStorage {
     /*
@@ -207,7 +207,7 @@ export default class MessageStorage {
                 "LIMIT " + num + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 else {
@@ -246,7 +246,7 @@ export default class MessageStorage {
                 "WHERE isGroupChat = '" + isGroupChat + "' && cid = '" + this.chat.chatId + "';";
             logger.verbose('SQL: %s',query_str1);
 
-            chatServer.con.query(query_str1,(err:Error,result:any) => {
+            pool.query(query_str1,(err:Error,result:any) => {
                 if(err)
                     reject(err);
                 /*
@@ -268,7 +268,7 @@ export default class MessageStorage {
                         "FROM message;";
                     logger.verbose('SQL: %s',query_str2);
 
-                    chatServer.con.query(query_str2,(err:Error,result:any) => {
+                    pool.query(query_str2,(err:Error,result:any) => {
                         if(err)
                             reject(err);
                         /*

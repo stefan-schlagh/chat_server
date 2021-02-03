@@ -1,7 +1,7 @@
-import {chatServer} from "../../chatServer";
 import {Chat} from "../chat/chat";
 import User from "../user";
 import {logger} from "../../util/logger";
+import {pool} from "../../app";
 
 export enum messageTypes {
     normalMessage = 0,
@@ -69,7 +69,7 @@ export default abstract class Message{
                 "');";
             logger.verbose('SQL: %s',query_str1);
 
-            chatServer.con.query(query_str1,(err:Error) => {
+            pool.query(query_str1,(err:Error) => {
                 if(err){
                     reject(err);
                 }else {
@@ -81,7 +81,7 @@ export default abstract class Message{
                         "AS 'mid' FROM message";
                     logger.verbose('SQL: %s',query_str2);
 
-                    chatServer.con.query(query_str2, (err:Error, result:any, fields:any) => {
+                    pool.query(query_str2, (err:Error, result:any, fields:any) => {
                         if(err){
                             reject(err);
                         }else {

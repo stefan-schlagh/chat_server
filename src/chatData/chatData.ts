@@ -2,12 +2,13 @@ import BinSearchArray from '../util/binsearcharray';
 import CDataChatStorage from "./chat/cDataChatStorage";
 import User from "./user";
 import {setChatData} from "./data";
-import {con} from "../app";
+import {pool} from "../app";
+import {logger} from "../util/logger";
 
 class ChatData{
 
-    public user = new BinSearchArray();
-    public chats = new CDataChatStorage(this.user);
+    private _user = new BinSearchArray();
+    private _chats = new CDataChatStorage(this._user);
     /*
         the current chat is changed
             user: the user where the currentChat should be changed
@@ -26,7 +27,7 @@ class ChatData{
             user.currentChat = null;
         }
         else {
-            const newChat = this.chats.getChat(type, id);
+            const newChat = this._chats.getChat(type, id);
             if (newChat){
                 user.currentChat = newChat;
             }else{
@@ -57,7 +58,7 @@ class ChatData{
         /*
             does the chat exist?
          */
-        const chat = this.chats.getChat(type,id);
+        const chat = this._chats.getChat(type,id);
         if(chat)
             /*
                 messages in this chat are loaded
@@ -91,7 +92,7 @@ class ChatData{
                         /*
                             if userInfo is not needed anywhere anymore, it gets deleted
                          */
-                        this.user.remove(user.uid);
+                        this._user.remove(user.uid);
                 })
                 .catch((err:Error) => console.log(err));
         }
@@ -100,8 +101,8 @@ class ChatData{
         returns if the user is online
      */
     isUserOnline(uid:number){
-        if(this.user.getIndex(uid) === -1) return false;
-        return this.user.get(uid).online;
+        if(this._user.getIndex(uid) === -1) return false;
+        return this._user.get(uid).online;
     }
     /*
         new user gets added
@@ -110,9 +111,9 @@ class ChatData{
         /*
             does the user already exist?
          */
-        if(this.user.getIndex(uid) === -1) {
+        if(this._user.getIndex(uid) === -1) {
             const user = new User(uid, username);
-            this.user.add(uid,user);
+            this._user.add(uid,user);
             return user;
         }
     }
@@ -123,12 +124,12 @@ class ChatData{
         /*
             if user does not exist -> is created new
          */
-        if(this.user.getIndex(uid) === -1) {
+        if(this._user.getIndex(uid) === -1) {
             const user = new User(uid, username, socket, true);
             /*
                 user is added to array
              */
-            this.user.add(user.uid,user);
+            this._user.add(user.uid,user);
             /*
                 chats are loaded
              */
@@ -140,7 +141,7 @@ class ChatData{
                 online is set to true
          */
         else{
-            const user = this.user.get(uid);
+            const user = this._user.get(uid);
             user.socket = socket;
             user.online = true;
             /*
@@ -148,7 +149,7 @@ class ChatData{
              */
             await user.loadChats();
         }
-        return this.user.get(uid);
+        return this._user.get(uid);
     }
     /*
          a new normalChat is created
@@ -158,15 +159,15 @@ class ChatData{
             does user already exist in server?
                 if not --> gets created
         */
-        let otherUser = this.user.get(uidOther);
+        let otherUser = this._user.get(uidOther);
         if(!otherUser){
             /*
                 user gets created
              */
             otherUser = new User(uidOther,usernameOther);
-            chatData.user.add(uidOther,otherUser);
+            chatData._user.add(uidOther,otherUser);
         }
-        return await this.chats.newNormalChat(userSelf,otherUser,message);
+        return await this._chats.newNormalChat(userSelf,otherUser,message);
     }
     /*
         a new groupChat is created
@@ -178,18 +179,18 @@ class ChatData{
         for(let i=0;i<users.length;i++){
 
             const user = users[i];
-            if(chatData.user.getIndex(user.uid) === -1){
+            if(chatData._user.getIndex(user.uid) === -1){
 
-                chatData.user.add(user.uid,new User(user.uid,user.username));
+                chatData._user.add(user.uid,new User(user.uid,user.username));
             }
         }
-        return await this.chats.newGroupChat(userFrom,data,users);
+        return await this._chats.newGroupChat(userFrom,data,users);
     }
     /*
         requested chat is returned
      */
     getChat(type:any,id:number){
-        const chat = this.chats.getChat(type,id);
+        const chat = this._chats.getChat(type,id);
         if(!chat)
             throw new Error('chat does not exist');
         return chat;
@@ -201,7 +202,7 @@ class ChatData{
                 else, an exception is thrown
      */
     async getUser(uid:number,loadUser:boolean) {
-        let user = this.user.get(uid);
+        let user = this._user.get(uid);
         if (!user) {
             if (loadUser) {
                 user = await this.loadUser(uid);
@@ -217,8 +218,10 @@ class ChatData{
 
             const query_str =
                 "SELECT * " +
-                "FROM user WHERE username = " + con.escape(username) + ";";
-            con.query(query_str,(err:Error,result:any) => {
+                "FROM user WHERE username = " + pool.escape(username) + ";";
+            logger.verbose('SQL: %s',query_str);
+
+            pool.query(query_str,(err:Error,result:any) => {
                 if(err)
                    reject(err)
                 if(!result || result.length === 0)
@@ -245,35 +248,36 @@ class ChatData{
                 "SELECT username " +
                 "FROM user " +
                 "WHERE uid = " + uid + ";";
+            logger.verbose('SQL: %s',query_str);
 
-            con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 /*
                     user is initialized
                  */
                 const user = new User(uid,result[0].username);
-                this.user.add(uid,user);
+                this._user.add(uid,user);
                 resolve(user);
             });
         });
     }
-/*
-    get chats() {
-        return this.#_chats;
+
+    get user(): BinSearchArray {
+        return this._user;
     }
 
-    set chats(value) {
-        this.#_chats = value;
+    set user(value: BinSearchArray) {
+        this._user = value;
     }
 
-    get user() {
-        return this.#_user;
+    get chats(): CDataChatStorage {
+        return this._chats;
     }
 
-    set user(value) {
-        this.#_user = value;
-    }*/
+    set chats(value: CDataChatStorage) {
+        this._chats = value;
+    }
 }
 
 const chatData = new ChatData();

@@ -1,7 +1,7 @@
 import {chatData} from "../data";
-import {chatServer} from "../../chatServer";
 import User from "../user";
 import {logger} from "../../util/logger";
+import {pool} from "../../app";
 
 export default class Mention {
 
@@ -49,7 +49,7 @@ export default class Mention {
                 ");";
             logger.verbose('SQL: %s',query_str1);
 
-            chatServer.con.query(query_str1, (err:Error) => {
+            pool.query(query_str1, (err:Error) => {
                 if (err)
                     reject(err);
                 /*
@@ -60,7 +60,7 @@ export default class Mention {
                     "FROM mentioneduser;";
                 logger.verbose('SQL: %s',query_str2);
 
-                chatServer.con.query(query_str2, (err:Error, result:any) => {
+                pool.query(query_str2, (err:Error, result:any) => {
                     if (err)
                         reject(err);
                     try {

@@ -1,9 +1,8 @@
 import {Server, Socket} from 'socket.io';
-import {Server as httpsServer} from 'https';
 import {chatData} from "./chatData/data";
 import {verifyToken} from "./authentication/jwt";
 import {Express} from "express";
-import {Connection} from "mysql2";
+import {Pool} from "mysql2";
 import {logger} from "./util/logger";
 import User from "./chatData/user";
 
@@ -17,14 +16,14 @@ export function createChatServer(server:any,con:any,app:any){
 class ChatServer{
 
     private _server:any;
-    private _con:Connection;
+    private _pool:Pool;
     private _app:Express;
     private _io:Server;
 
-    constructor(server:any,con:Connection,app:Express) {
+    constructor(server:any,pool:Pool,app:Express) {
 
         this.server = server;
-        this.con = con;
+        this.pool = pool;
         this.app = app;
 
         //@ts-ignore
@@ -129,12 +128,12 @@ class ChatServer{
         this._server = value;
     }
 
-    get con(): Connection {
-        return this._con;
+    get pool(): Pool {
+        return this._pool;
     }
 
-    set con(value: Connection) {
-        this._con = value;
+    set pool(value: Pool) {
+        this._pool = value;
     }
 
     get app(): Express {

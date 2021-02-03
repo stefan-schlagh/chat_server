@@ -1,10 +1,10 @@
 import Message,{messageTypes} from "./message";
-import {chatServer} from "../../chatServer";
 import {chatData} from "../data";
 import User from "../user";
 import {Chat} from "../chat/chat";
 import {logger} from "../../util/logger";
 import {StatusMessageContent} from "../../models/message";
+import {pool} from "../../app";
 
 export enum statusMessageTypes {
     chatCreated,
@@ -51,7 +51,7 @@ export default class StatusMessage extends Message {
                 "WHERE mid = " + this.mid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 try {
@@ -75,7 +75,7 @@ export default class StatusMessage extends Message {
                 "WHERE smid = " + this.smid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                    reject(err);
 
@@ -126,7 +126,7 @@ export default class StatusMessage extends Message {
                 "VALUES (" + this.mid + "," + this.type + ");";
             logger.verbose('SQL: %s',query_str1);
 
-            chatServer.con.query(query_str1,(err:Error) => {
+            pool.query(query_str1,(err:Error) => {
                 if (err)
                     reject(err);
                 /*
@@ -137,7 +137,7 @@ export default class StatusMessage extends Message {
                     "FROM statusmessage;";
                 logger.verbose('SQL: %s',query_str2);
 
-                chatServer.con.query(query_str2,(err:Error,result:any,fields:any) => {
+                pool.query(query_str2,(err:Error,result:any,fields:any) => {
                     if (err)
                         reject(err);
                     try {
@@ -192,7 +192,7 @@ export default class StatusMessage extends Message {
                 /*
                     rows are saved in the database
                  */
-                chatServer.con.query(query_str,(err:Error,result:any,fields:any) => {
+                pool.query(query_str,(err:Error,result:any,fields:any) => {
                     if (err)
                         reject(err);
                     resolve();

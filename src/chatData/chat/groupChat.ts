@@ -7,6 +7,7 @@ import User from "../user";
 import GroupChatMember from "./groupChatMember";
 import StatusMessage,{statusMessageTypes} from "../message/statusMessage";
 import {logger} from "../../util/logger";
+import {pool} from "../../app";
 
 export class GroupChat extends Chat{
 
@@ -46,20 +47,19 @@ export class GroupChat extends Chat{
 
         return await new Promise((resolve,reject) => {
 
-            const con = chatServer.con;
             const isPublic = this.isPublic ? 1 : 0;
 
             const query_str1 =
                 "INSERT " +
                 "INTO groupchat (name,description,isPublic) " +
                 "VALUES (" +
-                    con.escape(this.chatName) + "," +
-                    con.escape(this.description) + "," +
+                    pool.escape(this.chatName) + "," +
+                    pool.escape(this.description) + "," +
                     isPublic +
                 ")";
             logger.verbose('SQL: %s',query_str1);
 
-            con.query(query_str1,(err:Error) => {
+            pool.query(query_str1,(err:Error) => {
                 /*
                     if no error has occured, the chatID gets requested
                  */
@@ -72,7 +72,7 @@ export class GroupChat extends Chat{
                         "FROM groupchat;";
                     logger.verbose('SQL: %s',query_str2);
 
-                    con.query(query_str2,(err:Error,result:any,fields:any) => {
+                    pool.query(query_str2,(err:Error,result:any,fields:any) => {
 
                         if(err){
                             reject(err);
@@ -420,7 +420,6 @@ export class GroupChat extends Chat{
 
         return new Promise((resolve, reject) => {
 
-            const con = chatServer.con;
             const query_str =
                 "SELECT u.uid, " +
                     "u.username, " +
@@ -434,7 +433,7 @@ export class GroupChat extends Chat{
                 "WHERE gcm.gcid = '" + this.chatId + "';";
             logger.verbose('SQL: %s',query_str);
 
-            con.query(query_str,(err:Error,result:any,fields:any) => {
+            pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
                     reject(err);
                 resolve(result);
@@ -634,18 +633,17 @@ export class GroupChat extends Chat{
 
         await new Promise((resolve,reject) => {
 
-            const con = chatServer.con;
             const isPublic = this.isPublic ? 1 : 0;
 
             const query_str1 =
                 "UPDATE groupchat " +
-                "SET name = " + con.escape(this.chatName) + ", " +
-                "description = " + con.escape(this.description) + ", " +
+                "SET name = " + pool.escape(this.chatName) + ", " +
+                "description = " + pool.escape(this.description) + ", " +
                 "isPublic = " + isPublic + " " +
                 "WHERE gcid = " + this.chatId;
             logger.verbose('SQL: %s',query_str1);
 
-            con.query(query_str1,(err:Error) => {
+            pool.query(query_str1,(err:Error) => {
                 /*
                     if no error has occured, the chatID gets requested
                  */
