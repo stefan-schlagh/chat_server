@@ -24,7 +24,7 @@ export default class CDataChatStorage extends ChatStorage {
             --> gets returned
             else --> is loaded from DB
      */
-    async getGroupChat(gcid:number):Promise<Chat>{
+    async getGroupChat(gcid:number):Promise<Chat> {
 
         const chat = this.getChat('groupChat',gcid);
 
@@ -37,7 +37,7 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         groupChat with this id is loaded from the Database
      */
-    async loadGroupChat(gcid:number):Promise<GroupChat>{
+    async loadGroupChat(gcid:number):Promise<GroupChat> {
 
         const data:any = await new Promise((resolve, reject) => {
 
@@ -195,7 +195,7 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         all normalChats of the user are loaded
      */
-    async loadNormalChats(user:any){
+    async loadNormalChats(user:User):Promise<void> {
 
         const normalChatsDB:any = await this.selectNormalChats(user.uid);
 
@@ -221,25 +221,11 @@ export default class CDataChatStorage extends ChatStorage {
                 let user1;
                 let user2;
 
-                const getOtherUser = (uid:number,username:string) => {
-                    /*
-                        does the user already exist in the Map?
-                     */
-                    if (this.chatData.user.has(uid)) {
-                        return this.chatData.user.get(uid);
-                    }else{
-                        // user is created
-                        const newUser =  new User(uid, username);
-                        this.chatData.user.set(uid,newUser);
-                        return newUser;
-                    }
-                };
-
                 if (normalChatDB.uid1 === user.uid) {
                     user1 = user;
-                    user2 = getOtherUser(normalChatDB.uid2,normalChatDB.uname2);
+                    user2 = this.chatData.getUserUsername(normalChatDB.uid2,normalChatDB.uname2);
                 } else {
-                    user1 = getOtherUser(normalChatDB.uid1,normalChatDB.uname1);
+                    user1 = this.chatData.getUserUsername(normalChatDB.uid1,normalChatDB.uname1);
                     user2 = user;
                 }
                 /*
@@ -264,24 +250,24 @@ export default class CDataChatStorage extends ChatStorage {
                  */
                 this.normal.add(normalChatDB.ncid,newChat);
             }
-
         }
     }
     /*
         normalChats of the user are selected
      */
-    async selectNormalChats(uid:number){
+    //TODO type
+    async selectNormalChats(uid:number):Promise<any> {
 
         return new Promise((resolve, reject) => {
 
             const query_str =
                 "SELECT nc.ncid, " +
-                "nc.uid1, " +
-                "u1.username AS 'uname1', " +
-                "nc.unreadMessages1, " +
-                "nc.uid2, " +
-                "u2.username AS 'uname2', " +
-                "nc.unreadMessages2 " +
+                    "nc.uid1, " +
+                    "u1.username AS 'uname1', " +
+                    "nc.unreadMessages1, " +
+                    "nc.uid2, " +
+                    "u2.username AS 'uname2', " +
+                    "nc.unreadMessages2 " +
                 "FROM normalchat nc " +
                 "INNER JOIN user u1 " +
                 "ON nc.uid1 = u1.uid " +
@@ -300,7 +286,7 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         all groupChats of the user are loaded
      */
-    async loadGroupChats(user:any){
+    async loadGroupChats(user:User):Promise<void> {
 
         const groupChatsDB:any = await this.selectGroupChats(user.uid);
 
@@ -348,7 +334,8 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         all groupChats of the user are selected
      */
-    async selectGroupChats(uid:number){
+    //TODO type
+    async selectGroupChats(uid:number):Promise<any> {
 
         return new Promise((resolve, reject) => {
 

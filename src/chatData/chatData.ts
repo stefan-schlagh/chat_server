@@ -211,6 +211,22 @@ export class ChatData{
         return chat;
     }
     /*
+        requested user is returned, the username is already known
+     */
+    getUserUsername(uid:number,username:string):User {
+        /*
+            does the user already exist in the Map?
+         */
+        if (this.user.has(uid)) {
+            return this.user.get(uid);
+        }else{
+            // user is created
+            const newUser =  new User(uid, username);
+            this.user.set(uid,newUser);
+            return newUser;
+        }
+    }
+    /*
         requested user is returned
             loadUser:
                 if true the userdata is requested from the database and saved
@@ -220,6 +236,7 @@ export class ChatData{
         let user = this.user.get(uid);
         if (!user) {
             if (loadUser) {
+                //should the name of the user be loaded?
                 user = await this.loadUser(uid);
             } else {
                 throw new Error('user does not exist');
