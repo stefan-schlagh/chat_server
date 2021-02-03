@@ -24,7 +24,7 @@ export abstract class Chat{
         neue Message wird zu message-array hinzugefügt
         im Callback wird die msgId zurückgegeben
      */
-    async sendMessage(author:any,message:Message,includeSender:boolean = false){
+    async sendMessage(author:any,message:Message,includeSender:boolean = false):Promise<void> {
         /*
             message gets sent to all users
          */
@@ -38,7 +38,7 @@ export abstract class Chat{
     /*
         a new message is added to the chat
      */
-    async addMessage(author:User,data:MessageData){
+    async addMessage(author:User,data:MessageData):Promise<Message> {
         /*
             message is created & initialized
          */

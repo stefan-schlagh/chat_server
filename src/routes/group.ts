@@ -3,6 +3,7 @@ import {chatData} from "../chatData/data";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
 import {logger} from "../util/logger";
+import {GroupChatMemberData} from "../models/chat";
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.get('/public',(req,res) => {
  */
 router.put('/',(req:any,res:any) => {
 
-    const userFrom = {
+    const userFrom:GroupChatMemberData = {
         uid: req.user.uid,
         username: req.user.username,
         isAdmin: true

@@ -190,7 +190,7 @@ export default class NormalChat extends Chat{
          */
         if(user !== undefined) {
             if (user.chats.length <= 1) {
-                chatData.user.remove(user.uid);
+                chatData.user.delete(user.uid);
             }
             /*
                 sonst wird chat entfernt

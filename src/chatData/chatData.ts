@@ -1,21 +1,23 @@
-import BinSearchArray from '../util/binsearcharray';
 import CDataChatStorage from "./chat/cDataChatStorage";
 import User from "./user";
 import {setChatData} from "./data";
 import {pool} from "../app";
 import {logger} from "../util/logger";
+import {MessageData} from "../models/message";
+import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
+import {Chat} from "./chat/chat";
 
-class ChatData{
+export class ChatData{
 
-    private _user = new BinSearchArray();
-    private _chats = new CDataChatStorage(this._user);
+    private _user = new Map<number,User>();
+    private _chats = new CDataChatStorage(this);
     /*
         the current chat is changed
             user: the user where the currentChat should be changed
             type: the type of the new chat
             id. the id of the new chat
      */
-    changeChat(user:any,type:any,id:number){
+    changeChat(user:User,type:string,id:number):void {
 
         /*
             is no chat selected
@@ -27,7 +29,7 @@ class ChatData{
             user.currentChat = null;
         }
         else {
-            const newChat = this._chats.getChat(type, id);
+            const newChat = this.chats.getChat(type, id);
             if (newChat){
                 user.currentChat = newChat;
             }else{
@@ -38,7 +40,7 @@ class ChatData{
     /*
         a message is sent
      */
-    async sendMessage(user:any,data:any){
+    async sendMessage(user:User,data:MessageData):Promise<number>{
         /*
             mid is returned
          */
@@ -54,11 +56,12 @@ class ChatData{
 
             returns: messages
      */
+    //TODO return type
     async loadMessages(user:User,type:string,id:number,lastMsgId:number,num:number){
         /*
             does the chat exist?
          */
-        const chat = this._chats.getChat(type,id);
+        const chat = this.chats.getChat(type,id);
         if(chat)
             /*
                 messages in this chat are loaded
@@ -75,7 +78,7 @@ class ChatData{
         user is unloaded. this happens when the client disconnects
             user: the user
      */
-    unloadUser(user:User){
+    async unloadUser(user:User):Promise<void> {
 
         if(user) {
             /*
@@ -86,50 +89,49 @@ class ChatData{
                 user and all references are deleted
                 + all others who are not needed anymore (chats etc...)
             */
-            user.saveAndDeleteChats()
-                .then((userInfoNeeded:boolean) => {
-                    if(!userInfoNeeded)
-                        /*
-                            if userInfo is not needed anywhere anymore, it gets deleted
-                         */
-                        this._user.remove(user.uid);
-                })
-                .catch((err:Error) => console.log(err));
+            const userInfoNeeded:boolean = await user.saveAndDeleteChats();
+
+            if(!userInfoNeeded)
+                /*
+                    if userInfo is not needed anywhere anymore, it gets deleted
+                 */
+                this.user.delete(user.uid);
         }
     }
     /*
         returns if the user is online
      */
-    isUserOnline(uid:number){
-        if(this._user.getIndex(uid) === -1) return false;
-        return this._user.get(uid).online;
+    isUserOnline(uid:number):boolean {
+        // is user loaded?
+        if(!this.user.has(uid)) return false;
+        return this.user.get(uid).online;
     }
     /*
         new user gets added
      */
-    addNewUser(uid:number,username:string){
+    addNewUser(uid:number,username:string):User {
         /*
             does the user already exist?
          */
-        if(this._user.getIndex(uid) === -1) {
+        if(!this.user.has(uid)) {
             const user = new User(uid, username);
-            this._user.add(uid,user);
+            this.user.set(uid,user);
             return user;
         }
     }
     /*
         the socket of a user is initialized
      */
-    async initUserSocket(uid:number,username:string,socket:any){
+    async initUserSocket(uid:number,username:string,socket:any):Promise<User> {
         /*
             if user does not exist -> is created new
          */
-        if(this._user.getIndex(uid) === -1) {
+        if(!this.user.has(uid)) {
             const user = new User(uid, username, socket, true);
             /*
                 user is added to array
              */
-            this._user.add(user.uid,user);
+            this.user.set(user.uid,user);
             /*
                 chats are loaded
              */
@@ -141,7 +143,7 @@ class ChatData{
                 online is set to true
          */
         else{
-            const user = this._user.get(uid);
+            const user = this.user.get(uid);
             user.socket = socket;
             user.online = true;
             /*
@@ -149,48 +151,61 @@ class ChatData{
              */
             await user.loadChats();
         }
-        return this._user.get(uid);
+        return this.user.get(uid);
     }
     /*
          a new normalChat is created
      */
-    async newNormalChat(userSelf:any,uidOther:number,usernameOther:string,message:any){
+    async newNormalChat(
+        userSelf:User,
+        uidOther:number,
+        usernameOther:string,
+        message:MessageData
+    ):Promise<NewNormalChatData> {
         /*
             does user already exist in server?
                 if not --> gets created
         */
-        let otherUser = this._user.get(uidOther);
-        if(!otherUser){
+        if(!this.user.has(uidOther)){
             /*
                 user gets created
              */
-            otherUser = new User(uidOther,usernameOther);
-            chatData._user.add(uidOther,otherUser);
+            const otherUser = new User(uidOther,usernameOther);
+            this.user.set(uidOther,otherUser);
         }
-        return await this._chats.newNormalChat(userSelf,otherUser,message);
+        const otherUser = this.user.get(uidOther);
+        return await this.chats.newNormalChat(userSelf,otherUser,message);
     }
     /*
         a new groupChat is created
      */
-    async newGroupChat(userFrom:any,data:any,users:any){
+    async newGroupChat(
+        userFrom:GroupChatMemberData,
+        data:GroupChatData,
+        users:GroupChatMemberData[]
+    ):Promise<void> {
         /*
             not saved users are created
          */
         for(let i=0;i<users.length;i++){
 
             const user = users[i];
-            if(chatData._user.getIndex(user.uid) === -1){
-
-                chatData._user.add(user.uid,new User(user.uid,user.username));
+            /*
+                if the user does not exist in Map
+             */
+            if(!this.user.has(user.uid)){
+                // user gets created
+                const newUser = new User(user.uid,user.username);
+                this.user.set(newUser.uid,newUser);
             }
         }
-        return await this._chats.newGroupChat(userFrom,data,users);
+        await this.chats.newGroupChat(userFrom,data,users);
     }
     /*
         requested chat is returned
      */
-    getChat(type:any,id:number){
-        const chat = this._chats.getChat(type,id);
+    getChat(type:string,id:number):Chat {
+        const chat = this.chats.getChat(type,id);
         if(!chat)
             throw new Error('chat does not exist');
         return chat;
@@ -201,8 +216,8 @@ class ChatData{
                 if true the userdata is requested from the database and saved
                 else, an exception is thrown
      */
-    async getUser(uid:number,loadUser:boolean) {
-        let user = this._user.get(uid);
+    async getUser(uid:number,loadUser:boolean):Promise<User> {
+        let user = this.user.get(uid);
         if (!user) {
             if (loadUser) {
                 user = await this.loadUser(uid);
@@ -212,7 +227,10 @@ class ChatData{
         }
         return user;
     }
-    async getUserEmail(username:string,email:string){
+    /*
+        get a user by the username and the email address
+     */
+    async getUserEmail(username:string,email:string):Promise<User> {
 
         const result:any = await new Promise((resolve, reject) => {
 
@@ -240,7 +258,7 @@ class ChatData{
     /*
         userdata is loaded, user is saved
      */
-    async loadUser(uid:number){
+    async loadUser(uid:number):Promise<User> {
 
         return new Promise((resolve, reject) => {
 
@@ -257,17 +275,17 @@ class ChatData{
                     user is initialized
                  */
                 const user = new User(uid,result[0].username);
-                this._user.add(uid,user);
+                this.user.set(uid,user);
                 resolve(user);
             });
         });
     }
 
-    get user(): BinSearchArray {
+    get user(): Map<number,User> {
         return this._user;
     }
 
-    set user(value: BinSearchArray) {
+    set user(value: Map<number,User>) {
         this._user = value;
     }
 

@@ -101,11 +101,15 @@ class ChatServer{
             /*
                 is called after client disconnected
              */
-            socket.on('disconnect', () => {
+            socket.on('disconnect', async () => {
                 /*
                     userData is saved and deleted
                  */
-                chatData.unloadUser(user);
+                try {
+                    await chatData.unloadUser(user);
+                } catch (err) {
+                    logger.error(err);
+                }
 
                 logger.log('info','disconnected');
             });

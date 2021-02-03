@@ -11,6 +11,7 @@ import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {Chat} from "./chat/chat";
+import {MessageData} from "../models/message";
 
 class Emitter extends EventEmitter {}
 
@@ -43,9 +44,9 @@ export default class User{
     }
 
     /*
-        Die chats des users werden geladen.
+        chats of the user are loaded
      */
-    async loadChats(){
+    async loadChats():Promise<void> {
         /*
             normalChats are loaded
          */
@@ -69,9 +70,9 @@ export default class User{
 
     }
     /*
-        chats des users werden gespeichert und gelöscht
+        chats of user are saved and deleted
      */
-    async saveAndDeleteChats(){
+    async saveAndDeleteChats():Promise<boolean> {
 
         this.chatsLoaded = false;
 
@@ -104,7 +105,7 @@ export default class User{
             });
         }));
     }
-    startedTyping(){
+    startedTyping():void {
 
         /*
             nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
@@ -117,7 +118,7 @@ export default class User{
                 false
             );
     }
-    stoppedTyping(){
+    stoppedTyping():void {
         /*
             nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
          */
@@ -129,7 +130,7 @@ export default class User{
                 false
             );
     }
-    async sendMessage(data:any){
+    async sendMessage(data:MessageData):Promise<number> {
         /*
             only when a chat is selected it can be sent
          */
@@ -151,26 +152,26 @@ export default class User{
         }
     }
     /*
-        wird aufgerufen, wenn chat geladen wurde und zum array hinzugefügt werden soll.
+        is called, when a newly loaded chat should be added to the list
      */
-    addLoadedChat(chat:any){
+    addLoadedChat(chat:Chat):void {
         this.chats.addChat(chat);
     }
     /*
-        wird aufgerufen, wenn geladener chat gespeichert
-        und aus server-speicher entfernt werden soll
-        aufgerufen in:
+        loaded chat gets saved and removed from storage
+        called in:
             removeUsers:
-                Normalchat
-                Grpupchat
+                normalchat
+                groupchat
      */
-    removeUnloadedChat(chat:any){
+    removeUnloadedChat(chat:Chat):void {
         //Referenz im eigenen chat-array wird gelöscht
         this.chats.removeChat(chat);
     }
     /*
         A object with all chats where the user is in gets returned
      */
+    //TODO return type
     async getChatJson(){
 
         return new Promise((resolve, reject) => {

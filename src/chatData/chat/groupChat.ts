@@ -368,9 +368,9 @@ export class GroupChat extends Chat{
             const unreadMessages = userChatDB.unreadMessages;
             const isStillMember = userChatDB.isStillMember === 1;
             /*
-                does user already exist?
+                does user already exist in the Map
              */
-            if (chatData.user.getIndex(userChatDB.uid) === -1) {
+            if (!chatData.user.has(userChatDB.uid)) {
                 /*
                     new user gets created
                  */
@@ -378,7 +378,8 @@ export class GroupChat extends Chat{
                     userChatDB.uid,
                     userChatDB.username
                 );
-                chatData.user.add(newUser.uid, newUser);
+                // add user
+                chatData.user.set(newUser.uid, newUser);
             }
 
             const newUser = chatData.user.get(userChatDB.uid);
@@ -541,7 +542,7 @@ export class GroupChat extends Chat{
                     if there are no other chats, the user gets deleted
                  */
                 if (member.chats.length() <= 1) {
-                    chatData.user.remove(member.uid);
+                    chatData.user.delete(member.uid);
                 }
                 /*
                     chat is deleted
