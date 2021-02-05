@@ -38,7 +38,8 @@ class ChatServer{
         //TODO log socket id
         this.io.on('connection', (socket:Socket) => {
 
-            logger.info('Socket: new connection initialized');
+            logger.info(socket.id);
+            logger.info('Socket(id: %s): %s',socket.id,' new connection initialized');
             /*
                 the user who uses this connection
              */
@@ -62,9 +63,9 @@ class ChatServer{
                      */
                     socket.emit('initialized');
                     // info is logged
-                    logger.log('info','Socket: %s %s','connection established: ',user.uid);
+                    logger.log('info','Socket(id: %s): %s %s ',socket.id,'connection established: ',user.uid);
                 } catch (err) {
-                    logger.log('error','Socket: %s at %s','error',err);
+                    logger.log('error','Socket(id: %s): %s %s ',socket.id,'error',err);
                     socket.disconnect();
                 }
             });
@@ -80,7 +81,7 @@ class ChatServer{
                 else
                     chatData.changeChat(user, data.type, data.id);
                 // info is logged
-                logger.log('info','Socket: %s %s ','chat changed: ',user.uid);
+                logger.log('info','Socket(id: %s): %s %s ',socket.id,'chat changed: ',user.uid);
             });
             socket.on('started typing', () => {
                 /*
@@ -88,7 +89,7 @@ class ChatServer{
                  */
                 user.startedTyping();
                 // info is logged
-                logger.log('info','Socket: %s %s ','user started typing: ',user.uid);
+                logger.log('info','Socket(id: %s): %s %s ',socket.id,'user started typing: ',user.uid);
             });
             socket.on('stopped typing', () => {
                 /*
@@ -96,18 +97,22 @@ class ChatServer{
                  */
                 user.stoppedTyping();
                 // info is logged
-                logger.log('info','Socket: %s %s ','user stopped typing: ',user.uid);
+                logger.log('info','Socket(id: %s): %s %s ',socket.id,'user stopped typing: ',user.uid);
             });
             /*
                 is called after client disconnected
              */
-            socket.on('disconnect', () => {
+            socket.on('disconnect', async () => {
                 /*
                     userData is saved and deleted
                  */
-                chatData.unloadUser(user);
+                try {
+                    await chatData.unloadUser(user);
+                } catch (err) {
+                    logger.error(err);
+                }
 
-                logger.log('info','disconnected');
+                logger.log('info','Socket(id: %s): %s ',socket.id,'disconnected');
             });
         });
 
@@ -120,11 +125,11 @@ class ChatServer{
         return chatData.isUserOnline(uid);
     }
 
-    get server(): any {
+    get server(): Server {
         return this._server;
     }
 
-    set server(value: any) {
+    set server(value: Server) {
         this._server = value;
     }
 

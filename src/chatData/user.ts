@@ -2,26 +2,30 @@ import EventEmitter from 'events';
 import chatData from "./chatData";
 import ChatStorage from "./chat/chatStorage";
 import {
-    verifyCode,
+    generateVerificationCode,
+    Parts,
+    VerificationCode,
     verificationCodeTypes,
-    generateVerificationCode, Parts, VerificationCode
+    verifyCode
 } from "../verification/code";
 import {pool} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
-import {Chat} from "./chat/chat";
+import {Chat, chatTypes} from "./chat/chat";
+import {MessageData} from "../models/message";
+import {GroupChat} from "./chat/groupChat";
+import {Socket} from "socket.io";
 
 class Emitter extends EventEmitter {}
 
 export default class User{
-    //TODO
     /*
         eventEmitter
      */
     private _eventEmitter = new Emitter();
     private _chats:ChatStorage = new ChatStorage();
-    private _socket:any;
+    private _socket:Socket;
     private _uid:number;
     private _username:string;
     private _online:boolean;
@@ -34,18 +38,18 @@ export default class User{
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
      */
-    constructor(uid:number,username:string,socket:any = null,online:boolean = false) {
+    constructor(uid:number,username:string,socket:Socket = null,online:boolean = false) {
         this.uid = uid;
-        this.online = online;
         this.username = username;
         this.socket = socket;
+        this.online = online;
         this.currentChat = null;
     }
 
     /*
-        Die chats des users werden geladen.
+        chats of the user are loaded
      */
-    async loadChats(){
+    async loadChats():Promise<void> {
         /*
             normalChats are loaded
          */
@@ -57,7 +61,7 @@ export default class User{
         /*
             subscribe to all socket-rooms in the chats
         */
-        this.chats.forEachGroup((chat:any,index:number,key:number) => {
+        this.chats.group.forEach((chat:GroupChat) => {
             chat.subscribeToRoom(this);
         });
 
@@ -69,9 +73,9 @@ export default class User{
 
     }
     /*
-        chats des users werden gespeichert und gelöscht
+        chats of user are saved and deleted
      */
-    async saveAndDeleteChats(){
+    async saveAndDeleteChats():Promise<boolean> {
 
         this.chatsLoaded = false;
 
@@ -82,32 +86,32 @@ export default class User{
             let userInfoNeeded = false;
             let i = 0;
 
-            this.chats.forEach((item:any,index:number,key:number,type:any) => {
+            this.chats.forEach((value:Chat,key) => {
                 i++;
                 /*
                     is there anyone online at the chat?
                  */
-                if(item.isAnyoneOnline())
+                if(value.isAnyoneOnline())
                     userInfoNeeded = true;
                 else {
                     /*
                         chat is deleted
                      */
-                    const chat = chatData.chats.getChat(type,key);
+                    const chat = chatData.chats.getChat(value.type,key);
                     chat.removeUsers(this.uid);
                     chatData.chats.removeChat(chat);
                 }
-                if (type === 'groupChat')
-                    item.leaveRoom(this);
+                if (value.type === chatTypes.groupChat)
+                    (value as GroupChat).leaveRoom(this);
                 if(i === this.chats.length())
                     resolve(userInfoNeeded);
             });
         }));
     }
-    startedTyping(){
+    startedTyping():void {
 
         /*
-            nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
+            if there is no current chat, msg cannot be sent
          */
         if(this.currentChat !== null)
             this.currentChat.sendToAll(
@@ -117,9 +121,9 @@ export default class User{
                 false
             );
     }
-    stoppedTyping(){
+    stoppedTyping():void {
         /*
-            nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
+            if there is no current chat, msg cannot be sent
          */
         if(this.currentChat !== null)
             this.currentChat.sendToAll(
@@ -129,7 +133,7 @@ export default class User{
                 false
             );
     }
-    async sendMessage(data:any){
+    async sendMessage(data:MessageData):Promise<number> {
         /*
             only when a chat is selected it can be sent
          */
@@ -151,26 +155,26 @@ export default class User{
         }
     }
     /*
-        wird aufgerufen, wenn chat geladen wurde und zum array hinzugefügt werden soll.
+        is called, when a newly loaded chat should be added to the list
      */
-    addLoadedChat(chat:any){
+    addLoadedChat(chat:Chat):void {
         this.chats.addChat(chat);
     }
     /*
-        wird aufgerufen, wenn geladener chat gespeichert
-        und aus server-speicher entfernt werden soll
-        aufgerufen in:
+        loaded chat gets saved and removed from storage
+        called in:
             removeUsers:
-                Normalchat
-                Grpupchat
+                normalchat
+                groupchat
      */
-    removeUnloadedChat(chat:any){
+    removeUnloadedChat(chat:Chat):void {
         //Referenz im eigenen chat-array wird gelöscht
         this.chats.removeChat(chat);
     }
     /*
         A object with all chats where the user is in gets returned
      */
+    //TODO return type
     async getChatJson(){
 
         return new Promise((resolve, reject) => {
@@ -183,7 +187,7 @@ export default class User{
             if(this.chats.length() === 0)
                 resolve(rc);
 
-            this.chats.forEach((chat:any,index:number,key:number) => {
+            this.chats.forEach((value:Chat,key:number) => {
 
                 try {
                     /*
@@ -191,24 +195,24 @@ export default class User{
                             is the user still member in this chat?
                             TODO
                      */
-                    if (chat.type === "groupChat") {
+                    if (value.type === chatTypes.groupChat) {
 
-                        chat.getMember(this.uid);
+                        (value as GroupChat).getMember(this.uid);
                     }
 
-                    const members = chat.getMemberObject(this.uid);
-                    const chatName = chat.getChatName(this.uid);
-                    const fm = chat.messageStorage.getNewestMessageObject();
+                    const members = value.getMemberObject(this.uid);
+                    const chatName = value.getChatName(this.uid);
+                    const fm = value.messageStorage.getNewestMessageObject();
                     /*
                         Objekt wird erstellt und zum Array hinzugefügt
                      */
                     rc.push({
-                        type: chat.type,
+                        type: value.getChatTypeString(),
                         id: key,
                         chatName: chatName,
                         members: members,
                         firstMessage: fm,
-                        unreadMessages: chat.getUnreadMessages(this.uid)
+                        unreadMessages: value.getUnreadMessages(this.uid)
                     });
 
                 }catch(e) {
@@ -226,14 +230,14 @@ export default class User{
         a new chat gets added to the user
         this also gets emitted to the client
      */
-    addNewChat(chat:any){
+    addNewChat(chat:Chat):void {
 
         if(this.socket !== null) {
             /*
                 info gets emitted to the server
              */
             const data = {
-                type: chat.type,
+                type: chat.getChatTypeString(),
                 id: chat.chatId,
                 chatName: chat.getChatName(this.uid),
                 members: chat.getMemberObject(this.uid),
@@ -246,7 +250,7 @@ export default class User{
     /*
         is the chat the currentChat of the user?
      */
-    isCurrentChat(chat:any){
+    isCurrentChat(chat:Chat):boolean {
         if(!this.currentChat)
             return false;
         return this.currentChat.type === chat.type
@@ -260,7 +264,7 @@ export default class User{
             password: the new password
             code: the code sent by the user
      */
-    async setPassword(hash:string,code:string){
+    async setPassword(hash:string,code:string):Promise<void> {
         //is email verified?
         if(await this.isVerified()) {
             const parts:Parts = {
@@ -288,7 +292,7 @@ export default class User{
         }else
             throw new Error("Email not verified!");
     }
-    async isVerified(){
+    async isVerified():Promise<boolean> {
         const result:any = await new Promise((resolve, reject) => {
             const query_str =
                 "SELECT isVerified " +
@@ -305,7 +309,7 @@ export default class User{
         return result[0].isVerified === 1;
     }
     //email of the user is set
-    async setEmail(email:string){
+    async setEmail(email:string):Promise<void> {
 
         await this.deleteVerificationCodes();
 
@@ -321,6 +325,7 @@ export default class User{
             pool.query(query_str,(err:Error,result:any) => {
                if(err)
                    reject(err);
+               // TODO: result type?
                if(isResultEmpty(result))
                    reject(new ResultEmptyError());
                resolve(result);
@@ -330,7 +335,7 @@ export default class User{
         await sendMail(email,"Chat App: email verification",sCode);
     }
     //all current verificationCodes are deleted
-    async deleteVerificationCodes(){
+    async deleteVerificationCodes():Promise<void> {
         await new Promise((resolve, reject) => {
             const query_str =
                 "DELETE " +
@@ -346,7 +351,7 @@ export default class User{
         });
     }
 
-    async verifyEmail(parts:Parts):Promise<boolean>{
+    async verifyEmail(parts:Parts):Promise<boolean> {
         //verifyCode
         const vcid:number = await verifyCode(parts,verificationCodeTypes.emailVerification);
         if(vcid != -1){
@@ -401,55 +406,55 @@ export default class User{
         }
     }
 
-    get eventEmitter() {
+    get eventEmitter():EventEmitter {
         return this._eventEmitter;
     }
 
-    set eventEmitter(value) {
+    set eventEmitter(value:EventEmitter) {
         this._eventEmitter = value;
     }
 
-    get uid() {
+    get uid():number {
         return this._uid;
     }
 
-    set uid(value) {
+    set uid(value:number) {
         this._uid = value;
     }
 
-    get username() {
+    get username():string {
         return this._username;
     }
 
-    set username(value) {
+    set username(value:string) {
         this._username = value;
     }
 
-    get socket() {
+    get socket():Socket {
         return this._socket;
     }
 
-    set socket(value) {
+    set socket(value:Socket) {
         this._socket = value;
     }
 
-    get chats() {
+    get chats():ChatStorage {
         return this._chats;
     }
 
-    set chats(value) {
+    set chats(value:ChatStorage) {
         this._chats = value;
     }
 
-    get online() {
+    get online():boolean {
         return this._online;
     }
 
-    set online(online){
+    set online(online:boolean){
         this._online = online;
     }
 
-    get currentChat() {
+    get currentChat():Chat {
         return this._currentChat;
     }
 
@@ -467,11 +472,11 @@ export default class User{
         }
     }
 
-    get chatsLoaded() {
+    get chatsLoaded():boolean {
         return this._chatsLoaded;
     }
 
-    set chatsLoaded(value) {
+    set chatsLoaded(value:boolean) {
         this._chatsLoaded = value;
     }
 }

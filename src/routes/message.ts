@@ -3,6 +3,7 @@ import chatData from "../chatData/chatData";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
 import {logger} from "../util/logger";
+import {getChatType} from "../chatData/chat/chat";
 
 const router = express.Router();
 
@@ -38,7 +39,7 @@ router.post('/load',(req:any,res) => {
 
     const user = req.user;
 
-    const chatType = req.body.chatType;
+    const chatType = getChatType(req.body.chatType);
     const chatId = req.body.chatId;
     const lastMsgId = req.body.lastMsgId;
     const num = req.body.num;

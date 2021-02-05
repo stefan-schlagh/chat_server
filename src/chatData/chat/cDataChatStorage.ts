@@ -2,27 +2,31 @@ import BinSearchArray from "../../util/binsearcharray";
 import NormalChat from "./normalChat";
 import {GroupChat} from "./groupChat";
 import GroupChatMember from "./groupChatMember";
-import {chatServer} from "../../chatServer";
 import User from "../user";
 import ChatStorage from "./chatStorage";
 import {pool} from "../../app";
+import {ChatData} from "../chatData";
+import {logger} from "../../util/logger";
+import {Chat, chatTypes} from "./chat";
+import {MessageData} from "../../models/message";
+import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
 
 export default class CDataChatStorage extends ChatStorage {
 
-    private _user:BinSearchArray;
+    private _chatData:ChatData;
 
-    constructor(user:BinSearchArray) {
+    constructor(chatData: ChatData) {
         super();
-        this._user = user;
+        this.chatData = chatData;
     }
     /*
         if chat is loaded
             --> gets returned
             else --> is loaded from DB
      */
-    async getGroupChat(gcid:number){
+    async getGroupChat(gcid:number):Promise<Chat> {
 
-        const chat = this.getChat('groupChat',gcid);
+        const chat = this.getChat(chatTypes.groupChat, gcid);
 
         if(chat){
             return chat;
@@ -33,7 +37,7 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         groupChat with this id is loaded from the Database
      */
-    async loadGroupChat(gcid:number){
+    async loadGroupChat(gcid:number):Promise<GroupChat> {
 
         const data:any = await new Promise((resolve, reject) => {
 
@@ -41,6 +45,7 @@ export default class CDataChatStorage extends ChatStorage {
                 "SELECT * " +
                 "FROM groupchat " +
                 "WHERE gcid = " + gcid + ";";
+            logger.verbose('SQL: %s',query_str);
 
             pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
@@ -78,7 +83,11 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         new normalChat is created
      */
-    async newNormalChat(user1:any,user2:any,message:any){
+    async newNormalChat(
+        user1:User,
+        user2:User,
+        message:MessageData
+    ):Promise<NewNormalChatData> {
 
         const newChat = new NormalChat(
             -1,
@@ -90,12 +99,12 @@ export default class CDataChatStorage extends ChatStorage {
          */
         const ncid:any = await newChat.saveChatInDB();
 
-        this.normal.add(ncid,newChat);
+        this.normal.set(ncid,newChat);
         /*
             chats are added to the users
          */
-        user1.chats.addChat(ncid,newChat);
-        user2.chats.addChat(ncid,newChat);
+        user1.chats.addChat(newChat);
+        user2.chats.addChat(newChat);
         /*
             first message gets initialized
          */
@@ -114,7 +123,11 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         new groupChat is created
      */
-    async newGroupChat(userFrom:any, data:any, users:any){
+    async newGroupChat(
+        userFrom:GroupChatMemberData,
+        data:GroupChatData,
+        users:GroupChatMemberData[]
+    ):Promise<void> {
         /*
             chat is created
          */
@@ -138,7 +151,7 @@ export default class CDataChatStorage extends ChatStorage {
         const gcmSelf = new GroupChatMember(
             -1,
             newChat,
-            this._user.get(userFrom.uid),
+            this.chatData.user.get(userFrom.uid),
             userFrom.isAdmin,
             0
         );
@@ -149,7 +162,7 @@ export default class CDataChatStorage extends ChatStorage {
          */
         for(let i=0;i<users.length;i++){
 
-            const user = this._user.get(users[i].uid);
+            const user = this.chatData.user.get(users[i].uid);
             const gcm = new GroupChatMember(
                 -1,
                 newChat,
@@ -161,16 +174,18 @@ export default class CDataChatStorage extends ChatStorage {
 
             members.add(user.uid,gcm);
         }
+        //set members
         newChat.members = members;
-        this.group.add(newChat.chatId,newChat);
+        // add groupChat to list
+        this.group.set(newChat.chatId,newChat);
         /*
             statusMessages are added
          */
-        await newChat.createStatusMessagesStart(userFrom);
+        await newChat.createStatusMessagesStart(gcmSelf.user);
         /*
             chat gets added to the members
          */
-        newChat.forEachUser((user:any,index:number,key:number) => {
+        newChat.forEachUser((user:User,key:number) => {
             user.addLoadedChat(newChat);
             user.addNewChat(newChat);
         });
@@ -182,7 +197,7 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         all normalChats of the user are loaded
      */
-    async loadNormalChats(user:any){
+    async loadNormalChats(user:User):Promise<void> {
 
         const normalChatsDB:any = await this.selectNormalChats(user.uid);
 
@@ -192,7 +207,7 @@ export default class CDataChatStorage extends ChatStorage {
             /*
                 is the chat already loaded?
              */
-            if(this.normal.getIndex(normalChatDB.ncid) !== -1){
+            if(this.normal.has(normalChatDB.ncid)){
                 /*
                     if chat is already loaded, it gets added to user
                  */
@@ -208,24 +223,11 @@ export default class CDataChatStorage extends ChatStorage {
                 let user1;
                 let user2;
 
-                const getOtherUser = (uid:number,username:string) => {
-                    /*
-                        does the user already exist at the server?
-                     */
-                    if (this._user.getIndex(uid) === -1) {
-                        const newUser =  new User(uid, username);
-                        this._user.add(uid,newUser);
-                        return newUser;
-                    }else{
-                        return this._user.get(uid);
-                    }
-                };
-
                 if (normalChatDB.uid1 === user.uid) {
                     user1 = user;
-                    user2 = getOtherUser(normalChatDB.uid2,normalChatDB.uname2);
+                    user2 = this.chatData.getUserUsername(normalChatDB.uid2,normalChatDB.uname2);
                 } else {
-                    user1 = getOtherUser(normalChatDB.uid1,normalChatDB.uname1);
+                    user1 = this.chatData.getUserUsername(normalChatDB.uid1,normalChatDB.uname1);
                     user2 = user;
                 }
                 /*
@@ -248,32 +250,33 @@ export default class CDataChatStorage extends ChatStorage {
                 /*
                     chat wird bei array, das alle chats beinhaltet hinzugefügt
                  */
-                this.normal.add(normalChatDB.ncid,newChat);
+                this.normal.set(normalChatDB.ncid,newChat);
             }
-
         }
     }
     /*
         normalChats of the user are selected
      */
-    async selectNormalChats(uid:number){
+    //TODO type
+    async selectNormalChats(uid:number):Promise<any> {
 
         return new Promise((resolve, reject) => {
 
             const query_str =
                 "SELECT nc.ncid, " +
-                "nc.uid1, " +
-                "u1.username AS 'uname1', " +
-                "nc.unreadMessages1, " +
-                "nc.uid2, " +
-                "u2.username AS 'uname2', " +
-                "nc.unreadMessages2 " +
+                    "nc.uid1, " +
+                    "u1.username AS 'uname1', " +
+                    "nc.unreadMessages1, " +
+                    "nc.uid2, " +
+                    "u2.username AS 'uname2', " +
+                    "nc.unreadMessages2 " +
                 "FROM normalchat nc " +
                 "INNER JOIN user u1 " +
                 "ON nc.uid1 = u1.uid " +
                 "INNER JOIN user u2 " +
                 "ON nc.uid2 = u2.uid " +
                 "WHERE uid1 = '" + uid + "' OR uid2 = '" + uid + "';";
+            logger.verbose('SQL: %s',query_str);
 
             pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
@@ -285,7 +288,7 @@ export default class CDataChatStorage extends ChatStorage {
     /*
         all groupChats of the user are loaded
      */
-    async loadGroupChats(user:any){
+    async loadGroupChats(user:User):Promise<void> {
 
         const groupChatsDB:any = await this.selectGroupChats(user.uid);
 
@@ -295,7 +298,7 @@ export default class CDataChatStorage extends ChatStorage {
             /*
                 is chat already loaded?
              */
-            if (this.group.getIndex(groupChatDB.gcid) !== -1) {
+            if (this.group.has(groupChatDB.gcid)) {
                 /*
                     if chat is already loaded, it gets added to user
                  */
@@ -326,14 +329,15 @@ export default class CDataChatStorage extends ChatStorage {
                 /*
                     chat gets added in chatData
                  */
-                this.group.add(newChat.chatId, newChat);
+                this.group.set(newChat.chatId, newChat);
             }
         }
     }
     /*
         all groupChats of the user are selected
      */
-    async selectGroupChats(uid:number){
+    //TODO type
+    async selectGroupChats(uid:number):Promise<any> {
 
         return new Promise((resolve, reject) => {
 
@@ -343,6 +347,7 @@ export default class CDataChatStorage extends ChatStorage {
                 "JOIN groupchat gc " +
                 "ON gcm.gcid = gc.gcid " +
                 "WHERE gcm.uid = '" + uid + "';";
+            logger.verbose('SQL: %s',query_str);
 
             pool.query(query_str,(err:Error,result:any,fields:any) => {
                 if(err)
@@ -352,11 +357,11 @@ export default class CDataChatStorage extends ChatStorage {
         });
     }
 
-    get user(): BinSearchArray {
-        return this._user;
+    get chatData(): ChatData {
+        return this._chatData;
     }
 
-    set user(value: BinSearchArray) {
-        this._user = value;
+    set chatData(value: ChatData) {
+        this._chatData = value;
     }
 }

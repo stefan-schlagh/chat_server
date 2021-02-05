@@ -1,4 +1,4 @@
-import {Chat} from "../chat/chat";
+import {Chat, chatTypes} from "../chat/chat";
 import User from "../user";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
@@ -49,7 +49,7 @@ export default abstract class Message{
 
         return(new Promise((resolve, reject) => {
 
-            const isGroupChat = this.chat.type === 'groupChat' ? 1 : 0;
+            const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
 
             const query_str1 =
                 "INSERT " +
