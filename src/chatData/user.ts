@@ -15,17 +15,17 @@ import {logger} from "../util/logger";
 import {Chat, chatTypes} from "./chat/chat";
 import {MessageData} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
+import {Socket} from "socket.io";
 
 class Emitter extends EventEmitter {}
 
 export default class User{
-    //TODO types
     /*
         eventEmitter
      */
     private _eventEmitter = new Emitter();
     private _chats:ChatStorage = new ChatStorage();
-    private _socket:any;
+    private _socket:Socket;
     private _uid:number;
     private _username:string;
     private _online:boolean;
@@ -38,11 +38,11 @@ export default class User{
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
      */
-    constructor(uid:number,username:string,socket:any = null,online:boolean = false) {
+    constructor(uid:number,username:string,socket:Socket = null,online:boolean = false) {
         this.uid = uid;
-        this.online = online;
         this.username = username;
         this.socket = socket;
+        this.online = online;
         this.currentChat = null;
     }
 
@@ -111,7 +111,7 @@ export default class User{
     startedTyping():void {
 
         /*
-            nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
+            if there is no current chat, msg cannot be sent
          */
         if(this.currentChat !== null)
             this.currentChat.sendToAll(
@@ -123,7 +123,7 @@ export default class User{
     }
     stoppedTyping():void {
         /*
-            nur wenn derzeitiger chat definiert ist, kann msg gesendet werden
+            if there is no current chat, msg cannot be sent
          */
         if(this.currentChat !== null)
             this.currentChat.sendToAll(
@@ -230,7 +230,7 @@ export default class User{
         a new chat gets added to the user
         this also gets emitted to the client
      */
-    addNewChat(chat:Chat) {
+    addNewChat(chat:Chat):void {
 
         if(this.socket !== null) {
             /*
@@ -250,7 +250,7 @@ export default class User{
     /*
         is the chat the currentChat of the user?
      */
-    isCurrentChat(chat:any){
+    isCurrentChat(chat:Chat):boolean {
         if(!this.currentChat)
             return false;
         return this.currentChat.type === chat.type
@@ -264,7 +264,7 @@ export default class User{
             password: the new password
             code: the code sent by the user
      */
-    async setPassword(hash:string,code:string){
+    async setPassword(hash:string,code:string):Promise<void> {
         //is email verified?
         if(await this.isVerified()) {
             const parts:Parts = {
@@ -292,7 +292,7 @@ export default class User{
         }else
             throw new Error("Email not verified!");
     }
-    async isVerified(){
+    async isVerified():Promise<boolean> {
         const result:any = await new Promise((resolve, reject) => {
             const query_str =
                 "SELECT isVerified " +
@@ -309,7 +309,7 @@ export default class User{
         return result[0].isVerified === 1;
     }
     //email of the user is set
-    async setEmail(email:string){
+    async setEmail(email:string):Promise<void> {
 
         await this.deleteVerificationCodes();
 
@@ -325,6 +325,7 @@ export default class User{
             pool.query(query_str,(err:Error,result:any) => {
                if(err)
                    reject(err);
+               // TODO: result type?
                if(isResultEmpty(result))
                    reject(new ResultEmptyError());
                resolve(result);
@@ -334,7 +335,7 @@ export default class User{
         await sendMail(email,"Chat App: email verification",sCode);
     }
     //all current verificationCodes are deleted
-    async deleteVerificationCodes(){
+    async deleteVerificationCodes():Promise<void> {
         await new Promise((resolve, reject) => {
             const query_str =
                 "DELETE " +
@@ -350,7 +351,7 @@ export default class User{
         });
     }
 
-    async verifyEmail(parts:Parts):Promise<boolean>{
+    async verifyEmail(parts:Parts):Promise<boolean> {
         //verifyCode
         const vcid:number = await verifyCode(parts,verificationCodeTypes.emailVerification);
         if(vcid != -1){
@@ -405,55 +406,55 @@ export default class User{
         }
     }
 
-    get eventEmitter() {
+    get eventEmitter():EventEmitter {
         return this._eventEmitter;
     }
 
-    set eventEmitter(value) {
+    set eventEmitter(value:EventEmitter) {
         this._eventEmitter = value;
     }
 
-    get uid() {
+    get uid():number {
         return this._uid;
     }
 
-    set uid(value) {
+    set uid(value:number) {
         this._uid = value;
     }
 
-    get username() {
+    get username():string {
         return this._username;
     }
 
-    set username(value) {
+    set username(value:string) {
         this._username = value;
     }
 
-    get socket() {
+    get socket():Socket {
         return this._socket;
     }
 
-    set socket(value) {
+    set socket(value:Socket) {
         this._socket = value;
     }
 
-    get chats() {
+    get chats():ChatStorage {
         return this._chats;
     }
 
-    set chats(value) {
+    set chats(value:ChatStorage) {
         this._chats = value;
     }
 
-    get online() {
+    get online():boolean {
         return this._online;
     }
 
-    set online(online){
+    set online(online:boolean){
         this._online = online;
     }
 
-    get currentChat() {
+    get currentChat():Chat {
         return this._currentChat;
     }
 
@@ -471,11 +472,11 @@ export default class User{
         }
     }
 
-    get chatsLoaded() {
+    get chatsLoaded():boolean {
         return this._chatsLoaded;
     }
 
-    set chatsLoaded(value) {
+    set chatsLoaded(value:boolean) {
         this._chatsLoaded = value;
     }
 }

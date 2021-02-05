@@ -518,7 +518,7 @@ export class GroupChat extends Chat{
          */
         const data = {
             chat: {
-                type: this.type,
+                type: this.getChatTypeString(),
                 id: this.chatId
             },
             ...messageObject
@@ -527,6 +527,14 @@ export class GroupChat extends Chat{
             chatServer.io.to(this.socketRoomName).emit(socketMessage,data);
         else
             sentBy.socket.to(this.socketRoomName).emit(socketMessage,data);
+        logger.info({
+            info: 'send socket message to all users',
+            message: socketMessage,
+            socketMessage: socketMessage,
+            includeSender: includeSender,
+            roomName: this.socketRoomName,
+            groupName: this.getChatName(0)
+        });
     }
     /*
         is called:

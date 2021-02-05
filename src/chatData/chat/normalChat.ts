@@ -75,9 +75,10 @@ export default class NormalChat extends Chat{
         event is emitted to all participants of the chat
      */
     sendToAll(sentBy:User,socketMessage:string,messageObject:any):void {
+
         const data = {
             chat: {
-                type: this.type,
+                type: this.getChatTypeString(),
                 id: this.chatId,
             },
             uid: sentBy.uid,
@@ -91,15 +92,33 @@ export default class NormalChat extends Chat{
             /*
                 es wird geschaut, ob Socket definiert ist
              */
-            if(this.user2.socket != null)
-                chatServer.io.to(this.user2.socket.id).emit(socketMessage,data);
+            if(this.user2.online) {
+                chatServer.io.to(this.user2.socket.id).emit(socketMessage, data);
+                logger.info({
+                    info: 'send socket message to other user',
+                    message: socketMessage,
+                    socketMessage: socketMessage,
+                    socketId: this.user2.socket.id,
+                    uid: this.user2.uid
+                });
+            }else
+                logger.info('send socket message to other user: %s, other user not online',socketMessage);
         }
         else {
             /*
                 es wird geschaut, ob Socket definiert ist
              */
-            if(this._user1.socket != null)
-                chatServer.io.to(this._user1.socket.id).emit(socketMessage,data);
+            if(this.user1.online) {
+                chatServer.io.to(this.user1.socket.id).emit(socketMessage, data);
+                logger.info({
+                    info: 'send socket message to other user',
+                    message:socketMessage,
+                    socketMessage: socketMessage,
+                    socketId: this.user1.socket.id,
+                    uid: this.user1.uid
+                });
+            }else
+                logger.info('send socket message to other user: %s, other user not online',socketMessage);
         }
     }
     /*

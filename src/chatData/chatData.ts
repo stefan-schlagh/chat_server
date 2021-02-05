@@ -6,6 +6,7 @@ import {logger} from "../util/logger";
 import {MessageData} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
 import {Chat, chatTypes, getChatType} from "./chat/chat";
+import {Socket} from "socket.io";
 
 export class ChatData{
 
@@ -122,12 +123,12 @@ export class ChatData{
     /*
         the socket of a user is initialized
      */
-    async initUserSocket(uid:number,username:string,socket:any):Promise<User> {
+    async initUserSocket(uid:number,username:string,socket:Socket):Promise<User> {
         /*
             if user does not exist -> is created new
          */
         if(!this.user.has(uid)) {
-            const user = new User(uid, username, socket, true);
+            const user = new User(uid, username,socket,true);
             /*
                 user is added to array
              */
