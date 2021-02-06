@@ -184,7 +184,7 @@ export class ChatData{
         userFrom:GroupChatMemberData,
         data:GroupChatData,
         users:GroupChatMemberData[]
-    ):Promise<void> {
+    ):Promise<number> {
         /*
             not saved users are created
          */
@@ -200,7 +200,7 @@ export class ChatData{
                 this.user.set(newUser.uid,newUser);
             }
         }
-        await this.chats.newGroupChat(userFrom,data,users);
+        return await this.chats.newGroupChat(userFrom,data,users);
     }
     /*
         requested chat is returned

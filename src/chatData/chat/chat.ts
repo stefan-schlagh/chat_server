@@ -140,14 +140,14 @@ export abstract class Chat{
     // set the unreadMessages of the user with this uid to the specified number
     abstract async setUnreadMessages(uid:number,unreadMessages:number): Promise<void>;
     // returns if there is someone online in this chat
-    abstract isAnyoneOnline():boolean;
+    abstract async isAnyoneOnline():Promise<boolean>;
     /*
         remove all users from the chat, gets called when chat gets unloaded
             uid: the requesting user
      */
-    abstract removeUsers(uid:number):void;
+    async abstract removeUsers(uid:number):Promise<void>;
     // all members of the chat get returned
-    abstract getMemberObject(uidSelf:number):SimpleUser[];
+    async abstract getMemberObject(uidSelf:number):Promise<SimpleUser[]>;
     // the name of the chat gets returned
     abstract getChatName(uidSelf:number):string;
     // unread Messages of the user with this uid are returned

@@ -1,4 +1,3 @@
-import BinSearchArray from "../../util/binsearcharray";
 import {Chat, chatTypes} from "./chat";
 import chatData from "../chatData";
 import {randomString} from "../../util/random";
@@ -9,12 +8,12 @@ import StatusMessage, {statusMessageTypes} from "../message/statusMessage";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
-import {GroupChatInfo, GroupChatMemberDataAll, RemoveMemberReturn} from "../../models/chat";
+import {GroupChatInfo, GroupChatMemberDataAll} from "../../models/chat";
 
 export class GroupChat extends Chat{
 
     //BinSearchArray - groupChatMembers
-    private _members:BinSearchArray = new BinSearchArray();
+    private _members:Map<number,GroupChatMember> = new Map<number,GroupChatMember>();
     private _chatName:string;
     private _description:string;
     private _isPublic:boolean;
@@ -22,32 +21,38 @@ export class GroupChat extends Chat{
 
     constructor(chatId:number = -1, chatName:string, description:string, isPublic:boolean) {
         super(chatTypes.groupChat,chatId);
-        this._chatName = chatName;
-        this._description = description;
-        this._isPublic = isPublic;
-        this._socketRoomName = randomString(10);
+        this.chatName = chatName;
+        this.description = description;
+        this.isPublic = isPublic;
+        this.socketRoomName = randomString(10);
 
     }
     /*
         subscribeUsersToSocket
      */
-    subscribeUsersToSocket():void {
+    async subscribeUsersToSocket():Promise<void> {
         /*
             each users socket joins the roo,
          */
-        for(let i=0; i<this.members.length; i++){
-            const user = this.members[i].value.user;
-            if(user.socket){
-                user.socket.join(this.socketRoomName);
-            }
-        }
+        await new Promise((resolve, reject) => {
+            let callCounter = 0;
+
+            this.members.forEach(((value:GroupChatMember, key:number) => {
+                if(value.user.online){
+                    value.user.socket.join(this.socketRoomName);
+                }
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve();
+            }));
+        })
     }
     /*
         chat is saved in the database
      */
     async saveChatInDB():Promise<number> {
 
-        return await new Promise((resolve,reject) => {
+        const id:number =  await new Promise<number>((resolve,reject) => {
 
             const isPublic = this.isPublic ? 1 : 0;
 
@@ -86,6 +91,8 @@ export class GroupChat extends Chat{
                 }
             });
         });
+        this.chatId = id;
+        return id;
     }
     /*
         member is added to chat
@@ -120,12 +127,12 @@ export class GroupChat extends Chat{
             /*
                 member is added at chat
              */
-            this.members.add(user.uid, groupChatMember);
+            this.members.set(user.uid, groupChatMember);
         }
         /*
             chat is sent to user
         */
-        user.addNewChat(this);
+        await user.addNewChat(this);
         /*
             member is subscribed to socket
          */
@@ -204,7 +211,7 @@ export class GroupChat extends Chat{
     async removeMember(
         memberFrom:GroupChatMember,
         memberOther:GroupChatMember
-    ):Promise<RemoveMemberReturn> {
+    ):Promise<void> {
         /*
             member is removed from DB
          */
@@ -229,15 +236,11 @@ export class GroupChat extends Chat{
             socket room is left
          */
         this.leaveRoom(memberOther.user);
-
-        return {
-            mid: message.mid
-        }
     }
     /*
         member joins chat --> only when public
      */
-    async joinChat(user:User):Promise<void>{
+    async joinChat(user:User):Promise<void> {
 
         await this.addGroupChatMember(user);
         /*
@@ -259,7 +262,7 @@ export class GroupChat extends Chat{
     /*
         chat is left by the user
      */
-    async leaveChat(member:GroupChatMember):Promise<void>{
+    async leaveChat(member:GroupChatMember):Promise<void> {
         /*
             member is removed from DB
          */
@@ -342,11 +345,9 @@ export class GroupChat extends Chat{
         const usersAdded =
             new StatusMessage(this,createdBy);
 
-        logger.info(this.getMemberUids(createdBy.uid));
-
         await usersAdded.initNewMessage({
             type: statusMessageTypes.usersAdded,
-            passiveUsers: this.getMemberUids(createdBy.uid)
+            passiveUsers: await this.getMemberUids(createdBy.uid)
         });
         /*
             messages are added to messageStorage
@@ -357,16 +358,21 @@ export class GroupChat extends Chat{
     /*
         all uids of the groupChatMembers are returned
      */
-    getMemberUids(uidC:number):number[] {
+   async getMemberUids(uidExclude:number):Promise<number[]> {
 
-        const uids = [];
+       return new Promise<number[]>((resolve, reject) => {
 
-        for(let i=0; i<this.members.length; i++){
-            const uid = this.members[i].key;
-            if(uid !== uidC)
-                uids.push(uid)
-        }
-        return uids;
+           const uids:number[] = [];
+           let callCounter = 0;
+
+           this.members.forEach((value:GroupChatMember, key:number) => {
+               if(key !== uidExclude)
+                   uids.push(key)
+               callCounter ++;
+               if(callCounter === this.members.size)
+                   resolve(uids);
+           });
+       })
     }
     /*
         all members of this chat are loaded
@@ -374,7 +380,7 @@ export class GroupChat extends Chat{
     async loadGroupChatMembers():Promise<void> {
 
         const usersChatDB:any = await this.selectGroupChatMembers();
-        this.members = new BinSearchArray();
+        this.members = new Map<number,GroupChatMember>();
         /*
             loop through users, if not exists --> gets created
          */
@@ -409,7 +415,7 @@ export class GroupChat extends Chat{
                     unreadMessages,
                     isStillMember
                 );
-            this.members.add(
+            this.members.set(
                 newUser.uid,
                 groupChatMember
             );
@@ -417,19 +423,25 @@ export class GroupChat extends Chat{
         /*
             chat gets added to the members
          */
-        for (let j = 0; j < this.members.length; j++) {
+        await new Promise<number[]>((resolve, reject) => {
 
-            const member = this.members[j].value;
-            /*
-                is the member still member?
+            let callCounter = 0;
+
+            this.members.forEach((value:GroupChatMember, key:number) => {
+                /*
+                is the member still member --> add chat?
              */
-            if(member.isStillMember)
-                member.user.addLoadedChat(this);
-        }
+                if(value.isStillMember)
+                    value.user.addLoadedChat(this);
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve();
+            });
+        })
         /*
             users are subscribed to socket
          */
-        this.subscribeUsersToSocket();
+        await this.subscribeUsersToSocket();
     }
     /*
         groupChatMembers are selected
@@ -477,10 +489,15 @@ export class GroupChat extends Chat{
      */
     async incrementUnreadMessages(num:number):Promise<void> {
 
-        for(let i=0; i<this.members.length; i++){
-
-            await this.members[i].value.incrementUnreadMessages(num);
-        }
+        await new Promise<void>((resolve, reject) => {
+            let callCounter = 0;
+            this.members.forEach(async (value:GroupChatMember, key:number) => {
+                await value.incrementUnreadMessages(num);
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve();
+            });
+        })
     }
     /*
         unreadMessages are increment at the user with this uid
@@ -540,51 +557,62 @@ export class GroupChat extends Chat{
         is called:
             loadCHats.js ca. 150
      */
-    subscribeToRoom(user:any):void {
+    subscribeToRoom(user:User):void {
         if(user.socket !== null)
             user.socket.join(this.socketRoomName);
     }
 
-    leaveRoom(user:any):void {
+    leaveRoom(user:User):void {
         if(user.socket !== null)
             user.socket.leave(this.socketRoomName);
     }
     /*
         returns if there is someone online in this chat
      */
-    isAnyoneOnline():boolean {
-        for(let i=0; i<this.members.length; i++){
-            if(this.members[i].online)
-                return true;
-        }
-        return false;
+    async isAnyoneOnline():Promise<boolean> {
+        return await new Promise<boolean>((resolve, reject) => {
+            let callCounter = 0;
+            let anyOneOnline = false;
+            this.members.forEach((value:GroupChatMember, key:number) => {
+                if(value.user.online)
+                    anyOneOnline = true
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve(anyOneOnline);
+            });
+        })
     }
     /*
         remove all users from the chat, gets called when chat gets unloaded
             uid: the requesting user
      */
-    removeUsers(uid:number):void {
-        for(let i=0; i<this.members.length; i++){
+    async removeUsers(uid:number):Promise<void> {
+        await new Promise<void>((resolve, reject) => {
 
-            const member = this.members[i].value.user;
-            /*
+            let callCounter = 0;
+            this.members.forEach((value:GroupChatMember, key:number) => {
+                /*
                 if the uid is not the one of the removing user
              */
-            if(this.members[i].value.uid !== uid) {
-                /*
-                    if there are no other chats, the user gets deleted
-                 */
-                if (member.chats.length() <= 1) {
-                    chatData.user.delete(member.uid);
+                if(value.user.uid !== uid) {
+                    /*
+                        if there are no other chats, the user gets deleted
+                     */
+                    if (value.user.chats.length() <= 1) {
+                        chatData.user.delete(value.user.uid);
+                    }
+                    /*
+                        chat is deleted
+                     */
+                    else {
+                        value.user.removeUnloadedChat(this);
+                    }
                 }
-                /*
-                    chat is deleted
-                 */
-                else {
-                    member.removeUnloadedChat(this);
-                }
-            }
-        }
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve();
+            });
+        });
     }
     // the name of the chat gets returned
     getChatName(uidSelf:number):string {
@@ -594,52 +622,54 @@ export class GroupChat extends Chat{
         all members of the chat get returned, only the most important information
             uid: the id of the user that should be excluded, -1 if no one should
      */
-    getMemberObject(uid:number,minified = true):SimpleUser[] {
+    async getMemberObject(uid:number,minified = true):Promise<SimpleUser[]> {
 
-        let members = [];
-
-        for(let j=0; j<this.members.length; j++) {
-            // create member object
-            const member = this.members[j].value.user;
-            if (!(uid === member.uid)) {
+        return await new Promise<SimpleUser[]>((resolve, reject) => {
+            let callCounter = 0;
+            let members:SimpleUser[] = [];
+            this.members.forEach((member:GroupChatMember, key:number) => {
                 members.push({
-                    uid: member.uid,
-                    username: member.username
+                    uid: member.user.uid,
+                    username: member.user.username
                 });
-            }
-        }
-        return members;
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve(members);
+            });
+        })
     }
     /*
         all members of the chat get returned, all info
      */
-    getMemberObjectAll():GroupChatMemberDataAll[] {
+    async getMemberObjectAll():Promise<GroupChatMemberDataAll[]> {
 
-        let members = [];
-
-        for(let j=0; j<this.members.length; j++) {
-            // create member object
-            const member = this.members[j].value;
-            if(member.isStillMember)
-                members.push({
-                    uid: member.user.uid,
-                    username: member.user.username,
-                    isAdmin: member.isAdmin,
-                    gcmid: member.gcmid
-                });
-        }
-        return members;
+        return await new Promise<GroupChatMemberDataAll[]>((resolve, reject) => {
+            let callCounter = 0;
+            let members:GroupChatMemberDataAll[] = [];
+            this.members.forEach((member:GroupChatMember, key:number) => {
+                if(member.isStillMember)
+                    members.push({
+                        uid: member.user.uid,
+                        username: member.user.username,
+                        isAdmin: member.isAdmin,
+                        gcmid: member.gcmid
+                    });
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve(members);
+            });
+        })
     }
 
     forEachUser(callback: (user: User, key: number) => void):void {
-        for(let i=0; i<this.members.length; i++){
-            callback(this.members[i].value.user,this.members[i].key);
-        }
+        this.members.forEach((value:GroupChatMember, key:number) => {
+            callback(value.user,key);
+        })
     }
     /*
         groupChatInfo is returned
      */
-    getGroupChatInfo(memberSelf:GroupChatMember):GroupChatInfo {
+    async getGroupChatInfo(memberSelf:GroupChatMember):Promise<GroupChatInfo> {
         return({
             type: this.getChatTypeString(),
             id: this.chatId,
@@ -649,22 +679,29 @@ export class GroupChat extends Chat{
             memberSelf: {
                 isAdmin: memberSelf.isAdmin
             },
-            members: this.getMemberObjectAll(),
+            members: await this.getMemberObjectAll(),
         });
     }
     /*
         the number of admins in this chat is returned
      */
-    getAdminCount():number {
+    async getAdminCount():Promise<number> {
 
-        let counter = 0;
+        return new Promise((resolve, reject) => {
 
-        for(let i=0; i<this.members.length; i++){
-            if(this.members[i].value.isAdmin)
-                counter ++;
-        }
+            let callCounter = 0,
+                adminCounter = 0;
 
-        return counter;
+
+            this.members.forEach((value:GroupChatMember,key:number) => {
+                callCounter ++;
+                //if groupChatMember is admin, increase adminCounter by 1
+                if(value.isAdmin)
+                    adminCounter ++;
+                if(callCounter == this.members.size)
+                    resolve(adminCounter);
+            });
+        });
     }
     /*
         info is updated in the database:
@@ -699,12 +736,23 @@ export class GroupChat extends Chat{
 
         //TODO: emit via socket
     }
+    async forAllMembers(callback: (value:GroupChatMember,key:number) => void):Promise<void> {
+        await new Promise<void>((resolve, reject) => {
+            let callCounter = 0;
+            this.members.forEach((value:GroupChatMember, key:number) => {
+                callback(value,key);
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve();
+            });
+        })
+    }
 
-    get members(): BinSearchArray {
+    get members(): Map<number,GroupChatMember> {
         return this._members;
     }
 
-    set members(value: BinSearchArray) {
+    set members(value: Map<number,GroupChatMember>) {
         this._members = value;
     }
 

@@ -86,19 +86,19 @@ export default class User{
             let userInfoNeeded = false;
             let i = 0;
 
-            this.chats.forEach((value:Chat,key) => {
+            this.chats.forEach(async (value:Chat,key) => {
                 i++;
                 /*
                     is there anyone online at the chat?
                  */
-                if(value.isAnyoneOnline())
+                if(await value.isAnyoneOnline())
                     userInfoNeeded = true;
                 else {
                     /*
                         chat is deleted
                      */
                     const chat = chatData.chats.getChat(value.type,key);
-                    chat.removeUsers(this.uid);
+                    await chat.removeUsers(this.uid);
                     chatData.chats.removeChat(chat);
                 }
                 if (value.type === chatTypes.groupChat)
@@ -187,7 +187,7 @@ export default class User{
             if(this.chats.length() === 0)
                 resolve(rc);
 
-            this.chats.forEach((value:Chat,key:number) => {
+            this.chats.forEach(async (value:Chat,key:number) => {
 
                 try {
                     /*
@@ -200,7 +200,7 @@ export default class User{
                         (value as GroupChat).getMember(this.uid);
                     }
 
-                    const members = value.getMemberObject(this.uid);
+                    const members = await value.getMemberObject(this.uid);
                     const chatName = value.getChatName(this.uid);
                     const fm = value.messageStorage.getNewestMessageObject();
                     /*
@@ -230,7 +230,7 @@ export default class User{
         a new chat gets added to the user
         this also gets emitted to the client
      */
-    addNewChat(chat:Chat):void {
+    async addNewChat(chat:Chat):Promise<void> {
 
         if(this.socket !== null) {
             /*
@@ -240,7 +240,7 @@ export default class User{
                 type: chat.getChatTypeString(),
                 id: chat.chatId,
                 chatName: chat.getChatName(this.uid),
-                members: chat.getMemberObject(this.uid),
+                members: await chat.getMemberObject(this.uid),
                 firstMessage: chat.messageStorage.getNewestMessageObject()
             };
 

@@ -12,6 +12,17 @@ export interface GroupChatMemberData {
     // is the member admin?
     isAdmin: boolean
 }
+// type check
+export function instanceOfGroupChatMemberData(object: any): object is GroupChatMemberData {
+    if(!(
+        typeof object === 'object'
+        && 'uid' in object && typeof object.uid === 'number'
+        && 'username' in object && typeof object.username === 'string'
+        && 'isAdmin' in object && typeof object.isAdmin === 'boolean'
+    ))
+        throw new TypeError('invalid GroupChatMemberData');
+    return true;
+}
 // the same with an id
 export interface GroupChatMemberDataAll extends GroupChatMemberData{
     // the id of the GroupChatMember
@@ -25,10 +36,19 @@ export interface GroupChatData {
     // is the chat public?
     isPublic: boolean
 }
-export interface RemoveMemberReturn {
-    mid: number
+// type check
+export function instanceOfGroupChatData(object: any): object is GroupChatData {
+    if(!(
+        typeof object === 'object'
+        && 'name' in object && typeof object.name === 'string'
+        && 'description' in object && typeof object.description === 'string'
+        && 'isPublic' in object && typeof object.isPublic === 'boolean'
+    ))
+        throw new TypeError('invalid GroupChatData');
+    return true;
 }
 export interface GroupChatInfo {
+    // the type of the chat, either normalChat or groupChat
     type: string,
     id: number,
     chatName: string,

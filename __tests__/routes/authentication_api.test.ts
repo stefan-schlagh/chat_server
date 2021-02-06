@@ -4,7 +4,7 @@ import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 
 const test_username = "test234567";
 
-describe('test API', () => {
+describe('test API /authentication', () => {
     beforeAll((done) => {
         startServer();
         done();
