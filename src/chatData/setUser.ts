@@ -19,6 +19,9 @@ export function setUser(req:any,res:any,next:any){
                 user is created
              */
             req.user = chatData.addNewUser(uid,username);
+    }else{
+        res.status(400);
+        res.send();
     }
     next();
 }

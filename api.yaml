@@ -266,6 +266,8 @@ paths:
                   chatId:
                     type: number
                     description: the id of the new groupChat
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -329,6 +331,8 @@ paths:
                       gcmid:
                         type: integer
                         description: groupchatmemberId - the id of the groupChatMember
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -376,6 +380,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -407,6 +413,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -435,6 +443,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -462,6 +472,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -499,6 +511,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -527,6 +541,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -555,6 +571,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -575,6 +593,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -597,6 +617,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':
@@ -620,6 +642,8 @@ paths:
       responses:
         '200':
           description: successful
+        '400':
+          description: bad request
         '403':
           $ref: '#components/responses/NotAllowed'
         '500':

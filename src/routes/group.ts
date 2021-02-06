@@ -13,6 +13,8 @@ import {
 import {Chat, chatTypes} from "../chatData/chat/chat";
 import {instanceOfSimpleUser} from "../models/user";
 import User from "../chatData/user";
+// @ts-ignore
+import data from "../../public/data.json";
 
 const router = express.Router();
 
@@ -77,7 +79,7 @@ router.put('/',async (req:any,res:any) => {
 router.put(
     '/:gcid/chatName',
     getChat(true),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     authAdminSelf,
     async (req:any,res:any) => {
 
@@ -109,7 +111,7 @@ router.put(
 router.put(
     '/:gcid/description',
     getChat(true),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     authAdminSelf,
     async (req:any,res:any) => {
 
@@ -151,11 +153,11 @@ router.delete('/:gcid',(req,res) => {
 router.get(
     '/:gcid',
     getChat(false),
-    getGroupChatMemberSelf(false),
+    getGroupChatMemberSelf,
     async (req:any,res:any) => {
 
         const chat = req.chat;
-        const groupChatInfo:GroupChatInfo = await  chat.getGroupChatInfo(req.memberSelf);
+        const groupChatInfo:GroupChatInfo = await chat.getGroupChatInfo(req.memberSelf);
         /*
             chatInfo is sent
          */
@@ -169,7 +171,7 @@ router.put(
     '/:gcid/member/:uid',
     getChat(true),
     getOtherUser(true),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     authAdminSelf,
     (req:any,res:any) => {
 
@@ -195,7 +197,7 @@ router.put(
     '/:gcid/members',
     getChat(true),
     getOtherUsers(true),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     authAdminSelf,
     (req:any,res:any) => {
 
@@ -222,7 +224,7 @@ router.delete(
     '/:gcid/member/:uid',
     getChat(true),
     getOtherUser(false),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     getGroupChatMemberOther,
     authAdminSelf,
     (req:any,res:any) => {
@@ -249,7 +251,7 @@ router.post(
     '/:gcid/member/:uid/giveAdmin',
     getChat(true),
     getOtherUser(false),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     getGroupChatMemberOther,
     authAdminSelf,
     (req:any,res) => {
@@ -276,7 +278,7 @@ router.post(
     '/:gcid/member/:uid/removeAdmin',
     getChat(true),
     getOtherUser(false),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     getGroupChatMemberOther,
     authAdminSelf,
     authAdminOther,
@@ -334,7 +336,7 @@ router.post(
 router.post(
     '/:gcid/leave',
     getChat(true),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     isAdminLeft,
     (req:any,res) => {
 
@@ -357,7 +359,7 @@ router.post(
 router.post(
     '/:gcid/removeAdmin',
     getChat(true),
-    getGroupChatMemberSelf(true),
+    getGroupChatMemberSelf,
     authAdminSelf,
     isAdminLeft,
     (req:any,res) => {
@@ -415,9 +417,9 @@ function getChat(shouldBeLoaded:boolean){
                             next();
                         }
                     }).catch((err:Error) => {
-                    logger.error(err);
-                    res.status(500);
-                    res.send();
+                        logger.error(err);
+                        res.status(500);
+                        res.send();
                 });
             }catch(err){
                 /*
@@ -523,60 +525,27 @@ function getOtherUsers(createNew:boolean){
             userSelf
             chat
  */
-function getGroupChatMemberSelf(memberReqired:boolean = true){
-    return function(req:any,res:any,next:any) {
-        try {
-            /*
-                groupChatMembesr is searched
-             */
-            req.memberSelf =
-                req.chat.getMember(
-                    req.user.uid
-                );
-            next();
-        } catch (err) {
-            /*
-                error is thrown if user is not member in the chat
-             */
-            if(memberReqired) {
-                /*
-                    400 -> bad request,
-                    user should be member of this chat when making the request
-                */
-                res.status(400);
-                res.send();
-            }else{
-                /*
-                    if member is not reqired, the action is still not performed, but the messages give more detail
-                    is err member does not exist?
-                 */
-                if(
-                    err.message === 'member does not exist' ||
-                    err.message === 'member not in chat anymore'
-                ) {
-                    const chat = req.chat;
-                    if (chat.isPublic) {
-                        // TODO no message
-                        res.send({
-                            chatName: chat.chatName,
-                            error: "not part of chat"
-                        });
-                    } else {
-                        /*
-                            chat not public and not member --> not authenticated
-                         */
-                        res.status(403);
-                        res.send();
-                    }
-                }else{
-                    /*
-                        otherwise, status 400 is sent
-                     */
-                    res.status(400);
-                    res.send();
-                }
-            }
-        }
+function getGroupChatMemberSelf(req:any,res:any,next:any) {
+    try {
+        /*
+            groupChatMembesr is searched
+         */
+        req.memberSelf =
+            req.chat.getMember(
+                req.user.uid
+            );
+        next();
+    } catch (err) {
+        /*
+            error is thrown if user is not member in the chat
+            400 -> bad request,
+            user should be member of this chat when making the request
+        */
+        res.status(400);
+        res.status({
+            errorCode: data.groupChatErrors.notMemberOfChat
+        })
+        res.send();
     }
 }
 /*
@@ -653,9 +622,9 @@ function isAdminLeft(req:any,res:any,next:any){
             else if(!req.memberSelf.isAdmin)
                 next();
             else
-                // TODO: other response
+                res.status(400);
                 res.send({
-                    error: "no admin left!"
+                    errorCode: data.groupChatErrors.noAdminLeft
                 });
         })
         .catch((err:Error) => {

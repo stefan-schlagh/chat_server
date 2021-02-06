@@ -1,6 +1,8 @@
 import {app, closeServer, startServer} from "../../src/app";
 // @ts-ignore
 import names from "../../src/__testHelpers__/names/names.json";
+// @ts-ignore
+import data from "../../public/data.json";
 import {AccountInfo, findUserName, initAccount} from "../../src/__testHelpers__/userHelpers";
 import request, {Response} from "supertest";
 import {GroupChatData, GroupChatInfo, GroupChatMemberData} from "../../src/models/chat";
@@ -92,7 +94,7 @@ describe('test API /group', () => {
         expect(res.body.chatId).toBeGreaterThan(0);
         chatId = res.body.chatId;
     });
-    it('test groupChatInfo 1',async () => {
+    it('test groupChatInfo',async () => {
         const res:Response = await request(app)
             .get('/group/' + chatId)
             .set('Authorization',accounts[0].tokens)
@@ -109,6 +111,13 @@ describe('test API /group', () => {
         for(let i = 1;i < 10;i++){
             expect(findUserName(accounts[i].uid,groupChatInfo.members)).toEqual(accounts[i].username);
         }
+    });
+    it('test groupChatInfo not member',async () => {
+        const res:Response = await request(app)
+            .get('/group/' + chatId)
+            .set('Authorization',accounts[15].tokens)
+            .send();
+        expect(res.status).not.toEqual(200);
     });
     it('add additional members empty data',async () => {
         const res:Response = await request(app)
@@ -293,9 +302,8 @@ describe('test API /group', () => {
             .post('/group/' + chatId + '/leave/')
             .set('Authorization',accounts[2].tokens)
             .send();
-        expect(res.status).toEqual(200);
-        //TODO
-        expect(res.body.error).toEqual("no admin left!");
+        expect(res.status).toEqual(400);
+        expect(res.body.errorCode).toEqual(data.groupChatErrors.noAdminLeft);
     });
     it('leave chat',async () => {
         const res:Response = await request(app)

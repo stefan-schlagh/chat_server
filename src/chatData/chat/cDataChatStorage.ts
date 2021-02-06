@@ -1,4 +1,3 @@
-import BinSearchArray from "../../util/binsearcharray";
 import NormalChat from "./normalChat";
 import {GroupChat} from "./groupChat";
 import GroupChatMember from "./groupChatMember";
@@ -25,7 +24,6 @@ export default class CDataChatStorage extends ChatStorage {
             else --> is loaded from DB
      */
     async getGroupChat(gcid:number):Promise<Chat> {
-
         const chat = this.getChat(chatTypes.groupChat, gcid);
 
         if(chat){
