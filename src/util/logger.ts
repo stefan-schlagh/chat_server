@@ -28,6 +28,13 @@ export const logger = createLogger({
             zippedArchive: true,
             level: "error"
         })
+    ],
+    exceptionHandlers: [
+        new winston.transports.DailyRotateFile({
+            filename: 'log/uncaught-%DATE%.log',
+            datePattern: 'YYYY-MM-DD',
+            zippedArchive: true
+        }),
     ]
 });
 

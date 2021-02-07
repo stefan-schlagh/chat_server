@@ -1,11 +1,12 @@
 import {pool} from "../../app";
+import {SimpleUser, UserInfo} from "../../models/user";
 
 /*
     A user gets requested
         uidFrom --> uid of the requesting user
         uidReq -->  uid that should be requested
  */
-export async function getUser(uidFrom:number,uidReq:number){
+export async function getUser(uidFrom:number,uidReq:number):Promise<UserInfo> {
 
     return new Promise(function(resolve, reject) {
 
@@ -33,6 +34,7 @@ export async function getUser(uidFrom:number,uidReq:number){
             }
             
             const result = {
+                // TODO: uidSelf?
                 uidSelf: uidFrom,
                 username: username,
                 blocked: blocked,
@@ -48,7 +50,12 @@ export async function getUser(uidFrom:number,uidReq:number){
     all Users where the specified user does not have a chat with get selected and returned
     search does have to be validated
  */
-export async function selectUsersNoChat(uid:number,search:string,limit:number,start:number = 0){
+export async function selectUsersNoChat(
+    uid:number,
+    search:string,
+    limit:number,
+    start:number = 0
+):Promise<SimpleUser[]> {
 
     return new Promise(function(resolve, reject) {
         // The Promise constructor should catch any errors thrown on
@@ -95,7 +102,12 @@ export async function selectUsersNoChat(uid:number,search:string,limit:number,st
 /*
     all users are selected
  */
-export async function selectAllUsers(uid:number,search:string,limit:number,start:number = 0){
+export async function selectAllUsers(
+    uid:number,
+    search:string,
+    limit:number,
+    start:number = 0
+):Promise<SimpleUser[]> {
 
     return new Promise(function(resolve, reject) {
 
@@ -119,7 +131,7 @@ export async function selectAllUsers(uid:number,search:string,limit:number,start
 /*
     get the info of a user
  */
-export async function getUserInfo(uidFrom:number,uidReq:number){
+export async function getUserInfo(uidFrom:number,uidReq:number):Promise<UserInfo> {
 
     return await getUser(uidFrom, uidReq);
 }
@@ -131,7 +143,7 @@ export async function selectUsersNotInGroup(
     search:string,
     limit:number,
     start:number = 0
-){
+):Promise<SimpleUser[]> {
     return await new Promise((resolve, reject) => {
 
         const query_str =

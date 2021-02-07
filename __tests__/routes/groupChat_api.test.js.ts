@@ -1,12 +1,11 @@
 import {app, closeServer, startServer} from "../../src/app";
 // @ts-ignore
 import names from "../../src/__testHelpers__/names/names.json";
-// @ts-ignore
-import data from "../../public/data.json";
 import {AccountInfo, findUserName, initAccount} from "../../src/__testHelpers__/userHelpers";
 import request, {Response} from "supertest";
 import {GroupChatData, GroupChatInfo, GroupChatMemberData} from "../../src/models/chat";
-import {SimpleUser} from "../../src/models/user";
+import {instanceOfSimpleUser, SimpleUser} from "../../src/models/user";
+import {groupChatErrors} from "../../src/routes/group";
 
 describe('test API /group', () => {
 
@@ -303,7 +302,7 @@ describe('test API /group', () => {
             .set('Authorization',accounts[2].tokens)
             .send();
         expect(res.status).toEqual(400);
-        expect(res.body.errorCode).toEqual(data.groupChatErrors.noAdminLeft);
+        expect(res.body.errorCode).toEqual(groupChatErrors.noAdminLeft);
     });
     it('leave chat',async () => {
         const res:Response = await request(app)
@@ -311,5 +310,48 @@ describe('test API /group', () => {
             .set('Authorization',accounts[1].tokens)
             .send();
         expect(res.status).toEqual(200);
+    });
+    // user 2 is in chat --> nothing should be returned
+    it('search user not in group - return nothing',async () => {
+        const res:Response = await request(app)
+            .post('/user/notInGroup/' + chatId)
+            .set('Authorization',accounts[4].tokens)
+            .send({
+                search: accounts[2].username,
+                limit: 10,
+                start: 0
+            });
+        expect(res.status).toEqual(200);
+        expect(res.body.length).toEqual(0);
+    });
+    // there should be at least 6 users not in the chat
+    it('search user not in group - return all',async () => {
+        const res:Response = await request(app)
+            .post('/user/notInGroup/' + chatId)
+            .set('Authorization',accounts[2].tokens)
+            .send({
+                search: '',
+                limit: 10,
+                start: 0
+            });
+        expect(res.status).toEqual(200);
+        expect(res.body.length).toBeGreaterThanOrEqual(6);
+    });
+    // user 19 should not be in group
+    it('search user not in group - return one',async () => {
+        const res:Response = await request(app)
+            .post('/user/notInGroup/' + chatId)
+            .set('Authorization',accounts[3].tokens)
+            .send({
+                search: accounts[19].username,
+                limit: 10,
+                start: 0
+            });
+        expect(res.status).toEqual(200);
+        expect(res.body.length).toEqual(1);
+        const user:SimpleUser = res.body[0];
+        expect(instanceOfSimpleUser(user)).toEqual(true);
+        expect(user.uid).toEqual(accounts[19].uid);
+        expect(user.username).toEqual(accounts[19].username);
     })
 });

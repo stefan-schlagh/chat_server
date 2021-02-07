@@ -126,17 +126,21 @@ export default class NormalChat extends Chat{
      */
     async updateUnreadMessages():Promise<void> {
 
-        const query_str =
-            "UPDATE normalchat " +
-            "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
-            "unreadMessages2 = " + this.unreadMessages2 + " " +
-            "WHERE ncid = " + this.chatId + ";";
-        logger.verbose('SQL: %s',query_str);
+        await new Promise((resolve, reject) => {
+            const query_str =
+                "UPDATE normalchat " +
+                "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
+                "unreadMessages2 = " + this.unreadMessages2 + " " +
+                "WHERE ncid = " + this.chatId + ";";
+            logger.verbose('SQL: %s',query_str);
 
-        pool.query(query_str,(err:Error) => {
-            if(err)
-                throw err;
-        });
+            pool.query(query_str,(err:Error) => {
+                if(err)
+                    reject(err);
+                else
+                    resolve();
+            });
+        })
     }
     /*
         unreadMessages of the user with this uid are set

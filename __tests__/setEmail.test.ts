@@ -43,6 +43,15 @@ describe('setEmail Test', () => {
             }
         }
     });
+    it("setEmail - wrong type",async () => {
+        const res:Response = await request(app)
+            .post('/user/setEmail')
+            .set('Authorization',tokensStorage.get(test_username))
+            .send({
+                email: 1
+            })
+        expect(res.status).toEqual(400);
+    });
     it("setEmail",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
@@ -52,6 +61,15 @@ describe('setEmail Test', () => {
             })
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
+    });
+    it("verifyEmail - wrong type",async () => {
+        const res:Response = await request(app)
+            .post('/user/verifyEmail')
+            .set('Authorization',tokensStorage.get(test_username))
+            .send({
+                code: true
+            })
+        expect(res.status).toEqual(400);
     });
     it("verifyEmail",async () => {
         const res:Response = await request(app)

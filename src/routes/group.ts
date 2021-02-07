@@ -13,8 +13,11 @@ import {
 import {Chat, chatTypes} from "../chatData/chat/chat";
 import {instanceOfSimpleUser} from "../models/user";
 import User from "../chatData/user";
-// @ts-ignore
-import data from "../../public/data.json";
+
+export const groupChatErrors =  {
+    noAdminLeft: 0,
+    notMemberOfChat: 1
+}
 
 const router = express.Router();
 
@@ -543,7 +546,7 @@ function getGroupChatMemberSelf(req:any,res:any,next:any) {
         */
         res.status(400);
         res.status({
-            errorCode: data.groupChatErrors.notMemberOfChat
+            errorCode: groupChatErrors.notMemberOfChat
         })
         res.send();
     }
@@ -624,7 +627,7 @@ function isAdminLeft(req:any,res:any,next:any){
             else
                 res.status(400);
                 res.send({
-                    errorCode: data.groupChatErrors.noAdminLeft
+                    errorCode: groupChatErrors.noAdminLeft
                 });
         })
         .catch((err:Error) => {

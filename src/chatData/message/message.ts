@@ -45,9 +45,9 @@ export default abstract class Message{
     /*
         message gets saved in the database
      */
-    protected initNewMessageInner(){
+    protected async initNewMessageInner():Promise<void> {
 
-        return(new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
 
             const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
 
@@ -91,7 +91,7 @@ export default abstract class Message{
                     });
                 }
             });
-        }));
+        });
     }
 
     get mid(): number {

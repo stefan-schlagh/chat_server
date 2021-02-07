@@ -19,6 +19,7 @@ components:
           no authorization header provided
           token not valid
           the user user does not have the required role for the action
+          verification failed
   schemas:
     Message:
       type: object
@@ -74,7 +75,7 @@ paths:
       summary: login
       operationId: login
       parameters:
-        - name: user
+        - name: body
           in: header
           required: true
           schema:
@@ -113,7 +114,7 @@ paths:
       summary: register
       operationId: register
       parameters:
-        - name: user
+        - name: body
           in: header
           required: true
           schema:
@@ -224,7 +225,7 @@ paths:
       operationId: createGroup
       parameters:
         - $ref: '#components/securitySchemes/authorization'
-        - name: data
+        - name: body
           in: header
           required: true
           schema:
@@ -368,7 +369,7 @@ paths:
           schema:
             type: integer
             description: the id of the chat
-        - name: data
+        - name: body
           in: header
           required: true
           schema:
@@ -401,7 +402,7 @@ paths:
           schema:
             type: integer
             description: the id of the chat
-        - name: data
+        - name: body
           in: header
           required: true
           schema:
@@ -493,7 +494,7 @@ paths:
           schema:
             type: integer
             description: the id of the chat
-        - name: users
+        - name: body
           in: header
           required: true
           schema:
@@ -649,7 +650,301 @@ paths:
         '500':
           description: internal server error
 
+  #TODO message
 
+  /user/:
+    post:
+      description: |
+        get all users, with search and pagination
+      summary: get all users
+      operationId: getAllUsers
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              search:
+                type: string
+                description: after this value should be searched
+              limit:
+                type: number
+                description: how many results should be returned
+              start:
+                type: number
+                description: where to start in the list of results
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  uid:
+                    type: number
+                    description: the id of the user
+                  username:
+                    type: string
+                    description: the username of the user
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /user/noChat:
+    post:
+      description: |
+        get users who are not in a private conversation with the requesting user, with search and pagination
+      summary: get users not in chat
+      operationId: getUsersNotInChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              search:
+                type: string
+                description: after this value should be searched
+              limit:
+                type: number
+                description: how many results should be returned
+              start:
+                type: number
+                description: where to start in the list of results
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  uid:
+                    type: number
+                    description: the id of the user
+                  username:
+                    type: string
+                    description: the username of the user
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /user/notInGroup/:gcid:
+    post:
+      description: |
+        get users who are not in the group, with search and pagination
+      summary: get users not in group
+      operationId: getUsersNotInGroup
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: number
+            description: the id of the groupChat
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              search:
+                type: string
+                description: after this value should be searched
+              limit:
+                type: number
+                description: how many results should be returned
+              start:
+                type: number
+                description: where to start in the list of results
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: array
+                properties:
+                  uid:
+                    type: number
+                    description: the id of the user
+                  username:
+                    type: string
+                    description: the username of the user
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /user/self:
+    get:
+      description: |
+        get info about the requesting user himself
+      summary: get useinfo self
+      operationId: getUserInfoSelf
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uid:
+                    type: number
+                    description: the id of the user
+                  username:
+                    type: string
+                    description: the username of the user
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /user/:uid:
+    get:
+      description: |
+        get info about the user with this uid
+      summary: get userInfo
+      operationId: getUserInfo
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: number
+            description: the is of the user
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uidSelf:
+                    type: number
+                    description: the id of the requesting
+                  username:
+                    type: string
+                    description: the username of the user
+                  blocked:
+                    type: boolean
+                    description: is the user blocked by you?
+                  userExists:
+                    type: boolean
+                    description: does the user exist?
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /user/chat:
+    put:
+      description: |
+        create a new normalChat
+      summary: create new NormalChat
+      operationId: createNormalChat
+      parameters:
+      - $ref: '#components/securitySchemes/authorization'
+      - name: body
+        in: header
+        required: true
+        schema:
+          type: object
+          properties:
+            uid:
+              type: number
+              description: the id of the other user
+            username:
+              type: string
+              description: the username of the othe user
+            message:
+              $ref: '#components/schemas/Message'
+      responses:
+        '200':
+          description: data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ncid:
+                    type: number
+                    description: the id of the new chat
+                  mid:
+                    type: number
+                    description: the id of the first message
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /user/setEmail:
+    post:
+      description: |
+        set the email of the user
+      summary: set email
+      operationId: setEmail
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                description: the new email address
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+  /user/verifyEmail:
+    post:
+      description: |
+        verify the email of the user
+      summary: verify email
+      operationId: verifyEmail
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                description: the verification code
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
 
 
 

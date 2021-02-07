@@ -1,5 +1,3 @@
-import {GroupChatMemberData} from "./chat";
-
 export interface SimpleUser {
     // the username of the user
     username: string,
@@ -7,7 +5,7 @@ export interface SimpleUser {
     uid: number
 }
 // type check
-export function instanceOfSimpleUser(object: any): object is GroupChatMemberData {
+export function instanceOfSimpleUser(object: any): object is SimpleUser {
     if(!(
         typeof object === 'object'
         && 'uid' in object && typeof object.uid === 'number'
@@ -21,4 +19,22 @@ export interface UserExistsInfo {
     exists: boolean,
     // the user id of the user, -1 if user does not exist
     uid: number
+}
+export interface UserInfo {
+    uidSelf: number,
+    username: string,
+    blocked: boolean,
+    userExists: boolean
+}
+// type check
+export function instanceOfUserInfo(object: any): object is UserInfo {
+    if(!(
+        typeof object === 'object'
+        && 'uidSelf' in object && typeof object.uidSelf === 'number'
+        && 'username' in object && typeof object.username === 'string'
+        && 'blocked' in object && typeof object.blocked === 'boolean'
+        && 'userExists' in object && typeof object.userExists === 'boolean'
+    ))
+        throw new TypeError('invalid UserInfo');
+    return true;
 }

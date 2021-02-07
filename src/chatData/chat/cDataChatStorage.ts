@@ -95,7 +95,7 @@ export default class CDataChatStorage extends ChatStorage {
         /*
             chat is saved in the database
          */
-        const ncid:any = await newChat.saveChatInDB();
+        const ncid:number = await newChat.saveChatInDB();
 
         this.normal.set(ncid,newChat);
         /*

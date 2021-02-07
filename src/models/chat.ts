@@ -4,6 +4,15 @@ export interface NewNormalChatData {
     // the id of the first message
     mid: number
 }
+export function instanceOfNewNormalChatData(object: any): object is NewNormalChatData {
+    if(!(
+        typeof object === 'object'
+        && 'ncid' in object && typeof object.ncid === 'number'
+        && 'mid' in object && typeof object.mid === 'number'
+    ))
+        throw new TypeError('invalid NewNormalChatData');
+    return true;
+}
 export interface GroupChatMemberData {
     // the id of the suer
     uid: number,

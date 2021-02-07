@@ -1,1 +1,4 @@
 generated with: http://random-name-generator.info/index.php?n=100&g=1&st=2
+
+groupChat_api: names 1-30
+user_api: names 31-40
