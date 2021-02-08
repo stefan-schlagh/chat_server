@@ -3,7 +3,7 @@ import User from "./user";
 import {setChatData} from "./data";
 import {pool} from "../app";
 import {logger} from "../util/logger";
-import {MessageData} from "../models/message";
+import {MessageDataIn} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
 import {Chat, chatTypes, getChatType} from "./chat/chat";
 import {Socket} from "socket.io";
@@ -41,7 +41,7 @@ export class ChatData{
     /*
         a message is sent
      */
-    async sendMessage(user:User,data:MessageData):Promise<number>{
+    async sendMessage(user:User,data:MessageDataIn):Promise<number>{
         /*
             mid is returned
          */
@@ -161,7 +161,7 @@ export class ChatData{
         userSelf:User,
         uidOther:number,
         usernameOther:string,
-        message:MessageData
+        message:MessageDataIn
     ):Promise<NewNormalChatData> {
         /*
             does user already exist in server?

@@ -7,7 +7,7 @@ import {pool} from "../../app";
 import {ChatData} from "../chatData";
 import {logger} from "../../util/logger";
 import {Chat, chatTypes} from "./chat";
-import {MessageData} from "../../models/message";
+import {MessageDataIn} from "../../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
 
 export default class CDataChatStorage extends ChatStorage {
@@ -84,7 +84,7 @@ export default class CDataChatStorage extends ChatStorage {
     async newNormalChat(
         user1:User,
         user2:User,
-        message:MessageData
+        message:MessageDataIn
     ):Promise<NewNormalChatData> {
 
         const newChat = new NormalChat(

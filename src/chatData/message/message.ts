@@ -2,11 +2,7 @@ import {Chat, chatTypes} from "../chat/chat";
 import User from "../user";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
-
-export enum messageTypes {
-    normalMessage = 0,
-    statusMessage = 1
-}
+import {MessageDataOut, messageTypes} from "../../models/message";
 
 export default abstract class Message{
 
@@ -29,17 +25,8 @@ export default abstract class Message{
         this.author = author;
         this.mid = mid;
     }
-    /*
-        an object containing this message is returned
-     */
-    getMessageObject(){
-
-        return({
-            uid: this.author.uid,
-            mid: this.mid,
-            date: this.date
-        });
-    }
+    // an object containing this message is returned
+    abstract getMessageObject():MessageDataOut;
     //data is type of MessageContent
     abstract async initNewMessage(data:any):Promise<void>;
     /*

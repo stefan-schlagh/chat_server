@@ -10,7 +10,7 @@ import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
 import {extractParts, Parts} from "../verification/code";
 import {logger} from "../util/logger";
-import {MessageData} from "../models/message";
+import {MessageDataIn} from "../models/message";
 import {NewNormalChatData} from "../models/chat";
 
 const router = express.Router();
@@ -37,7 +37,7 @@ export function instanceOfSearchUser(object: any): object is SearchUser {
 export interface NewNormalChat {
     uid: number,
     username: string,
-    message: MessageData
+    message: MessageDataIn
 }
 // type check
 export function instanceOfNewNormalChat(object: any): object is NewNormalChat {

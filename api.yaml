@@ -49,13 +49,15 @@ components:
             mentions:
               type: array
               description: if normalMessage, not yet implemented
-              properties:
-                uid:
-                  type: integer
-                  description: the uid of the mentioned user
-                textColumn:
-                  type: integer
-                  description: the column in the text where the user is mentioned
+              items:
+                type: object
+                properties:
+                  uid:
+                    type: integer
+                    description: the uid of the mentioned user
+                  textColumn:
+                    type: integer
+                    description: the column in the text where the user is mentioned
             media:
               type: array
               description: if normalMessage, not yet implemented
@@ -65,9 +67,39 @@ components:
             passiveusers:
               type: array
               description: the ids of the passive users mentioned in this statusMessage
-              properties:
-                1:
-                  type: integer
+              items:
+                type: integer
+    MessageInput:
+      type: object
+      properties:
+        type:
+          type: number
+          description: the type of the message, should be 0 - normalMessage
+        content:
+          type: object
+          properties:
+            text:
+              type: string
+              description: the text of the message
+            mentions:
+              type: array
+              items:
+                type: object
+                properties:
+                  uid:
+                    type: number
+                    description: the id of the mentioned user
+                  textColumn:
+                    type: number
+            media:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: number
+                  pathToFile:
+                    type: string
 paths:
   /auth/login:
     post:
@@ -161,29 +193,33 @@ paths:
             application/json:
               schema:
                 type: array
-                properties:
-                  type:
-                    type: string
-                    description: |
-                      the type of the chat,
-                      either normalChat or groupChat
-                  id:
-                    type: integer
-                    description: the id of the chat
-                  chatName:
-                    type: string
-                    description: the name of the chat
-                  members:
-                    type: array
-                    properties:
-                      uid:
-                        type: integer
-                        description: the id of the user
-                      username:
-                        type: string
-                        description: the name of the user
-                  firstMessage:
-                    $ref: '#components/schemas/Message'
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      description: |
+                        the type of the chat,
+                        either normalChat or groupChat
+                    id:
+                      type: integer
+                      description: the id of the chat
+                    chatName:
+                      type: string
+                      description: the name of the chat
+                    members:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          uid:
+                            type: integer
+                            description: the id of the user
+                          username:
+                            type: string
+                            description: the name of the user
+                    firstMessage:
+                      $ref: '#components/schemas/Message'
         '400':
           description: timeout
         '403':
@@ -246,16 +282,18 @@ paths:
                     description: is the chat public?
               users:
                 type: array
-                properties:
-                  uid:
-                    type: integer
-                    description: the id of the user
-                  username:
-                    type: string
-                    description: the username of the user
-                  isAdmin:
-                    type: boolean
-                    description: will the user be admin in this chat
+                items:
+                  type: object
+                  properties:
+                    uid:
+                      type: integer
+                      description: the id of the user
+                    username:
+                      type: string
+                      description: the username of the user
+                    isAdmin:
+                      type: boolean
+                      description: will the user be admin in this chat
       responses:
         '200':
           description: successful
@@ -319,19 +357,21 @@ paths:
                   members:
                     type: array
                     description: all the other members
-                    properties:
-                      uid:
-                        type: integer
-                        description: the id of the member
-                      username:
-                        type: string
-                        description: the username of the member
-                      isAdmin:
-                        type: boolean
-                        description: is the member admin?
-                      gcmid:
-                        type: integer
-                        description: groupchatmemberId - the id of the groupChatMember
+                    items:
+                      type: object
+                      properties:
+                        uid:
+                          type: integer
+                          description: the id of the member
+                        username:
+                          type: string
+                          description: the username of the member
+                        isAdmin:
+                          type: boolean
+                          description: is the member admin?
+                        gcmid:
+                          type: integer
+                          description: groupchatmemberId - the id of the groupChatMember
         '400':
           description: bad request
         '403':
@@ -502,13 +542,15 @@ paths:
             properties:
               users:
                 type: array
-                properties:
-                  uid:
-                    type: integer
-                    description: the id of the user
-                  username:
-                    type: string
-                    description: the username of the user
+                items:
+                  type: object
+                  properties:
+                    uid:
+                      type: integer
+                      description: the id of the user
+                    username:
+                      type: string
+                      description: the username of the user
       responses:
         '200':
           description: successful
@@ -649,9 +691,130 @@ paths:
           $ref: '#components/responses/NotAllowed'
         '500':
           description: internal server error
-
-  #TODO message
-
+  /message/:
+    put:
+      description: |
+        add a new message
+      summary: add new message
+      operationId: addMessage
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            $ref: '#components/schemas/MessageInput'
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mid:
+                    type: number
+                    description: the id of the new message
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /message/add:
+    put:
+      description: |
+        add a new message
+      summary: add new message
+      operationId: addMessage
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              chatType:
+                type: string
+                description: |
+                  the type of the chat,
+                  either normalChat or groupChat
+              chatId:
+                type: number
+                description: the id of the chat
+              message:
+                $ref: '#components/schemas/MessageInput'
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mid:
+                    type: number
+                    description: the id of the new message
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
+  /message/load:
+    post:
+      description: |
+        load messages
+      summary: load messages
+      operationId: loadMessages
+      parameters:
+      - $ref: '#components/securitySchemes/authorization'
+      - name: body
+        in: header
+        required: true
+        schema:
+          type: object
+          properties:
+            chatType:
+              type: string
+              description: the type of the chat
+            chatId:
+              type: number
+              description: the id of the chat where the messages should be loaded
+            lastMsgId:
+              type: number
+              description: the id of the last message that has been loaded
+            num:
+              type: number
+              description: how many messages should be loaded?
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: |
+                      the status of this request
+                        reached top:
+                          all messages have been loaded, there could be some in the body
+                        success:
+                          messages loaded, there are some left who are not loaded
+                  messages:
+                    type: array
+                    description: the messages
+                    items:
+                      $ref: '#components/schemas/Message'
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
   /user/:
     post:
       description: |
@@ -682,13 +845,15 @@ paths:
             application/json:
               schema:
                 type: array
-                properties:
-                  uid:
-                    type: number
-                    description: the id of the user
-                  username:
-                    type: string
-                    description: the username of the user
+                items:
+                  type: object
+                  properties:
+                    uid:
+                      type: number
+                      description: the id of the user
+                    username:
+                      type: string
+                      description: the username of the user
         '400':
           description: bad request
         '403':
@@ -725,13 +890,15 @@ paths:
             application/json:
               schema:
                 type: array
-                properties:
-                  uid:
-                    type: number
-                    description: the id of the user
-                  username:
-                    type: string
-                    description: the username of the user
+                items:
+                  type: object
+                  properties:
+                    uid:
+                      type: number
+                      description: the id of the user
+                    username:
+                      type: string
+                      description: the username of the user
         '400':
           description: bad request
         '403':
@@ -774,13 +941,15 @@ paths:
             application/json:
               schema:
                 type: array
-                properties:
-                  uid:
-                    type: number
-                    description: the id of the user
-                  username:
-                    type: string
-                    description: the username of the user
+                items:
+                  type: object
+                  properties:
+                    uid:
+                      type: number
+                      description: the id of the user
+                    username:
+                      type: string
+                      description: the username of the user
         '400':
           description: bad request
         '403':
@@ -876,7 +1045,7 @@ paths:
               type: string
               description: the username of the othe user
             message:
-              $ref: '#components/schemas/Message'
+              $ref: '#components/schemas/MessageInput'
       responses:
         '200':
           description: data

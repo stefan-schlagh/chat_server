@@ -1,9 +1,9 @@
-import Message,{messageTypes} from "./message";
+import Message from "./message";
 import {chatData} from "../data";
 import User from "../user";
 import {Chat} from "../chat/chat";
 import {logger} from "../../util/logger";
-import {StatusMessageContent} from "../../models/message";
+import {MessageDataOut, messageTypes, StatusMessageContent} from "../../models/message";
 import {pool} from "../../app";
 
 export enum statusMessageTypes {
@@ -205,16 +205,18 @@ export default class StatusMessage extends Message {
     /*
         an object containing this message is returned
      */
-    getMessageObject(){
+    getMessageObject():MessageDataOut {
 
-        const msg:any = super.getMessageObject();
-
-        msg.type = messageTypes.statusMessage;
-        msg.content = {
-            type: this.type,
-            passiveUsers: this.getPassiveUsers()
-        };
-        return msg;
+        return {
+            uid: this.author.uid,
+            mid: this.mid,
+            date: this.date.toISOString(),
+            type: messageTypes.statusMessage,
+            content: {
+                type: this.type,
+                passiveUsers: this.getPassiveUsers()
+            }
+        }
     }
     /*
         an array containing the passive users is returned

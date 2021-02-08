@@ -13,9 +13,11 @@ import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {Chat, chatTypes} from "./chat/chat";
-import {MessageData} from "../models/message";
+import {MessageDataIn} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
 import {Socket} from "socket.io";
+import {SimpleUser} from "../models/user";
+import {ChatInfo} from "../models/chat";
 
 class Emitter extends EventEmitter {}
 
@@ -34,6 +36,10 @@ export default class User{
         are the chats of this user loaded?
      */
     private _chatsLoaded:boolean = false;
+    /*
+        are the chats currently loading?
+     */
+    private _chatsLoading:boolean = false;
 
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
@@ -49,7 +55,10 @@ export default class User{
     /*
         chats of the user are loaded
      */
-    async loadChats():Promise<void> {
+    //TODO return type
+    async loadChats():Promise<any> {
+
+        this.chatsLoading = true;
         /*
             normalChats are loaded
          */
@@ -68,9 +77,11 @@ export default class User{
         const chats = await this.getChatJson();
 
         this.chatsLoaded = true;
+        this.chatsLoading = false;
 
         this.eventEmitter.emit('chats loaded', chats);
 
+        return chats;
     }
     /*
         chats of user are saved and deleted
@@ -133,7 +144,7 @@ export default class User{
                 false
             );
     }
-    async sendMessage(data:MessageData):Promise<number> {
+    async sendMessage(data:MessageDataIn):Promise<number> {
         /*
             only when a chat is selected it can be sent
          */
@@ -171,15 +182,52 @@ export default class User{
         //Referenz im eigenen chat-array wird gelöscht
         this.chats.removeChat(chat);
     }
+    async getChats():Promise<ChatInfo[]> {
+        /*
+            if chats are loaded, return them
+         */
+        if(this.chatsLoaded){
+            return await this.getChatJson();
+        }
+        /*
+            otherwise, are chats currently loading?
+                --> set event listener
+         */
+        else if(this.chatsLoading){
+            return new Promise<ChatInfo[]>((resolve, reject) => {
+                // event listener
+                this.eventEmitter.on('chats loaded',(chats:ChatInfo[]) => {
+                    //when triggered, delete
+                    this.eventEmitter.removeAllListeners('chats loaded');
+                    resolve(chats);
+                });
+                /*
+                    timeout after 10 seconds
+                 */
+                setTimeout(() => {
+                    this.eventEmitter.removeAllListeners('chats loaded');
+                    reject(new Error('timeout'));
+                },10000);
+
+            })
+        }
+        /*
+            otherwise, load chat and unload after
+         */
+        else {
+            const chats = await this.loadChats();
+            await this.saveAndDeleteChats();
+            return chats;
+        }
+    }
     /*
         A object with all chats where the user is in gets returned
      */
-    //TODO return type
-    async getChatJson(){
+    private async getChatJson():Promise<ChatInfo[]> {
 
         return new Promise((resolve, reject) => {
 
-            let rc:any = [];
+            let rc:ChatInfo[] = [];
             let i=0;
             /*
                 if length is 0, empty array gets returned
@@ -200,8 +248,9 @@ export default class User{
                         (value as GroupChat).getMember(this.uid);
                     }
 
-                    const members = await value.getMemberObject(this.uid);
-                    const chatName = value.getChatName(this.uid);
+                    const members:SimpleUser[] = await value.getMemberObject(this.uid);
+                    const chatName:string = value.getChatName(this.uid);
+                    // TODO type
                     const fm = value.messageStorage.getNewestMessageObject();
                     /*
                         Objekt wird erstellt und zum Array hinzugefügt
@@ -478,5 +527,13 @@ export default class User{
 
     set chatsLoaded(value:boolean) {
         this._chatsLoaded = value;
+    }
+
+    get chatsLoading(): boolean {
+        return this._chatsLoading;
+    }
+
+    set chatsLoading(value: boolean) {
+        this._chatsLoading = value;
     }
 }

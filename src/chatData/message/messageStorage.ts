@@ -2,10 +2,11 @@ import BinSearchArray from "../../util/binsearcharray";
 import {chatData} from "../data";
 import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
-import Message, {messageTypes} from "./message";
+import Message from "./message";
 import {Chat, chatTypes} from "../chat/chat";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
+import {MessageDataOut, messageTypes} from "../../models/message";
 
 export default class MessageStorage {
     /*
@@ -33,7 +34,7 @@ export default class MessageStorage {
                 ->all selected messages have lower mid
             num -> how many messages should be selected
      */
-    async getMessagesByMid(firstMid:number,num:number){
+    async getMessagesByMid(firstMid:number,num:number):Promise<MessageDataOut[]> {
         /*
             nextIndex is selected
             if index is -1 --> error is thrown
@@ -43,7 +44,7 @@ export default class MessageStorage {
             the array that is going to be returned
                 --> earlier messages have lower indexes in array
          */
-        let rMessages = [];
+        let rMessages:MessageDataOut[] = [];
 
         if(iMessage === -1){
 
@@ -295,7 +296,8 @@ export default class MessageStorage {
     /*
         an object containing the newest message is returned
      */
-    getNewestMessageObject(){
+    // TODO type
+    getNewestMessageObject():any {
 
         const newestMsg = this.messages[this._messages.length - 1];
         /*

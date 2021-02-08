@@ -4,8 +4,8 @@ import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
 import names from "../../src/__testHelpers__/names/names.json";
 import request, {Response} from "supertest";
 import {instanceOfSimpleUser, instanceOfUserInfo, SimpleUser, UserInfo} from "../../src/models/user";
-import {messageTypes} from "../../src/chatData/message/message";
 import {instanceOfNewNormalChatData, NewNormalChatData} from "../../src/models/chat";
+import {messageTypes} from "../../src/models/message";
 
 describe('test API /user',() => {
 

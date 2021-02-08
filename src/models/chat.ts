@@ -1,3 +1,29 @@
+import {instanceOfSimpleUser, SimpleUser} from "./user";
+
+export interface ChatInfo {
+    type:string,
+    id: number,
+    chatName: string,
+    members: SimpleUser[],
+    //TODO type
+    firstMessage: any,
+    unreadMessages: number
+}
+export function instanceOfChatInfo(object: any): object is ChatInfo {
+    if(!(
+        typeof object === 'object'
+        && 'type' in object && typeof object.type === 'string'
+        && 'id' in object && typeof object.id === 'number'
+        && 'chatName' in object && typeof object.chatName === 'string'
+        && 'members' in object && typeof object.members === 'object'
+        && Array.isArray(object.members) && object.members.length > 0
+        && instanceOfSimpleUser(object.members[0])
+        && 'firstMessage' in object && typeof object.firstMessage === 'object'
+        && 'unreadMessages' in object && typeof object.unreadMessages === 'number'
+    ))
+        throw new TypeError('invalid ChatInfo');
+    return true;
+}
 export interface NewNormalChatData {
     // the id of the chat
     ncid: number,

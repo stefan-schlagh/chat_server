@@ -1,9 +1,15 @@
-import Message, {messageTypes} from "../message/message";
+import Message from "../message/message";
 import MessageStorage from "../message/messageStorage";
 import NormalMessage from "../message/normalMessage";
 import StatusMessage from "../message/statusMessage";
 import User from "../user";
-import {MessageData, NormalMessageContent, StatusMessageContent} from "../../models/message";
+import {
+    LoadedMessages,
+    MessageDataIn,
+    messageTypes,
+    NormalMessageContent,
+    StatusMessageContent
+} from "../../models/message";
 import {SimpleUser} from "../../models/user";
 
 export enum chatTypes {
@@ -57,7 +63,7 @@ export abstract class Chat{
     /*
         a new message is added to the chat
      */
-    async addMessage(author:User,data:MessageData):Promise<Message> {
+    async addMessage(author:User,data:MessageDataIn):Promise<Message> {
         /*
             message is created & initialized
          */
@@ -100,8 +106,7 @@ export abstract class Chat{
         msgIdStart: wenn -1, wird mit der letzten Nachricht angefangen
         num: Anzahl der msg, die geladen werden sollen
      */
-    // TODO: return types
-    async getMessages(msgIdStart:number,num:number){
+    async getMessages(msgIdStart:number,num:number):Promise<LoadedMessages> {
         /*
             if msgIdStart is -1, it is started with maxMid
          */
