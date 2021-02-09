@@ -94,3 +94,15 @@ export interface GroupChatInfo {
     },
     members: GroupChatMemberDataAll[]
 }
+export interface ChangeChatData {
+    type: string,
+    id: number
+}
+// type check
+export function instanceOfChangeChatData(object: any): object is ChangeChatData {
+    return (
+        object !== null
+        && typeof object === 'object'
+        && 'mid' in object && typeof object.mid === 'number'
+    )
+}
