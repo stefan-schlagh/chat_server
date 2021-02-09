@@ -103,6 +103,7 @@ export function instanceOfChangeChatData(object: any): object is ChangeChatData 
     return (
         object !== null
         && typeof object === 'object'
-        && 'mid' in object && typeof object.mid === 'number'
+        && 'type' in object && typeof object.type === 'string'
+        && 'id' in object && typeof object.id === 'number'
     )
 }
