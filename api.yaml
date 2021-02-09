@@ -815,6 +815,74 @@ paths:
           $ref: '#components/responses/NotAllowed'
         '500':
           description: internal server error
+  /pwReset/isValid/:code:
+    get:
+      description: is the verification code valid?
+      summary: is code valid
+      operationId: isValid
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: number
+            description: the code that should be verfied
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
+        '403':
+          description: verification failed
+  /pwReset/set:
+    get:
+      description: set a new password
+      summary: set a new password
+      operationId: setPassword
+      parameters:
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                description: a valid verificationCode
+              password:
+                type: string
+                description: the new password
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
+        '403':
+          description: verification failed
+  /pwReset/requestLink:
+    post:
+      description: |
+        request a password reset link, an email with the link will be sent
+      summary: request a password reset link
+      operationId: requestLink
+      parameters:
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+                description: the username of the user
+              email:
+                type: string
+                description: the email of the user
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
   /user/:
     post:
       description: |

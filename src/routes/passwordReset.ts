@@ -4,6 +4,7 @@ import {chatData} from "../chatData/data";
 import {hashPassword} from "../authentication/bcryptWrappers";
 import {sendMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
+import {instanceOfSetPassword, instanceOfUsernameEmail, SetPassword, UsernameEmail} from "../models/code";
 
 const router = express.Router();
 
@@ -13,13 +14,13 @@ router.get("/isValid/:code",async (req,res) => {
 
         const parts:Parts = extractParts(code);
 
-        if (await verifyCode(parts, verificationCodeTypes.pwReset))
+        if (await verifyCode(parts, verificationCodeTypes.pwReset) !== -1)
             res.sendStatus(200);
         else
             res.sendStatus(403);
     }catch (err){
         logger.error(err);
-        res.status(500);
+        res.status(400);
         res.send();
     }
 });
@@ -28,17 +29,22 @@ router.get("/isValid/:code",async (req,res) => {
  */
 router.post("/set",async (req, res) => {
     try {
-        const {code,password} = req.body;
+        const data:SetPassword = req.body;
+        instanceOfSetPassword(data);
 
-        const parts:Parts = extractParts(code);
-        //load user
-        const user = await chatData.getUser(parts.uid,true);
-        //generate hash
-        const hash = await hashPassword(password);
-        //set Password at user
-        await user.setPassword(hash,parts.code);
+        const parts:Parts = extractParts(data.code);
+        if (await verifyCode(parts, verificationCodeTypes.pwReset) !== -1) {
+            //load user
+            const user = await chatData.getUser(parts.uid,true);
+            //generate hash
+            const hash = await hashPassword(data.password);
+            //set Password at user
+            await user.setPassword(hash,parts.code);
 
-        res.send();
+            res.send();
+        }
+        else
+            res.sendStatus(403);
     }catch (err){
         logger.error(err);
         res.status(400);
@@ -50,13 +56,15 @@ router.post("/set",async (req, res) => {
  */
 router.post("/requestLink",async (req,res) => {
     try {
-        const {username,email} = req.body;
+        const data:UsernameEmail = req.body;
+        instanceOfUsernameEmail(data);
+
         // user is searched/loaded from db
-        const user = await chatData.getUserEmail(username,email);
+        const user = await chatData.getUserEmail(data.username,data.email);
         // code is created
         const {sCode} = await user.createPasswordResetCode();
         // mail is sent
-        await sendMail(email,"Chat App: password reset",sCode);
+        await sendMail(data.email,"Chat App: password reset",sCode);
 
         res.send();
 

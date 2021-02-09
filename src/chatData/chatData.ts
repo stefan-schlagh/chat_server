@@ -239,8 +239,11 @@ export class ChatData{
             if (loadUser) {
                 //should the name of the user be loaded?
                 user = await this.loadUser(uid);
+                if(user === null)
+                    //if user does not exist, throw error
+                    throw new Error('user does not exist');
             } else {
-                throw new Error('user does not exist');
+                throw new Error('user does not exist in storage');
             }
         }
         return user;
@@ -292,9 +295,14 @@ export class ChatData{
                 /*
                     user is initialized
                  */
-                const user = new User(uid,result[0].username);
-                this.user.set(uid,user);
-                resolve(user);
+                else if(result.length !== 1)
+                    //if not exactly 1 user found, return null --> error
+                    resolve(null);
+                else {
+                    const user = new User(uid, result[0].username);
+                    this.user.set(uid, user);
+                    resolve(user);
+                }
             });
         });
     }

@@ -1,7 +1,7 @@
-import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
+import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
-import {app, closeServer, startServer} from "../src/app";
-import {mailStorage} from "../src/verification/mailStorage";
+import {app, closeServer, startServer} from "../../src/app";
+import {mailStorage} from "../../src/verification/mailStorage";
 
 const test_username = "test345678";
 let newpassword = "password2";
@@ -88,12 +88,34 @@ describe("setPassword Test",() => {
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
     });
+    it("request password reset link - invalid data",async () => {
+        const res:Response = await request(app)
+            .post('/pwReset/requestLink')
+            .send({
+                username: test_username
+            })
+        expect(res.status).toEqual(400);
+    });
     it("verify password reset",async () => {
         expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
         const res:Response = await request(app)
             .get('/pwReset/isValid/' + mailStorage.get("Chat App: password reset"))
             .send()
         expect(res.status).toEqual(200);
+    });
+    it("verify password reset - wrong code",async () => {
+        expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
+        const res:Response = await request(app)
+            .get('/pwReset/isValid/' + mailStorage.get("Chat App: password reset") + 'xx')
+            .send()
+        expect(res.status).toEqual(403);
+    });
+    it("verify password reset - wrong code and wrong uid",async () => {
+        expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
+        const res:Response = await request(app)
+            .get('/pwReset/isValid/000004efbghjgkjkaghfkjhagkhf')
+            .send()
+        expect(res.status).toEqual(400);
     });
     it("set new password",async () => {
         const res:Response = await request(app)
@@ -103,5 +125,32 @@ describe("setPassword Test",() => {
                 password: newpassword
             })
         expect(res.status).toEqual(200);
+    });
+    it("set new password - invalid data",async () => {
+        const res:Response = await request(app)
+            .post('/pwReset/set')
+            .send({
+                code: 123,
+                password: newpassword
+            })
+        expect(res.status).toEqual(400);
+    });
+    it("set new password - wrong code",async () => {
+        const res:Response = await request(app)
+            .post('/pwReset/set')
+            .send({
+                code: mailStorage.get("Chat App: password reset") + 'xx',
+                password: newpassword
+            })
+        expect(res.status).toEqual(403);
+    });
+    it("set new password - wrong code and wrong uid",async () => {
+        const res:Response = await request(app)
+            .post('/pwReset/set')
+            .send({
+                code: '000004efbghjgkjkaghfkjhagkhf',
+                password: newpassword
+            })
+        expect(res.status).toEqual(400);
     });
 });
