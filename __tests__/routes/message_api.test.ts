@@ -12,6 +12,7 @@ import {
     messageTypes,
     NewMessageReturn
 } from "../../src/models/message";
+import {logger} from "../../src/util/logger";
 
 describe('test API /user/message',() => {
 
@@ -213,13 +214,14 @@ describe('test API /user/message',() => {
         expect(res.status).toEqual(200);
         const data:LoadedMessages = res.body;
         expect(instanceOfLoadedMessages(data)).toEqual(true);
-        expect(data.messages.length).toBeGreaterThanOrEqual(3);
+        // 2 --> the message with lastMsgId is already loaded
+        expect(data.messages.length).toBeGreaterThanOrEqual(2);
 
         const findMessage = (text:string):boolean => {
             for(let i = 0;i < data.messages.length;i++){
-                const message:MessageDataOut = data.messages[0];
+                const message:MessageDataOut = data.messages[i];
                 if(message.type === messageTypes.normalMessage)
-                    if(message.content.text === text)
+                    if (message.content.text === text)
                         return true;
             }
             return false;

@@ -112,13 +112,14 @@ export abstract class Chat{
          */
         if(msgIdStart === -1)
 
-        if(this.messageStorage.loadedAllMessages){
+            if(this.messageStorage.loadedAllMessages){
 
-            return({
-                status: 'reached top',
-                messages: []
-            });
-        }
+                return({
+                    status: 'reached top',
+                    messages: []
+                });
+            }
+            //TODO return first messages otherwise
 
         const mid = await this.messageStorage.getMidBelow(msgIdStart);
 

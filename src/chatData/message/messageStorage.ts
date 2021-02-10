@@ -314,7 +314,7 @@ export default class MessageStorage {
     /*
         the mid below the given is returned
      */
-    async getMidBelow(mid:number):Promise<number>{
+    async getMidBelow(mid:number):Promise<number> {
 
         const index = this.messages.getIndex(mid);
 
