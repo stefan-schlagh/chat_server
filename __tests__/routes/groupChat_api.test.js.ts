@@ -400,7 +400,7 @@ describe('test API /group', () => {
                 let socket:any;
                 const res = await new Promise((resolve, reject) => {
                     socket = io.connect(
-                        'http://localhost',
+                        'http://localhost:' + process.env.NODE_HTTP_PORT,
                         {
                             transports: ['websocket']
                         }
