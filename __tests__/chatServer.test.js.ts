@@ -18,6 +18,7 @@ describe('test chatServer', () => {
             done();
         });
         afterAll((done) => {
+            socket.close();
             closeServer();
             done();
         });
@@ -103,6 +104,9 @@ describe('test chatServer', () => {
                 });
             });
             expect(res).toEqual('socket connected');
+        });
+        afterEach(() => {
+            socket.close();
         });
         it('authenticate socket - invalid token',async () => {
 

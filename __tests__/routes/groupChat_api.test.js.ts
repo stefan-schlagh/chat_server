@@ -382,6 +382,10 @@ describe('test API /group', () => {
             done();
         });
         afterAll((done) => {
+            //close sockets
+            for(let i = 0;i < sockets.length;i++){
+                sockets[i].close();
+            }
             closeServer();
             done();
         });
