@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 24. Sep 2020 um 20:22
+-- Erstellungszeit: 10. Feb 2021 um 18:45
 -- Server-Version: 10.4.13-MariaDB
 -- PHP-Version: 7.4.8
 
@@ -72,8 +72,8 @@ CREATE TABLE `groupchatmember` (
   `uid` int(11) NOT NULL,
   `gcid` int(11) NOT NULL,
   `isAdmin` tinyint(1) NOT NULL,
-  `unreadMessages` int(11) NOT NULL,
-  `isStillMember` tinyint(4) NOT NULL
+  `unreadMessages` int(11) NOT NULL DEFAULT 0,
+  `isStillMember` tinyint(4) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
 
 -- --------------------------------------------------------
@@ -110,7 +110,6 @@ CREATE TABLE `mentioneduser` (
 
 CREATE TABLE `message` (
   `mid` int(11) NOT NULL,
-  `content` varchar(4000) COLLATE utf8mb4_bin NOT NULL,
   `date` datetime NOT NULL,
   `isGroupChat` tinyint(1) NOT NULL,
   `messageType` int(11) NOT NULL,
@@ -128,8 +127,8 @@ CREATE TABLE `normalchat` (
   `ncid` int(11) NOT NULL,
   `uid1` int(11) NOT NULL,
   `uid2` int(11) NOT NULL,
-  `unreadMessages1` int(11) NOT NULL,
-  `unreadMessages2` int(11) NOT NULL
+  `unreadMessages1` int(11) NOT NULL DEFAULT 0,
+  `unreadMessages2` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
 
 -- --------------------------------------------------------

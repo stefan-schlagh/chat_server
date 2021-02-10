@@ -66,6 +66,7 @@ Gets emitted when the client is disconnected. The information of the user gets s
 
 #### info
 When a message got sent by another user.
+origin: chat.sendToAll
 
 #### parameters
 ````json
@@ -86,6 +87,7 @@ When a message got sent by another user.
 
 #### info
 gets emitted by the server when a member of a chat starts typing.
+origin: chat.sendToAll
 
 #### parameters
 ````json
@@ -102,13 +104,14 @@ gets emitted by the server when a member of a chat starts typing.
 
 #### info
 gets emitted by the server when a member of a chat stops typing.
+origin: chat.sendToAll
 
 #### parameters
 ````json
 {
     "chat": {
          "type": "type of the chat",
-         "id": "id of the chat",
+         "id": "id of the chat"
     },
     "uid":"id of the user"
 }
@@ -118,6 +121,7 @@ gets emitted by the server when a member of a chat stops typing.
 
 #### info
 gets emitted by the server if the user gets added to a new chat
+origin: user.addNewChat
 
 #### parameters
 ````json
@@ -128,19 +132,18 @@ gets emitted by the server if the user gets added to a new chat
   "members": [
     {
       "uid": "id of the user",
-      "username": "username",
-      "isOnline": "is the user online"
+      "username": "username"
     },
     {
       "uid": "id of the user",
-      "username": "username",
-      "isOnline": "is the user online"
+      "username": "username"
     }
   ],
   "firstMessage": {
     "uid": "the uid from the author",
     "mid": "the message id",
     "date": "the date when the message was written",
+    "type": "the type of the message",
     "content": "the content of the message"
   }
 }
@@ -150,6 +153,9 @@ gets emitted by the server if the user gets added to a new chat
 
 #### info
 Gets emitted if the socket disconnects. An alert to reload the page is shown
+
+
+
 
 ### message content
 

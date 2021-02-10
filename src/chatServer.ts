@@ -5,8 +5,9 @@ import {Express} from "express";
 import {Pool} from "mysql2";
 import {logger} from "./util/logger";
 import User from "./chatData/user";
+import {ChangeChatData, instanceOfChangeChatData} from "./models/chat";
 
-export let chatServer:any;
+export let chatServer:ChatServer;
 export function createChatServer(server:any,con:any,app:any){
     chatServer = new ChatServer(server,con,app);
 }
@@ -27,15 +28,10 @@ class ChatServer{
         this.app = app;
 
         //@ts-ignore
-        this.io = new Server(server);/*,{
-            cors: {
-                origin: '*:*'
-            }
-        });*/
+        this.io = new Server(server);
         /*
             gets called when a connection is established
          */
-        //TODO log socket id
         this.io.on('connection', (socket:Socket) => {
 
             logger.info(socket.id);
@@ -44,6 +40,7 @@ class ChatServer{
                 the user who uses this connection
              */
             let user:User;
+            let authenticated:boolean = false;
 
             socket.on('auth', async (authTokens:string) => {
                 /*
@@ -58,6 +55,8 @@ class ChatServer{
                         socket is initialized
                      */
                     user = await chatData.initUserSocket(uid, username, socket);
+
+                    authenticated = true;
                     /*
                         info that user is initialized is emitted to client
                      */
@@ -70,49 +69,62 @@ class ChatServer{
                 }
             });
             /*
-                wird aufgerufen, wenn chat gewechselt wird
+                gets called when chat is changed
              */
-            socket.on('change chat', (data:any) => {
-                /*
-                    if data is null, no chat should be selected
-                 */
-                if (data === null)
-                    chatData.changeChat(user, '', 0);
-                else
-                    chatData.changeChat(user, data.type, data.id);
-                // info is logged
-                logger.log('info','Socket(id: %s): %s %s ',socket.id,'chat changed: ',user.uid);
+            socket.on('change chat', (data:ChangeChatData) => {
+
+                if(authenticated) {
+                    /*
+                        if data is null, no chat should be selected
+                     */
+                    if(!instanceOfChangeChatData(data))
+                        chatData.changeChat(user, '', 0);
+                    else
+                        chatData.changeChat(user, data.type, data.id);
+                    // info is logged
+                    logger.log('info', 'Socket(id: %s): %s %s ', socket.id, 'chat changed: ', user.uid);
+                }else
+                    socket.disconnect();
             });
             socket.on('started typing', () => {
-                /*
-                    user started typing
-                 */
-                user.startedTyping();
-                // info is logged
-                logger.log('info','Socket(id: %s): %s %s ',socket.id,'user started typing: ',user.uid);
+                if(authenticated) {
+                    /*
+                        user started typing
+                     */
+                    user.startedTyping();
+                    // info is logged
+                    logger.log('info', 'Socket(id: %s): %s %s ', socket.id, 'user started typing: ', user.uid);
+                }else
+                    socket.disconnect();
             });
             socket.on('stopped typing', () => {
-                /*
-                    user stopped typing
-                 */
-                user.stoppedTyping();
-                // info is logged
-                logger.log('info','Socket(id: %s): %s %s ',socket.id,'user stopped typing: ',user.uid);
+                if(authenticated) {
+                    /*
+                        user stopped typing
+                     */
+                    user.stoppedTyping();
+                    // info is logged
+                    logger.log('info', 'Socket(id: %s): %s %s ', socket.id, 'user stopped typing: ', user.uid);
+                }else
+                    socket.disconnect();
             });
             /*
                 is called after client disconnected
              */
             socket.on('disconnect', async () => {
-                /*
-                    userData is saved and deleted
-                 */
-                try {
-                    await chatData.unloadUser(user);
-                } catch (err) {
-                    logger.error(err);
-                }
+                if(authenticated) {
+                    /*
+                        userData is saved and deleted
+                     */
+                    try {
+                        await chatData.unloadUser(user);
+                    } catch (err) {
+                        logger.error(err);
+                    }
 
-                logger.log('info','Socket(id: %s): %s ',socket.id,'disconnected');
+                    logger.log('info', 'Socket(id: %s): %s ', socket.id, 'disconnected');
+                }else
+                    socket.disconnect();
             });
         });
 
@@ -121,7 +133,7 @@ class ChatServer{
     /*
         returns if the user is online
      */
-    isUserOnline(uid:number){
+    isUserOnline(uid:number):boolean {
         return chatData.isUserOnline(uid);
     }
 

@@ -128,8 +128,9 @@ export default class GroupChatMember{
     }
     /*
         admin status is set
+            value: the value that should be set
      */
-    async setAdmin(userFrom:any,value:any){
+    async setAdmin(userFrom:User,value:boolean):Promise<void> {
         /*
             change adminStatus in object
          */
@@ -161,10 +162,6 @@ export default class GroupChatMember{
             statusMessage,
             true
         );
-
-        return {
-            mid: statusMessage.mid
-        }
     }
     /*
         groupChatMember is deleted in the database

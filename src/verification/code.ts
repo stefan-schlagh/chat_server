@@ -31,7 +31,7 @@ export interface VerificationCode {
 }
 /*
     000004efbghjgkjkaghfkjhagkhf
-    4 Bytes  uid
+    4 Bytes  uid (000004ef  1263)
     rest  hash
  */
 export function extractParts(sCode:string):Parts{
@@ -82,9 +82,14 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
         pool.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
+            if(result.length === 0)
+                reject(null);
             resolve(result);
         });
     });
+    // if there are no verificationCodes --> not valid
+    if(res === null)
+        return -1
 
     for(let i=0;i<res.length;i++){
         if(type === res[i].type)

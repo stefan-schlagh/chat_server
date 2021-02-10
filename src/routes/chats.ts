@@ -2,6 +2,7 @@ import express from 'express';
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
 import {logger} from "../util/logger";
+import {ChatInfo} from "../models/chat";
 
 const router = express.Router();
 
@@ -17,34 +18,15 @@ router.get('/',(req:any,res:any) => {
     /*
         are the chats already loaded?
      */
-    if(user.chatsLoaded){
-        user.getChatJson()
-            .then((chats:any) => {
-                res.send(chats);
-            })
-            .catch((err:Error) => {
-                logger.error(err);
-                res.status(500);
-                res.send();
-            })
-    }else{
-
-        function chatsLoaded(chats:any){
-
+    user.getChats()
+        .then((chats:ChatInfo[]) => {
             res.send(chats);
-        }
-
-        user.eventEmitter.on('chats loaded',chatsLoaded);
-
-        /*
-            after 10 seconds, the request gets rejected
-         */
-        setTimeout(() => {
-            user.eventEmitter.removeListener('chats loaded',chatsLoaded);
-            res.status(400);
+        })
+        .catch((err:Error) => {
+            logger.error(err);
+            res.status(500);
             res.send();
-        },10000);
-    }
+        });
 });
 
 export default router;

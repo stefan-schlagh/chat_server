@@ -1,4 +1,3 @@
-import BinSearchArray from "../../util/binsearcharray";
 import NormalChat from "./normalChat";
 import {GroupChat} from "./groupChat";
 import GroupChatMember from "./groupChatMember";
@@ -8,7 +7,7 @@ import {pool} from "../../app";
 import {ChatData} from "../chatData";
 import {logger} from "../../util/logger";
 import {Chat, chatTypes} from "./chat";
-import {MessageData} from "../../models/message";
+import {MessageDataIn} from "../../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
 
 export default class CDataChatStorage extends ChatStorage {
@@ -25,7 +24,6 @@ export default class CDataChatStorage extends ChatStorage {
             else --> is loaded from DB
      */
     async getGroupChat(gcid:number):Promise<Chat> {
-
         const chat = this.getChat(chatTypes.groupChat, gcid);
 
         if(chat){
@@ -57,10 +55,10 @@ export default class CDataChatStorage extends ChatStorage {
             });
         });
         /*
-            if nothing found, undefined is returned
+            if nothing found, null is returned
          */
         if(!data)
-            return undefined;
+            return null;
 
         const isPublic = data.isPublic === 1;
         const chat = new GroupChat(
@@ -86,7 +84,7 @@ export default class CDataChatStorage extends ChatStorage {
     async newNormalChat(
         user1:User,
         user2:User,
-        message:MessageData
+        message:MessageDataIn
     ):Promise<NewNormalChatData> {
 
         const newChat = new NormalChat(
@@ -97,7 +95,7 @@ export default class CDataChatStorage extends ChatStorage {
         /*
             chat is saved in the database
          */
-        const ncid:any = await newChat.saveChatInDB();
+        const ncid:number = await newChat.saveChatInDB();
 
         this.normal.set(ncid,newChat);
         /*
@@ -113,7 +111,7 @@ export default class CDataChatStorage extends ChatStorage {
         /*
             if the user is online, the data gets sent to it too
          */
-        user2.addNewChat(newChat);
+        await user2.addNewChat(newChat);
 
         return {
             ncid: ncid,
@@ -127,7 +125,7 @@ export default class CDataChatStorage extends ChatStorage {
         userFrom:GroupChatMemberData,
         data:GroupChatData,
         users:GroupChatMemberData[]
-    ):Promise<void> {
+    ):Promise<number> {
         /*
             chat is created
          */
@@ -144,7 +142,7 @@ export default class CDataChatStorage extends ChatStorage {
         /*
             groupChatMembers are created
          */
-        const members = new BinSearchArray();
+        const members = new Map<number,GroupChatMember>();
         /*
             groupChatMemberSelf is created
          */
@@ -156,7 +154,7 @@ export default class CDataChatStorage extends ChatStorage {
             0
         );
         await gcmSelf.saveGroupChatMemberInDB();
-        members.add(userFrom.uid,gcmSelf);
+        members.set(userFrom.uid,gcmSelf);
         /*
             other users are added
          */
@@ -172,7 +170,7 @@ export default class CDataChatStorage extends ChatStorage {
             );
             await gcm.saveGroupChatMemberInDB();
 
-            members.add(user.uid,gcm);
+            members.set(user.uid,gcm);
         }
         //set members
         newChat.members = members;
@@ -192,7 +190,9 @@ export default class CDataChatStorage extends ChatStorage {
         /*
             users are subscribed to socket
          */
-        newChat.subscribeUsersToSocket();
+        await newChat.subscribeUsersToSocket();
+
+        return newChat.chatId;
     }
     /*
         all normalChats of the user are loaded

@@ -3,7 +3,7 @@ import User from "./user";
 import {setChatData} from "./data";
 import {pool} from "../app";
 import {logger} from "../util/logger";
-import {MessageData} from "../models/message";
+import {MessageDataIn} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
 import {Chat, chatTypes, getChatType} from "./chat/chat";
 import {Socket} from "socket.io";
@@ -41,7 +41,7 @@ export class ChatData{
     /*
         a message is sent
      */
-    async sendMessage(user:User,data:MessageData):Promise<number>{
+    async sendMessage(user:User,data:MessageDataIn):Promise<number>{
         /*
             mid is returned
          */
@@ -161,7 +161,7 @@ export class ChatData{
         userSelf:User,
         uidOther:number,
         usernameOther:string,
-        message:MessageData
+        message:MessageDataIn
     ):Promise<NewNormalChatData> {
         /*
             does user already exist in server?
@@ -184,7 +184,7 @@ export class ChatData{
         userFrom:GroupChatMemberData,
         data:GroupChatData,
         users:GroupChatMemberData[]
-    ):Promise<void> {
+    ):Promise<number> {
         /*
             not saved users are created
          */
@@ -200,7 +200,7 @@ export class ChatData{
                 this.user.set(newUser.uid,newUser);
             }
         }
-        await this.chats.newGroupChat(userFrom,data,users);
+        return await this.chats.newGroupChat(userFrom,data,users);
     }
     /*
         requested chat is returned
@@ -239,8 +239,11 @@ export class ChatData{
             if (loadUser) {
                 //should the name of the user be loaded?
                 user = await this.loadUser(uid);
+                if(user === null)
+                    //if user does not exist, throw error
+                    throw new Error('user does not exist');
             } else {
-                throw new Error('user does not exist');
+                throw new Error('user does not exist in storage');
             }
         }
         return user;
@@ -292,9 +295,14 @@ export class ChatData{
                 /*
                     user is initialized
                  */
-                const user = new User(uid,result[0].username);
-                this.user.set(uid,user);
-                resolve(user);
+                else if(result.length !== 1)
+                    //if not exactly 1 user found, return null --> error
+                    resolve(null);
+                else {
+                    const user = new User(uid, result[0].username);
+                    this.user.set(uid, user);
+                    resolve(user);
+                }
             });
         });
     }

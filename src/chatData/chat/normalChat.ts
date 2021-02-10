@@ -126,17 +126,21 @@ export default class NormalChat extends Chat{
      */
     async updateUnreadMessages():Promise<void> {
 
-        const query_str =
-            "UPDATE normalchat " +
-            "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
-            "unreadMessages2 = " + this.unreadMessages2 + " " +
-            "WHERE ncid = " + this.chatId + ";";
-        logger.verbose('SQL: %s',query_str);
+        await new Promise((resolve, reject) => {
+            const query_str =
+                "UPDATE normalchat " +
+                "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
+                "unreadMessages2 = " + this.unreadMessages2 + " " +
+                "WHERE ncid = " + this.chatId + ";";
+            logger.verbose('SQL: %s',query_str);
 
-        pool.query(query_str,(err:Error) => {
-            if(err)
-                throw err;
-        });
+            pool.query(query_str,(err:Error) => {
+                if(err)
+                    reject(err);
+                else
+                    resolve();
+            });
+        })
     }
     /*
         unreadMessages of the user with this uid are set
@@ -195,36 +199,42 @@ export default class NormalChat extends Chat{
     /*
         returns if there is someone online in this chat
      */
-    isAnyoneOnline():boolean {
-        return this.user1.online || this.user2.online;
+    async isAnyoneOnline():Promise<boolean> {
+        return await new Promise((resolve, reject) => {
+            resolve(this.user1.online || this.user2.online)
+        });
     }
     /*
         remove all users from the chat, gets called when chat gets unloaded
             uid: the requesting user
      */
-    removeUsers(uid:number):void {
-        /*
-            the user who does not have the uid is identified
-         */
-        let user;
-        if(this.user1.uid === uid)
-            user = this.user2;
-        else if(this.user2.uid === uid)
-            user = this.user1;
-        if(user !== undefined) {
+    async removeUsers(uid:number):Promise<void> {
+
+        await new Promise<void>((resolve, reject) => {
             /*
-                if no other chats, user is deleted
+                the user who does not have the uid is identified
              */
-            if (user.chats.length() <= 1) {
-                chatData.user.delete(user.uid);
+            let user;
+            if(this.user1.uid === uid)
+                user = this.user2;
+            else if(this.user2.uid === uid)
+                user = this.user1;
+            if(user !== undefined) {
+                /*
+                    if no other chats, user is deleted
+                 */
+                if (user.chats.length() <= 1) {
+                    chatData.user.delete(user.uid);
+                }
+                /*
+                    otherwise, chat gets removed
+                 */
+                else {
+                    user.removeUnloadedChat(this);
+                }
             }
-            /*
-                otherwise, chat gets removed
-             */
-            else {
-                user.removeUnloadedChat(this);
-            }
-        }
+            resolve();
+        })
     }
     // the name of the chat gets returned
     getChatName(uidSelf:number):string {
@@ -237,19 +247,21 @@ export default class NormalChat extends Chat{
     /*
         all members of the chat get returned
      */
-    getMemberObject(uidSelf:number):SimpleUser[] {
+    async getMemberObject(uidSelf:number):Promise<SimpleUser[]> {
 
-        if (uidSelf === this.user1.uid) {
-            return [{
-                uid: this.user2.uid,
-                username: this.user2.username
-            }];
-        } else {
-            return [{
-                uid: this.user1.uid,
-                username: this.user1.username
-            }];
-        }
+        return await new Promise<SimpleUser[]>((resolve, reject) => {
+            if (uidSelf === this.user1.uid) {
+                resolve ([{
+                    uid: this.user2.uid,
+                    username: this.user2.username
+                }]);
+            } else {
+                resolve ([{
+                    uid: this.user1.uid,
+                    username: this.user1.username
+                }]);
+            }
+        })
     }
 
     get user1(): User {

@@ -1,9 +1,9 @@
-import Message,{messageTypes} from "./message";
+import Message from "./message";
 import Mention from "./mention";
 import Media from "./media";
 import {chatData} from "../data";
 import {logger} from "../../util/logger";
-import {NormalMessageContent} from "../../models/message";
+import {MessageDataOut, messageTypes, NormalMessageContent} from "../../models/message";
 import {pool} from "../../app";
 
 export default class NormalMessage extends Message {
@@ -217,17 +217,19 @@ export default class NormalMessage extends Message {
     /*
         an object containing this message is returned
      */
-    getMessageObject(){
+    getMessageObject(): MessageDataOut {
 
-        const msg:any = super.getMessageObject();
-
-        msg.type = messageTypes.normalMessage;
-        msg.content = {
-            text: this.text,
-            mentions: this.getMentionsArray(),
-            media: this.getMediaArray()
-        };
-        return msg;
+        return {
+            uid: this.author.uid,
+            mid: this.mid,
+            date: this.date.toISOString(),
+            type: messageTypes.normalMessage,
+            content: {
+                text: this.text,
+                mentions: this.getMentionsArray(),
+                media: this.getMediaArray()
+            }
+        }
     }
     /*
         a array with the mentions is returned

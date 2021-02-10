@@ -103,12 +103,6 @@ export function startServer(){
         database: process.env.DB_DATABASE,
         charset : 'utf8mb4'
     });
-    /*pool.connect(function(err:Error) {
-        if (err) {
-            logger.error(err);
-            throw err;
-        }
-    });*/
     /*
         chatServer is created
      */
