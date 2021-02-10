@@ -158,6 +158,8 @@ export abstract class Chat{
     abstract getChatName(uidSelf:number):string;
     // unread Messages of the user with this uid are returned
     abstract getUnreadMessages(uid:number):number;
+    // chat is saved in the database
+    abstract async saveChatInDB():Promise<number>;
 
     get type(): chatTypes {
         return this._type;

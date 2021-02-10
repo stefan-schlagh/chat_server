@@ -24,47 +24,18 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: chat_server
-      # node.js setup
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14'
-      # install dependencies
-      - name: install dependencies
-        run: |
-          cd ./chat_server
-          npm ci
-      # setup mysql DB
-      - name: setup mysql DB
-        run: |
-          sudo systemctl start mysql.service
-          mysql -h 127.0.0.1 -P 3306 -u root "-proot" -e "CREATE DATABASE chat;"
-          mysql -h 127.0.0.1 -P 3306 -u root "-proot" "chat" < "./chat_server/sql/chat.sql"
-      # create private key, .env
-      - name: create jwt private key
-        run: |
-          cd ./chat_server
-          mkdir cert
-          cd ./cert
-          openssl genrsa -out jwtPrivate.pem 1024
-          cd ..
-          cp ./test_templates/test.env ./.env
-      # create certificate
-      - name: create certificate
-        run: |
-          cd ./chat_server/cert
-          openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem -subj "/C=AT/ST=Vienna/L=Vienna/O=/CN="
-          dir
-      # test
-      - name: npm test
+      - name: Create .env file
         env:
-          EMAIL_SERVICE: ${{ secrets.EMAIL_SERVICE}}
-          EMAIL: ${{ secrets.EMAIL}}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD}}
-          EMAIL_TEST_USER: ${{ secrets.EMAIL_TEST_USER}}
-          EMAIL_TEST_PASSWORD: ${{ secrets.EMAIL_TEST_PASSWORD}}
+          DOCKER_ENV: ${{ secrets.DOCKER_ENV}}
         run: |
-          cd ./chat_server
-          npm test
+          cd ./chat_server/test_templates
+          touch docker.env
+          printenv DOCKER_ENV > docker.env
+      - name: run tests
+        run: |
+          cd ./chat_server/test
+          docker-compose run -T chat-server npm test
+          docker-compose down
   selenium:
     name: selenium
     runs-on: ubuntu-latest

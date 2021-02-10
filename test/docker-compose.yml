@@ -1,0 +1,23 @@
+version: "3.7"
+services:
+  database:
+    image: mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chat
+    volumes:
+      - ../sql/:/docker-entrypoint-initdb.d
+  chat-server:
+    build:
+      dockerfile: test.DOCKERFILE
+      context: ../
+    restart: unless-stopped
+    depends_on:
+      - database
+    ports:
+      - "8080:80"
+      - "4443:443"
+    volumes:
+      - ../log/:/usr/src/app/log
+      - ../src/:/usr/src/app/src

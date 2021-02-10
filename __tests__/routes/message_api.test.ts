@@ -14,7 +14,7 @@ import {
 } from "../../src/models/message";
 import {logger} from "../../src/util/logger";
 
-describe('test API /user/message',() => {
+describe('test API /message',() => {
 
     const accountsNumber = 10;
     const accounts: AccountInfo[] = new Array(accountsNumber);

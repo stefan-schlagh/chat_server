@@ -404,7 +404,7 @@ function getChat(shouldBeLoaded:boolean){
         }else{
             try {
                 const gcid = parseInt(req.params.gcid);
-                if(typeof gcid !== 'number')
+                if(typeof gcid !== 'number' || isNaN(gcid))
                     throw new TypeError('wrong type of gcid!')
                 chatData.chats.getGroupChat(gcid)
                     .then((chat:Chat) => {
