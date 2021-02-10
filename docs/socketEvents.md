@@ -132,19 +132,18 @@ origin: user.addNewChat
   "members": [
     {
       "uid": "id of the user",
-      "username": "username",
-      "isOnline": "is the user online"
+      "username": "username"
     },
     {
       "uid": "id of the user",
-      "username": "username",
-      "isOnline": "is the user online"
+      "username": "username"
     }
   ],
   "firstMessage": {
     "uid": "the uid from the author",
     "mid": "the message id",
     "date": "the date when the message was written",
+    "type": "the type of the message",
     "content": "the content of the message"
   }
 }

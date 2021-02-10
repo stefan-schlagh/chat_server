@@ -1,4 +1,5 @@
 import {instanceOfSimpleUser, SimpleUser} from "./user";
+import {instanceOfMessageDataOut, MessageDataOut} from "./message";
 
 export interface ChatInfo {
     type:string,
@@ -106,4 +107,27 @@ export function instanceOfChangeChatData(object: any): object is ChangeChatData 
         && 'type' in object && typeof object.type === 'string'
         && 'id' in object && typeof object.id === 'number'
     )
+}
+export interface NewChatData {
+    type: string,
+    id: number,
+    chatName: string,
+    members: SimpleUser[],
+    firstMessage: MessageDataOut
+}
+// type check
+export function instanceOfNewChatData(object: any): object is NewChatData {
+    if(!(
+        typeof object === 'object'
+        && 'type' in object && typeof object.type === 'string'
+        && 'id' in object && typeof object.id === 'number'
+        && 'chatName' in object && typeof object.chatName === 'string'
+        && 'members' in object && typeof object.members === 'object'
+        && Array.isArray(object.members) && object.members.length >= 0
+        && instanceOfSimpleUser(object.members[0])
+        && 'firstMessage' in object && typeof object.firstMessage === 'object'
+        && instanceOfMessageDataOut(object.firstMessage)
+    ))
+        throw new TypeError('invalid NewChatData');
+    return true;
 }

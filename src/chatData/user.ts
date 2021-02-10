@@ -17,7 +17,7 @@ import {MessageDataIn} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
 import {Socket} from "socket.io";
 import {SimpleUser} from "../models/user";
-import {ChatInfo} from "../models/chat";
+import {ChatInfo, NewChatData} from "../models/chat";
 
 class Emitter extends EventEmitter {}
 
@@ -281,15 +281,16 @@ export default class User{
      */
     async addNewChat(chat:Chat):Promise<void> {
 
-        if(this.socket !== null) {
+        if(this.online) {
             /*
                 info gets emitted to the server
              */
-            const data = {
+            const data:NewChatData = {
                 type: chat.getChatTypeString(),
                 id: chat.chatId,
                 chatName: chat.getChatName(this.uid),
                 members: await chat.getMemberObject(this.uid),
+                //if groupChat: statusMessage
                 firstMessage: chat.messageStorage.getNewestMessageObject()
             };
 
@@ -319,7 +320,7 @@ export default class User{
             const parts:Parts = {
                 uid: this.uid,
                 code: code
-            }
+            };
             //verify code
             if (await verifyCode(parts, verificationCodeTypes.pwReset) !== -1) {
 
@@ -368,7 +369,7 @@ export default class User{
             const query_str =
                 "INSERT " +
                 "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
-                "VALUES (" + this.uid + "," + vcid + "," + pool.escape(email) + ",CURRENT_TIMESTAMP(),0);"
+                "VALUES (" + this.uid + "," + vcid + "," + pool.escape(email) + ",CURRENT_TIMESTAMP(),0);";
             logger.verbose('SQL: %s',query_str);
 
             pool.query(query_str,(err:Error,result:any) => {
@@ -416,7 +417,7 @@ export default class User{
                    if(err)
                        reject(err);
                    else if(isResultEmpty(result))
-                       reject(new ResultEmptyError())
+                       reject(new ResultEmptyError());
                    else
                        resolve(result[0]);
                });
