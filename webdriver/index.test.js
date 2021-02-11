@@ -1,6 +1,9 @@
 const {Builder, By, Key, until,Capabilities} = require('selenium-webdriver');
 require('selenium-webdriver/chrome');
 
+async function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 const rootURL = 'http://localhost:80';
 
 const chromeCapabilities = Capabilities.chrome();
@@ -79,8 +82,11 @@ it('should send messages',async () => {
     const msgInput = await msgForm.findElement(By.name('message-input-text'));
     // set text and send by pressing enter
     await msgInput.sendKeys(messages[0],Key.RETURN);
+    await timeout(100);
     //set text and press send button
     await msgInput.sendKeys(messages[1]);
+    await timeout(100);
+
     await msgForm.findElement(By.className('btn-submit')).click();
 });
 it('should find message',async () => {
