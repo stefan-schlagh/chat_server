@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    getUserInfo,
+    getUserInfo, getUserInfoSelf,
     selectAllUsers,
     selectUsersNoChat,
     selectUsersNotInGroup
@@ -12,6 +12,8 @@ import {extractParts, Parts} from "../verification/code";
 import {logger} from "../util/logger";
 import {MessageDataIn} from "../models/message";
 import {NewNormalChatData} from "../models/chat";
+import User from "../chatData/user";
+import {UserInfoSelf} from "../models/user";
 
 const router = express.Router();
 
@@ -129,15 +131,21 @@ router.post('/notInGroup/:gcid',(req:any,res:any) => {
 });
 /*
     the userInfo from the user self is returned
-    TODO: more info
  */
-router.get('/self',(req:any,res:any) => {
+router.get('/self',async (req:any,res:any) => {
 
-    const user = req.user;
-    res.send({
-        uid: user.uid,
-        username:user.username
-    });
+    try {
+        const user:User = req.user;
+        // get user info
+        const data: UserInfoSelf = await getUserInfoSelf(user.uid);
+
+        res.send(data);
+
+    }catch(err) {
+        logger.error(err);
+        res.status(500);
+        res.send();
+    }
 });
 /*
     the userInfo from the specified user is returned

@@ -1046,6 +1046,16 @@ paths:
                   username:
                     type: string
                     description: the username of the user
+                  email:
+                    type: string
+                    description: the email adress of the user
+                  emailVerified:
+                    type: boolean
+                    description: is the email verified
+                  accountCreationTime:
+                    type: string
+                    description: the datetime when the user was created
+                    format: date-time
         '400':
           description: bad request
         '403':

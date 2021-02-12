@@ -38,3 +38,20 @@ export function instanceOfUserInfo(object: any): object is UserInfo {
         throw new TypeError('invalid UserInfo');
     return true;
 }
+export interface UserInfoSelf extends SimpleUser{
+    email: string,
+    emailVerified: boolean,
+    accountCreationTime: string,
+}
+// type check
+export function instanceOfUserInfoSelf(object: any): object is UserInfoSelf {
+    if(!(
+        typeof object === 'object'
+        && 'email' in object && typeof object.email === 'string'
+        && 'emailVerified' in object && typeof object.emailVerified === 'boolean'
+        && 'accountCreationTime' in object && typeof object.accountCreationTime === 'string'
+        && instanceOfSimpleUser(object)
+    ))
+        throw new TypeError('invalid UserInfoSelf');
+    return true;
+}

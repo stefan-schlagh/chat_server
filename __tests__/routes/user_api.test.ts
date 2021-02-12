@@ -3,9 +3,10 @@ import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
 // @ts-ignore
 import names from "../../src/__testHelpers__/names/names.json";
 import request, {Response} from "supertest";
-import {instanceOfSimpleUser, instanceOfUserInfo, SimpleUser, UserInfo} from "../../src/models/user";
+import {instanceOfSimpleUser, instanceOfUserInfo, SimpleUser, UserInfo, UserInfoSelf} from "../../src/models/user";
 import {instanceOfNewNormalChatData, NewNormalChatData} from "../../src/models/chat";
 import {messageTypes} from "../../src/models/message";
+import exp from "constants";
 
 describe('test API /user',() => {
 
@@ -77,10 +78,12 @@ describe('test API /user',() => {
             .set('Authorization',accounts[0].tokens)
             .send();
         expect(res.status).toEqual(200);
-        const user:SimpleUser = res.body;
+        const user:UserInfoSelf = res.body;
         expect(instanceOfSimpleUser(user)).toEqual(true);
+
         expect(user.uid).toEqual(accounts[0].uid);
         expect(user.username).toEqual(accounts[0].username);
+        expect(user.email).toEqual('');
     });
     it('get userInfo of other user',async () => {
         const res:Response = await request(app)
