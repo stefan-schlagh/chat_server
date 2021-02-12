@@ -18,21 +18,23 @@ export async function getUser(uidFrom:number,uidReq:number):Promise<UserInfo> {
         logger.verbose('SQL: %s',query_str);
 
         pool.query(query_str, function (err:Error, rows:any, fields:any) {
+
+            let username:string = '';
+            let userExists:boolean = false;
+            let blocked:boolean = false;
+
             // Call reject on error states,
             // call resolve with results
             if (err) {
                 reject(err);
-            }
-            
-            let username = '';
-            let userExists = false;
-            let blocked = false;
-            
-            if(rows.length > 0){
-
+            } else if(!rows || rows.length === 0){
+                userExists = false
+            } else if(rows.length === 1){
                 username = rows[0].username;
                 userExists = true;
                 blocked = false;
+            } else {
+                throw new Error('uid ' + uidReq + ' appears more than once!');
             }
             
             const result = {

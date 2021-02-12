@@ -1169,22 +1169,19 @@ paths:
         '403':
           $ref: '#components/responses/NotAllowed'
   /user/verifyEmail:
-    post:
+    get:
       description: |
         verify the email of the user
       summary: verify email
       operationId: verifyEmail
       parameters:
         - $ref: '#components/securitySchemes/authorization'
-        - name: body
-          in: header
+        - name: code
+          in: path
           required: true
           schema:
-            type: object
-            properties:
-              code:
-                type: string
-                description: the verification code
+            type: string
+            description: the verification code
       responses:
         '200':
           description: success

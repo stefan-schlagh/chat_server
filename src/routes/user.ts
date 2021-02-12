@@ -215,11 +215,9 @@ router.post('/setEmail',async (req:any, res:any) => {
 /*
     email is verified
  */
-router.post("/verifyEmail",async (req:any,res:any) => {
+router.get("/verifyEmail/:code",async (req:any,res:any) => {
     try {
-        const code = req.body.code;
-        if(typeof code !== "string")
-            throw new TypeError('invalid code');
+        const code = req.params.code;
 
         const parts:Parts = extractParts(code);
         //load user

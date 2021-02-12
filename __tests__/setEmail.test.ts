@@ -64,20 +64,14 @@ describe('setEmail Test', () => {
     });
     it("verifyEmail - wrong type",async () => {
         const res:Response = await request(app)
-            .post('/user/verifyEmail')
+            .get('/user/verifyEmail/true')
             .set('Authorization',tokensStorage.get(test_username))
-            .send({
-                code: true
-            })
         expect(res.status).toEqual(400);
     });
     it("verifyEmail",async () => {
         const res:Response = await request(app)
-            .post('/user/verifyEmail')
+            .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
             .set('Authorization',tokensStorage.get(test_username))
-            .send({
-                code: mailStorage.get("Chat App: email verification")
-            })
         expect(res.status).toEqual(200);
     });
     it("fail verify",async () => {
@@ -91,11 +85,8 @@ describe('setEmail Test', () => {
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
 
         const res2:Response = await request(app)
-            .post('/user/verifyEmail')
+            .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification") + "jkljl")
             .set('Authorization',tokensStorage.get(test_username))
-            .send({
-                code: mailStorage.get("Chat App: email verification") + "jkljl"
-            })
         expect(res2.status).toEqual(403);
     });
 });
