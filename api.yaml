@@ -835,7 +835,7 @@ paths:
         '403':
           description: verification failed
   /pwReset/set:
-    get:
+    post:
       description: set a new password
       summary: set a new password
       operationId: setPassword
