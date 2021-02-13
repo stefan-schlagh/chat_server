@@ -2,7 +2,7 @@ import express from 'express';
 import {extractParts, Parts, verificationCodeTypes, verifyCode} from "../verification/code";
 import {chatData} from "../chatData/data";
 import {hashPassword} from "../authentication/bcryptWrappers";
-import {sendMail} from "../verification/sendMail";
+import {sendPasswordResetMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {instanceOfSetPassword, instanceOfUsernameEmail, SetPassword, UsernameEmail} from "../models/code";
 
@@ -64,7 +64,7 @@ router.post("/requestLink",async (req,res) => {
         // code is created
         const {sCode} = await user.createPasswordResetCode();
         // mail is sent
-        await sendMail(data.email,"Chat App: password reset",sCode);
+        await sendPasswordResetMail(data.email,sCode);
 
         res.send();
 

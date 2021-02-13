@@ -125,7 +125,13 @@ export function startServer(){
     app.get('/', function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });
     });
-    app.get(['/chat*','/login*','/register*','/about*'], function (req: Request, res: Response) {
+    app.get(
+        [
+            '/chat*','/about*',
+            '/login*','/register*',
+            '/verifyEmail*','/forgotPassword*','/resetPassword*'
+        ],
+        function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });
     });
 

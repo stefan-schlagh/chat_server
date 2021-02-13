@@ -6,7 +6,7 @@ import {mailStorage} from "../../src/verification/mailStorage";
 const test_username = "test345678";
 let newpassword = "password2";
 
-describe("setPassword Test",() => {
+describe("Test API /pwReset",() => {
     // start the server before the tests
     beforeAll((done) => {
         startServer();
@@ -71,11 +71,8 @@ describe("setPassword Test",() => {
     it("verifyEmail",async () => {
         expect(mailStorage.size).toBeGreaterThanOrEqual(1);
         const res:Response = await request(app)
-            .post('/user/verifyEmail')
+            .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
             .set('Authorization',tokensStorage.get(test_username))
-            .send({
-                code: mailStorage.get("Chat App: email verification")
-            })
         expect(res.status).toEqual(200);
     });
     it("request password reset link",async () => {

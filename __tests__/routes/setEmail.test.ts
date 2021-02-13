@@ -1,11 +1,13 @@
-import {tokensStorage} from "../src/__testHelpers__/tokensStorage";
+import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
-import {app, closeServer, startServer} from "../src/app";
-import {mailStorage} from "../src/verification/mailStorage";
+import {app, closeServer, startServer} from "../../src/app";
+import {mailStorage} from "../../src/verification/mailStorage";
+import {instanceOfSimpleUser, UserInfoSelf} from "../../src/models/user";
 
 const test_username = "test123456";
+const newEmail = "stefanjkf.test+setEmailTest@gmail.com";
 
-describe('setEmail Test', () => {
+describe('setEmail Test: API /user', () => {
     beforeAll((done) => {
         startServer();
         done();
@@ -57,7 +59,7 @@ describe('setEmail Test', () => {
             .post('/user/setEmail')
             .set('Authorization',tokensStorage.get(test_username))
             .send({
-                email: "stefanjkf.test+setEmailTest@gmail.com"
+                email: newEmail
             })
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
@@ -73,6 +75,18 @@ describe('setEmail Test', () => {
             .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
             .set('Authorization',tokensStorage.get(test_username))
         expect(res.status).toEqual(200);
+    });
+    it("email to be changed",async () => {
+        const res:Response = await request(app)
+            .get('/user/self')
+            .set('Authorization',tokensStorage.get(test_username))
+            .send();
+        expect(res.status).toEqual(200);
+        const user:UserInfoSelf = res.body;
+        expect(instanceOfSimpleUser(user)).toEqual(true);
+
+        expect(user.username).toEqual(test_username);
+        expect(user.email).toEqual(newEmail);
     });
     it("fail verify",async () => {
         const res1:Response = await request(app)
