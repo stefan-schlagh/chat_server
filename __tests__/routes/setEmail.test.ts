@@ -54,6 +54,15 @@ describe('setEmail Test: API /user', () => {
             })
         expect(res.status).toEqual(400);
     });
+    it("setEmail - invalid email",async () => {
+        const res:Response = await request(app)
+            .post('/user/setEmail')
+            .set('Authorization',tokensStorage.get(test_username))
+            .send({
+                email: "@a.a"
+            })
+        expect(res.status).toEqual(400);
+    });
     it("setEmail",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
@@ -67,13 +76,11 @@ describe('setEmail Test: API /user', () => {
     it("verifyEmail - wrong type",async () => {
         const res:Response = await request(app)
             .get('/user/verifyEmail/true')
-            .set('Authorization',tokensStorage.get(test_username))
         expect(res.status).toEqual(400);
     });
     it("verifyEmail",async () => {
         const res:Response = await request(app)
             .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
-            .set('Authorization',tokensStorage.get(test_username))
         expect(res.status).toEqual(200);
     });
     it("email to be changed",async () => {
@@ -100,7 +107,6 @@ describe('setEmail Test: API /user', () => {
 
         const res2:Response = await request(app)
             .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification") + "jkljl")
-            .set('Authorization',tokensStorage.get(test_username))
         expect(res2.status).toEqual(403);
     });
 });

@@ -14,11 +14,9 @@ import {MessageDataIn} from "../models/message";
 import {NewNormalChatData} from "../models/chat";
 import User from "../chatData/user";
 import {UserInfoSelf} from "../models/user";
+import {validateEmail} from "../util/validateEmail";
 
 const router = express.Router();
-
-router.use(isAuthenticated);
-router.use(setUser);
 
 export interface SearchUser {
     search: string,
@@ -55,7 +53,7 @@ export function instanceOfNewNormalChat(object: any): object is NewNormalChat {
 /*
     all users are returned
  */
-router.post('/',(req:any,res:any) => {
+router.post('/',isAuthenticated,setUser,(req:any,res:any) => {
 
     try {
         const uidFrom = req.user.uid;
@@ -80,7 +78,7 @@ router.post('/',(req:any,res:any) => {
 /*
     all users where the user self has no chat with get returned
  */
-router.post('/noChat',(req:any,res:any) => {
+router.post('/noChat',isAuthenticated,setUser,(req:any,res:any) => {
 
     try{
         const uidFrom = req.user.uid;
@@ -105,7 +103,7 @@ router.post('/noChat',(req:any,res:any) => {
 /*
     all users who are not in the chat are returned
  */
-router.post('/notInGroup/:gcid',(req:any,res:any) => {
+router.post('/notInGroup/:gcid',isAuthenticated,setUser,(req:any,res:any) => {
     try {
         const gcid = parseInt(req.params.gcid);
 
@@ -132,7 +130,7 @@ router.post('/notInGroup/:gcid',(req:any,res:any) => {
 /*
     the userInfo from the user self is returned
  */
-router.get('/self',async (req:any,res:any) => {
+router.get('/self',isAuthenticated,setUser,async (req:any,res:any) => {
 
     try {
         const user:User = req.user;
@@ -150,7 +148,7 @@ router.get('/self',async (req:any,res:any) => {
 /*
     the userInfo from the specified user is returned
  */
-router.get('/:uid',(req:any,res:any) => {
+router.get('/:uid',isAuthenticated,setUser,(req:any,res:any) => {
 
     const uidFrom = req.user.uid;
     const uidReq = req.params.uid;
@@ -166,7 +164,7 @@ router.get('/:uid',(req:any,res:any) => {
 /*
     a new normalCHat is created
  */
-router.put('/chat',(req:any,res:any) => {
+router.put('/chat',isAuthenticated,setUser,(req:any,res:any) => {
 
     try {
         const userSelf = req.user;
@@ -195,12 +193,12 @@ router.put('/chat',(req:any,res:any) => {
 /*
     the email of the user is changed
  */
-router.post('/setEmail',async (req:any, res:any) => {
+router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
     try {
         const user = req.user;
 
         const email = req.body.email;
-        if(typeof email !== "string")
+        if(typeof email !== "string" || !validateEmail(email))
             throw new TypeError('invalid email');
 
         await user.setEmail(email)

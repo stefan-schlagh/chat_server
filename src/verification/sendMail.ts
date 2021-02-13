@@ -8,7 +8,7 @@ export async function sendEmailVerificationMail(receiver:string,sCode:string):Pr
     if(process.env.NODE_ENV === "test")
         mailStorage.set(title, sCode);
 
-    const content = "https://" + process.env.NODE_DOMAIN + "/user/verifyEmail/" + sCode;
+    const content = "https://" + process.env.NODE_DOMAIN + "/verifyEmail/" + sCode;
 
     await sendMail(receiver,title,content);
 }
