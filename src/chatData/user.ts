@@ -10,7 +10,7 @@ import {
 } from "../verification/code";
 import {pool} from "../app";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
-import {sendMail} from "../verification/sendMail";
+import {sendEmailVerificationMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {Chat, chatTypes} from "./chat/chat";
 import {MessageDataIn} from "../models/message";
@@ -375,14 +375,13 @@ export default class User{
             pool.query(query_str,(err:Error,result:any) => {
                if(err)
                    reject(err);
-               // TODO: result type?
                if(isResultEmpty(result))
                    reject(new ResultEmptyError());
-               resolve(result);
+               resolve();
             });
         });
 
-        await sendMail(email,"Chat App: email verification",sCode);
+        await sendEmailVerificationMail(email,sCode);
     }
     //all current verificationCodes are deleted
     async deleteVerificationCodes():Promise<void> {

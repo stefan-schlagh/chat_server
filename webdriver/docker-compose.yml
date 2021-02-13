@@ -8,7 +8,6 @@ services:
       MYSQL_DATABASE: chat
     volumes:
       - ./database/:/docker-entrypoint-initdb.d
-      - mysql-data:/var/lib/mysql
   chat-server:
     build:
       dockerfile: webdriver.DOCKERFILE
@@ -21,5 +20,3 @@ services:
       - "4443:443"
     volumes:
       - ../log/:/usr/src/app/log
-volumes:
-  mysql-data:

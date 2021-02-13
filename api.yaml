@@ -835,7 +835,7 @@ paths:
         '403':
           description: verification failed
   /pwReset/set:
-    get:
+    post:
       description: set a new password
       summary: set a new password
       operationId: setPassword
@@ -1046,6 +1046,16 @@ paths:
                   username:
                     type: string
                     description: the username of the user
+                  email:
+                    type: string
+                    description: the email adress of the user
+                  emailVerified:
+                    type: boolean
+                    description: is the email verified
+                  accountCreationTime:
+                    type: string
+                    description: the datetime when the user was created
+                    format: date-time
         '400':
           description: bad request
         '403':
@@ -1159,22 +1169,19 @@ paths:
         '403':
           $ref: '#components/responses/NotAllowed'
   /user/verifyEmail:
-    post:
+    get:
       description: |
         verify the email of the user
       summary: verify email
       operationId: verifyEmail
       parameters:
         - $ref: '#components/securitySchemes/authorization'
-        - name: body
-          in: header
+        - name: code
+          in: path
           required: true
           schema:
-            type: object
-            properties:
-              code:
-                type: string
-                description: the verification code
+            type: string
+            description: the verification code
       responses:
         '200':
           description: success

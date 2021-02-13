@@ -1,5 +1,6 @@
 import {pool} from "../../app";
-import {SimpleUser, UserInfo} from "../../models/user";
+import {instanceOfUserInfoSelf, SimpleUser, UserInfo, UserInfoSelf} from "../../models/user";
+import {logger} from "../../util/logger";
 
 /*
     A user gets requested
@@ -14,23 +15,26 @@ export async function getUser(uidFrom:number,uidReq:number):Promise<UserInfo> {
             "SELECT username " +
             "FROM user " +
             "WHERE uid = " + uidReq + ";";
+        logger.verbose('SQL: %s',query_str);
 
         pool.query(query_str, function (err:Error, rows:any, fields:any) {
+
+            let username:string = '';
+            let userExists:boolean = false;
+            let blocked:boolean = false;
+
             // Call reject on error states,
             // call resolve with results
             if (err) {
                 reject(err);
-            }
-            
-            let username = '';
-            let userExists = false;
-            let blocked = false;
-            
-            if(rows.length > 0){
-
+            } else if(!rows || rows.length === 0){
+                userExists = false
+            } else if(rows.length === 1){
                 username = rows[0].username;
                 userExists = true;
                 blocked = false;
+            } else {
+                throw new Error('uid ' + uidReq + ' appears more than once!');
             }
             
             const result = {
@@ -88,6 +92,7 @@ export async function selectUsersNoChat(
                     "WHERE uid1 = " + uid + " OR uid2 = " + uid + " )) " +
             "AND username LIKE " + pool.escape('%' + search + '%') + " " +
             "LIMIT " + start + "," + limit + ";";
+        logger.verbose('SQL: %s',query_str);
 
         pool.query(query_str, function (err:Error, rows:any, fields:any) {
             // Call reject on error states,
@@ -117,6 +122,7 @@ export async function selectAllUsers(
             "WHERE NOT uid = '" + uid + "' " +
             "AND username LIKE " + pool.escape('%' + search + '%') + " " +
             "LIMIT " + start + "," + limit + ";";
+        logger.verbose('SQL: %s',query_str);
 
         pool.query(query_str, function (err:Error, rows:any, fields:any) {
             // Call reject on error states,
@@ -157,6 +163,7 @@ export async function selectUsersNotInGroup(
             ")" +
             "AND u.username LIKE " + pool.escape('%' + search + '%') +
             "LIMIT " + start + "," + limit + ";";
+        logger.verbose('SQL: %s',query_str);
 
         pool.query(query_str,(err:Error,result:any,fields:any) => {
             if(err)
@@ -168,4 +175,41 @@ export async function selectUsersNotInGroup(
                 resolve([]);
         });
     });
+}
+/*
+    returns info about the requesting user
+ */
+export async function getUserInfoSelf(uid:number):Promise<UserInfoSelf> {
+
+    return await new Promise<UserInfoSelf>((resolve, reject) => {
+
+        const query_str =
+            "SELECT uid, username, time, email, isVerified " +
+            "FROM user " +
+            "WHERE uid = " + uid;
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,result:any[],fields:any) => {
+            if(err)
+                reject(err);
+            else if(result.length !== 1)
+                reject(new Error('invalid result!'));
+            else
+                try{
+                    const time:Date = result[0].time;
+                    const res:UserInfoSelf = {
+                        uid: result[0].uid,
+                        username: result[0].username,
+                        email: result[0].email,
+                        emailVerified: result[0].isVerified == 1,
+                        accountCreationTime: time.toISOString()
+                    };
+                    instanceOfUserInfoSelf(res);
+                    resolve(res);
+                }catch(err){
+                    reject(err);
+                }
+        });
+    });
+
 }

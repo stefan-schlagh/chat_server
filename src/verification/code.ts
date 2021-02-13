@@ -94,8 +94,7 @@ export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise
     for(let i=0;i<res.length;i++){
         if(type === res[i].type)
             if(await comparePassword(parts.code,res[i].hash)){
-                const vc = res[i];
-                return vc.vcid;
+                return res[i].vcid;
             }
     }
     return -1;

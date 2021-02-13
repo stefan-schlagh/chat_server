@@ -19,6 +19,7 @@ const router = express.Router();
 router.use(isAuthenticated);
 router.use(setUser);
 
+//TODO: timeout
 /*
     a new message is put on the server
  */
