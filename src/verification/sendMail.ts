@@ -42,7 +42,8 @@ export async function sendMail(receiver:string,title:string,content:string):Prom
          */
     }else{
         mailConfig = {
-            service: process.env.EMAIL_SERVICE,
+            host: 'mail.gmx.net',
+            port: 587,
             auth: {
                 user: process.env.EMAIL,
                 pass: process.env.EMAIL_PASSWORD
