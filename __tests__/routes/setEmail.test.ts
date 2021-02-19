@@ -1,10 +1,11 @@
-import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../../src/app";
 import {mailStorage} from "../../src/verification/mailStorage";
 import {instanceOfSimpleUser, UserInfoSelf} from "../../src/models/user";
+import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
 
 const test_username = "test123456";
+let account:AccountInfo;
 const newEmail = "stefanjkf.test+setEmailTest@gmail.com";
 
 describe('setEmail Test: API /user', () => {
@@ -16,39 +17,14 @@ describe('setEmail Test: API /user', () => {
         closeServer();
         done();
     });
-    it('create account/login', async () => {
-        const res:Response = await request(app)
-            .post('/auth/register')
-            .send({
-                username: test_username,
-                password: "password"
-            })
-        expect(res.status).toEqual(200)
+    it('init account', async () => {
 
-        if(res.body.success) {
-            expect(res.body).toHaveProperty('tokens')
-            tokensStorage.set(test_username,res.body.tokens);
-        }else{
-            if (res.body.username === "Username already taken"){
-                const res = await request(app)
-                    .post('/auth/login')
-                    .send({
-                        username: test_username,
-                        password: "password"
-                    })
-                expect(res.status).toEqual(200)
-                expect(res.body).toHaveProperty('tokens')
-                tokensStorage.set(test_username,res.body.tokens);
-
-            }else {
-                fail('unknown error');
-            }
-        }
+        account = await initAccount(test_username);
     });
     it("setEmail - wrong type",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: 1
             })
@@ -57,7 +33,7 @@ describe('setEmail Test: API /user', () => {
     it("setEmail - invalid email",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: "@a.a"
             })
@@ -66,7 +42,7 @@ describe('setEmail Test: API /user', () => {
     it("setEmail",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: newEmail
             })
@@ -86,7 +62,7 @@ describe('setEmail Test: API /user', () => {
     it("email to be changed",async () => {
         const res:Response = await request(app)
             .get('/user/self')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send();
         expect(res.status).toEqual(200);
         const user:UserInfoSelf = res.body;
@@ -98,7 +74,7 @@ describe('setEmail Test: API /user', () => {
     it("fail verify",async () => {
         const res1:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: "stefanjkf.test@gmail.com"
             })

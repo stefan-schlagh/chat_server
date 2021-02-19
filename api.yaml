@@ -118,26 +118,25 @@ paths:
               password:
                 type: string
       responses:
-        # TODO errors
         '200':
-          description: default response
+          description: success
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    description: was the login successfull?
-                  username:
-                    type: string
-                    description: error message for the username
-                  password:
-                    type: string
-                    description: error message for password
+                  uid:
+                    type: number
+                    description: the id of the user
                   tokens:
                     type: string
                     description: the authentication token
+        '400':
+          description: bad request
+        '403':
+          description: wrong password
+        '404':
+          description: user not existing
         '500':
           description: internal server error
   /auth/register:
@@ -157,7 +156,6 @@ paths:
               password:
                 type: string
       responses:
-        #TODO errors
         '200':
           description: default response
           content:
@@ -165,18 +163,17 @@ paths:
               schema:
                 type: object
                 properties:
+                  usernameTaken:
+                    type: boolean
+                    description: is the username already taken?
                   success:
                     type: boolean
                     description: was the login successfull?
-                  username:
-                    type: string
-                    description: error message for the username
-                  password:
-                    type: string
-                    description: error message for password
                   tokens:
                     type: string
                     description: the authentication token
+        '400':
+          description: bad request
         '500':
           description: internal server error
   /chats:

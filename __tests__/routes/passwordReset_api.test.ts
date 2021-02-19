@@ -1,9 +1,10 @@
-import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../../src/app";
 import {mailStorage} from "../../src/verification/mailStorage";
+import {AccountInfo} from "../../src/__testHelpers__/userHelpers";
 
 const test_username = "test345678";
+let account:AccountInfo;
 let newpassword = "password2";
 
 describe("Test API /pwReset",() => {
@@ -17,7 +18,7 @@ describe("Test API /pwReset",() => {
         closeServer();
         done();
     });
-    it('create account/login', async () => {
+    it('init account', async () => {
         const res:Response = await request(app)
             .post('/auth/register')
             .send({
@@ -26,42 +27,42 @@ describe("Test API /pwReset",() => {
             })
         expect(res.status).toEqual(200)
 
-        if(res.body.success) {
+        if(!res.body.usernameTaken) {
             expect(res.body).toHaveProperty('tokens')
-            tokensStorage.set(test_username,res.body.tokens);
+            account =  {
+                uid: res.body.uid,
+                username: test_username,
+                tokens: res.body.tokens
+            }
         }else{
-            if (res.body.username === "Username already taken"){
-                const res = await request(app)
+            let res:Response = await request(app)
+                .post('/auth/login')
+                .send({
+                    username: test_username,
+                    password: "password"
+                })
+            if(res.status === 403) {
+                res = await request(app)
                     .post('/auth/login')
                     .send({
                         username: test_username,
-                        password: "password"
+                        password: "password2"
                     })
-                if(!res.body.success){
-                    const res = await request(app)
-                        .post('/auth/login')
-                        .send({
-                            username: test_username,
-                            password: "password2"
-                        });
-                    newpassword = "password";
-                    expect(res.status).toEqual(200);
-                    expect(res.body).toHaveProperty('tokens')
-                    tokensStorage.set(test_username,res.body.tokens);
-                }else{
-                    expect(res.status).toEqual(200);
-                    expect(res.body).toHaveProperty('tokens')
-                    tokensStorage.set(test_username,res.body.tokens);
-                }
-            }else {
-                fail('unknown error');
+                newpassword = "password";
+                expect(res.status).toEqual(200);
+            }
+            expect(res.body).toHaveProperty('tokens')
+            account =  {
+                uid: res.body.uid,
+                username: test_username,
+                tokens: res.body.tokens
             }
         }
     });
     it("setEmail",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: "stefanjkf.test@gmail.com"
             })
@@ -72,7 +73,7 @@ describe("Test API /pwReset",() => {
         expect(mailStorage.size).toBeGreaterThanOrEqual(1);
         const res:Response = await request(app)
             .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
         expect(res.status).toEqual(200);
     });
     it("request password reset link",async () => {
