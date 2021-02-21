@@ -880,6 +880,8 @@ paths:
           description: success
         '400':
           description: bad request
+        '404':
+          description: user not found
   /user/:
     post:
       description: |

@@ -60,13 +60,19 @@ router.post("/requestLink",async (req,res) => {
         instanceOfUsernameEmail(data);
 
         // user is searched/loaded from db
-        const user = await chatData.getUserEmail(data.username,data.email);
-        // code is created
-        const {sCode} = await user.createPasswordResetCode();
-        // mail is sent
-        await sendPasswordResetMail(data.email,sCode);
+        const user = await chatData.getUserEmail(data.username, data.email);
+        if(user === null){
+            // user not found
+            res.status(404);
+            res.send();
+        }else {
+            // code is created
+            const {sCode} = await user.createPasswordResetCode();
+            // mail is sent
+            await sendPasswordResetMail(data.email, sCode);
 
-        res.send();
+            res.send();
+        }
 
     }catch (err){
         logger.error(err);

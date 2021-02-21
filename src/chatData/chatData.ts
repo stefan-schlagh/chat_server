@@ -250,6 +250,7 @@ export class ChatData{
     }
     /*
         get a user by the username and the email address
+        returns null, if user not found
      */
     async getUserEmail(username:string,email:string):Promise<User> {
 
@@ -264,17 +265,20 @@ export class ChatData{
                 if(err)
                    reject(err)
                 if(!result || result.length === 0)
-                    reject(new Error("result is not defined!"))
+                    resolve(null)
                 resolve(result);
             });
         });
-        /*
-            is email equal with the email in the database?
-         */
-        if(result[0].email !== email)
-            throw new Error("wrong email!")
-        else
-            return await this.getUser(result[0].uid,true);
+        if(result != null) {
+            /*
+                is email equal with the email in the database?
+             */
+            if (result[0].email !== email)
+                throw new Error("wrong email!")
+            else
+                return await this.getUser(result[0].uid, true);
+        }else
+            return null;
     }
     /*
         userdata is loaded, user is saved

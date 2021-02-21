@@ -86,6 +86,15 @@ describe("Test API /pwReset",() => {
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
     });
+    it("request password reset link - user not existing",async () => {
+        const res:Response = await request(app)
+            .post('/pwReset/requestLink')
+            .send({
+                username: test_username + "abcd",
+                email: "stefanjkf.test@gmail.com"
+            })
+        expect(res.status).toEqual(404);
+    });
     it("request password reset link - invalid data",async () => {
         const res:Response = await request(app)
             .post('/pwReset/requestLink')
