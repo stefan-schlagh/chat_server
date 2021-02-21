@@ -65,16 +65,6 @@ describe('setEmail Test: API /user', () => {
     it("emailUsed should be false",async () => {
         expect(await isEmailUsed(newEmail)).toEqual(false);
     });
-    it("setEmail - email taken",async () => {
-        const res2:Response = await request(app)
-            .post('/user/setEmail')
-            .set('Authorization',account.tokens)
-            .send({
-                email: oldEmail
-            })
-        expect(res2.status).toEqual(200);
-        expect(res2.body.emailTaken).toEqual(true);
-    });
     it("setEmail",async () => {
         const res2:Response = await request(app)
             .post('/user/setEmail')
@@ -95,6 +85,16 @@ describe('setEmail Test: API /user', () => {
         const res:Response = await request(app)
             .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
         expect(res.status).toEqual(200);
+    });
+    it("setEmail - email taken",async () => {
+        const res2:Response = await request(app)
+            .post('/user/setEmail')
+            .set('Authorization',account.tokens)
+            .send({
+                email: newEmail
+            })
+        expect(res2.status).toEqual(200);
+        expect(res2.body.emailTaken).toEqual(true);
     });
     it("email to be changed",async () => {
         const res:Response = await request(app)
