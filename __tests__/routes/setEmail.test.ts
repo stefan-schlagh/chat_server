@@ -1,11 +1,17 @@
-import {tokensStorage} from "../../src/__testHelpers__/tokensStorage";
 import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../../src/app";
 import {mailStorage} from "../../src/verification/mailStorage";
-import {instanceOfSimpleUser, UserInfoSelf} from "../../src/models/user";
+import {instanceOfUserInfoSelf, UserInfoSelf} from "../../src/models/user";
+import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
+import {isEmailUsed} from "../../src/chatData/database/email";
 
 const test_username = "test123456";
-const newEmail = "stefanjkf.test+setEmailTest@gmail.com";
+let account:AccountInfo;
+const email1 = "setEmail1@test.com";
+const email2 = "setEmail2@test.com";
+
+let oldEmail = email2;
+let newEmail = email1;
 
 describe('setEmail Test: API /user', () => {
     beforeAll((done) => {
@@ -13,42 +19,18 @@ describe('setEmail Test: API /user', () => {
         done();
     });
     afterAll((done) => {
+        mailStorage.clear();
         closeServer();
         done();
     });
-    it('create account/login', async () => {
-        const res:Response = await request(app)
-            .post('/auth/register')
-            .send({
-                username: test_username,
-                password: "password"
-            })
-        expect(res.status).toEqual(200)
+    it('init account', async () => {
 
-        if(res.body.success) {
-            expect(res.body).toHaveProperty('tokens')
-            tokensStorage.set(test_username,res.body.tokens);
-        }else{
-            if (res.body.username === "Username already taken"){
-                const res = await request(app)
-                    .post('/auth/login')
-                    .send({
-                        username: test_username,
-                        password: "password"
-                    })
-                expect(res.status).toEqual(200)
-                expect(res.body).toHaveProperty('tokens')
-                tokensStorage.set(test_username,res.body.tokens);
-
-            }else {
-                fail('unknown error');
-            }
-        }
+        account = await initAccount(test_username);
     });
     it("setEmail - wrong type",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: 1
             })
@@ -57,21 +39,42 @@ describe('setEmail Test: API /user', () => {
     it("setEmail - invalid email",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: "@a.a"
             })
         expect(res.status).toEqual(400);
     });
+    it("get unused email",async () => {
+        // get current email
+        const res1:Response = await request(app)
+            .get('/user/self')
+            .set('Authorization',account.tokens)
+            .send();
+        expect(res1.status).toEqual(200);
+        const user:UserInfoSelf = res1.body;
+        expect(instanceOfUserInfoSelf(user)).toEqual(true);
+        expect(user.username).toEqual(test_username);
+
+        oldEmail = user.email;
+        if(oldEmail === email1)
+            newEmail = email2;
+        else
+            newEmail = email1;
+    });
+    it("emailUsed should be false",async () => {
+        expect(await isEmailUsed(newEmail)).toEqual(false);
+    });
     it("setEmail",async () => {
-        const res:Response = await request(app)
+        const res2:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: newEmail
             })
-        expect(res.status).toEqual(200);
+        expect(res2.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
+        expect(res2.body.emailTaken).toEqual(false);
     });
     it("verifyEmail - wrong type",async () => {
         const res:Response = await request(app)
@@ -83,22 +86,35 @@ describe('setEmail Test: API /user', () => {
             .get('/user/verifyEmail/' + mailStorage.get("Chat App: email verification"))
         expect(res.status).toEqual(200);
     });
+    it("setEmail - email taken",async () => {
+        const res2:Response = await request(app)
+            .post('/user/setEmail')
+            .set('Authorization',account.tokens)
+            .send({
+                email: newEmail
+            })
+        expect(res2.status).toEqual(200);
+        expect(res2.body.emailTaken).toEqual(true);
+    });
     it("email to be changed",async () => {
         const res:Response = await request(app)
             .get('/user/self')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send();
         expect(res.status).toEqual(200);
         const user:UserInfoSelf = res.body;
-        expect(instanceOfSimpleUser(user)).toEqual(true);
+        expect(instanceOfUserInfoSelf(user)).toEqual(true);
 
         expect(user.username).toEqual(test_username);
         expect(user.email).toEqual(newEmail);
     });
+    it("emailUsed should be true",async () => {
+       expect(await isEmailUsed(newEmail)).toEqual(true);
+    });
     it("fail verify",async () => {
         const res1:Response = await request(app)
             .post('/user/setEmail')
-            .set('Authorization',tokensStorage.get(test_username))
+            .set('Authorization',account.tokens)
             .send({
                 email: "stefanjkf.test@gmail.com"
             })

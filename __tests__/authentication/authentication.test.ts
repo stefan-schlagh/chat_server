@@ -1,5 +1,6 @@
 import {login,register,getUserInfo,getPasswordHash,saveUser} from "../../src/authentication/authentication";
 import {comparePassword, hashPassword} from "../../src/authentication/bcryptWrappers";
+import {AuthError, errorTypes} from "../../src/authentication/authError";
 
 describe('authentication test',() => {
     describe('bcryptWrappers',() => {
@@ -34,7 +35,6 @@ describe('authentication test',() => {
                 error = e;
             }
             expect(typeof res).toEqual('object');
-            expect(res.success).toEqual(true);
             expect(res).toHaveProperty('uid');
             expect(res.uid).toEqual(1);
             expect(res).toHaveProperty('tokens');
@@ -54,17 +54,16 @@ describe('authentication test',() => {
                         cb(null,[{password:hash}])
                     })
             }
-            let error;
+            let error = null;
             let res;
             try{
                 res = await login('user1','password', connection);
             }catch (e){
                 error = e;
             }
-            expect(typeof res).toEqual('object');
-            expect(res.success).toEqual(false);
-            expect(res).toHaveProperty('username');
-            expect(res.username).toEqual('Username does not exist');
+            expect(error).not.toEqual(null);
+            expect(error instanceof AuthError).toEqual(true);
+            expect(error.type).toEqual(errorTypes.userNotExisting);
         })
         it('wrong password',async () => {
             const hash = await hashPassword('password')
@@ -80,17 +79,16 @@ describe('authentication test',() => {
                         cb(null,[{password:hash}])
                     })
             }
-            let error;
+            let error = null;
             let res;
             try{
                 res = await login('user1','passwort', connection);
             }catch (e){
                 error = e;
             }
-            expect(typeof res).toEqual('object');
-            expect(res.success).toEqual(false);
-            expect(res).toHaveProperty('password');
-            expect(res.password).toEqual('Wrong password!');
+            expect(error).not.toEqual(null);
+            expect(error instanceof AuthError).toEqual(true);
+            expect(error.type).toEqual(errorTypes.wrongPassword);
         })
     })
     describe('register',() => {
@@ -130,7 +128,8 @@ describe('authentication test',() => {
                 error = e;
             }
             expect(typeof res).toEqual('object');
-            expect(res.success).toEqual(true);
+            expect(res).toHaveProperty('usernameTaken');
+            expect(res.usernameTaken).toEqual(false);
             expect(res).toHaveProperty('uid');
             expect(res.uid).toEqual(1);
             expect(res).toHaveProperty('tokens');
@@ -144,10 +143,8 @@ describe('authentication test',() => {
             }catch (e){
                 error = e;
             }
-            expect(typeof res).toEqual('object');
-            expect(res.success).toEqual(false);
-            expect(res).toHaveProperty('username');
-            expect(res.username).toEqual('Username already taken');
+            expect(res).toHaveProperty('usernameTaken');
+            expect(res.usernameTaken).toEqual(true);
         })
     })
     describe('getUserInfo',() => {

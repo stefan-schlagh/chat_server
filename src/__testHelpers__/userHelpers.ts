@@ -1,6 +1,7 @@
 import request, {Response} from "supertest";
 import {app} from "../app";
 import {GroupChatMemberDataAll} from "../models/chat";
+import {instanceOfUserInfoSelf, UserInfoSelf} from "../models/user";
 
 export interface AccountInfo {
     uid: number,
@@ -21,7 +22,7 @@ export async function initAccount(username:string):Promise<AccountInfo> {
         })
     expect(res.status).toEqual(200)
 
-    if(res.body.success) {
+    if(!res.body.usernameTaken) {
         expect(res.body).toHaveProperty('tokens')
         return {
             uid: res.body.uid,
@@ -29,22 +30,18 @@ export async function initAccount(username:string):Promise<AccountInfo> {
             tokens: res.body.tokens
         }
     }else{
-        if (res.body.username === "Username already taken"){
-            const res = await request(app)
-                .post('/auth/login')
-                .send({
-                    username: username,
-                    password: "password"
-                })
-            expect(res.status).toEqual(200)
-            expect(res.body).toHaveProperty('tokens')
-            return {
-                uid: res.body.uid,
+        const res:Response = await request(app)
+            .post('/auth/login')
+            .send({
                 username: username,
-                tokens: res.body.tokens
-            }
-        }else {
-            fail('unknown error');
+                password: "password"
+            })
+        expect(res.status).toEqual(200)
+        expect(res.body).toHaveProperty('tokens')
+        return {
+            uid: res.body.uid,
+            username: username,
+            tokens: res.body.tokens
         }
     }
 }

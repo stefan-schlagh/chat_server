@@ -1,8 +1,9 @@
-import {comparePassword,hashPassword} from "./bcryptWrappers";
+import {comparePassword, hashPassword} from "./bcryptWrappers";
 import {generateToken} from "./jwt";
 import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {UserExistsInfo} from "../models/user";
 import {logger} from "../util/logger";
+import {AuthError, errorTypes} from "./authError";
 
 /*
     login function
@@ -10,27 +11,8 @@ import {logger} from "../util/logger";
         string:username --> the username of the user
         string:password --> the password of the user
         object:con --> the connection to the database, uses library mysql
-    returns
-        if username does not exist:
-            {
-                success: false,
-                username: "Username does not exist"
-            }
-        if the password is wrong:
-            {
-                success: false,
-                password: "Wrong password!"
-            }
-        if success:
-            {
-                success: true,
-                uid: the userId of the user,
-                tokens: the authorization tokens (jwt)
-            }
-    throws:
-        see getUserInfo,getPasswordHash,comparePassword,generateToken
  */
-export async function login (username:string,password:string,con:any):Promise<loginReturn>{
+export async function login (username:string,password:string,con:any):Promise<LoginReturn> {
     /*
         username should already exist
      */
@@ -45,9 +27,7 @@ export async function login (username:string,password:string,con:any):Promise<lo
         /*
             hash gets compared with the received password
          */
-        const result = await comparePassword(password,hash);
-
-        if (result) {
+        if (await comparePassword(password,hash)) {
 
             const token = await generateToken({
                 username: username,
@@ -55,41 +35,18 @@ export async function login (username:string,password:string,con:any):Promise<lo
             });
 
             return({
-                success: true,
                 uid: uid,
-                username: null,
-                password: null,
                 tokens: token
             });
-        } else {
-            return({
-                success: false,
-                uid: -1,
-                username: null,
-                password: "Wrong password!",
-                tokens: null
-            });
-        }
-    } else {
-        return({
-            success: false,
-            uid: -1,
-            username: "Username does not exist",
-            password: null,
-            tokens: null
-        });
-    }
+        } else
+            throw new AuthError('wrong password!',errorTypes.wrongPassword)
+    } else
+        throw new AuthError('username does not exist!',errorTypes.userNotExisting)
 }
 // return interface of login
-export interface loginReturn {
-    success: boolean,
+export interface LoginReturn {
     // the user id of the user, -1 if not success
     uid: number,
-    // username error, null if success or no error
-    username: string,
-    // password error, null if success or no error
-    password: string,
-    // auth tokens, null if not success
     tokens: string
 }
 /*
@@ -98,22 +55,10 @@ export interface loginReturn {
         string:username --> the username of the user
         string:password --> the password of the user
         object:con --> the connection to the database, uses library mysql
-    returns:
-        if register successfull (username does not already exist):
-            {
-                success: true,
-                uid: the userId of the new user,
-                tokens: the authorization tokens (jwt)
-            }
-        else:
-            {
-                success: false,
-                username: "Username already taken"
-            }
     throws:
         see getUserInfo,hashPassword,saveUser,generateToken
  */
-export async function register (username:string,password:string,con:any):Promise<registerReturn>{
+export async function register (username:string,password:string,con:any):Promise<RegisterReturn> {
     /*
         username should not exist already
      */
@@ -131,28 +76,25 @@ export async function register (username:string,password:string,con:any):Promise
         });
 
         return({
-            success: true,
+            usernameTaken: false,
             uid: uid,
-            username: null,
             tokens: token
         })
 
     }else{
         return({
-            success: false,
+            usernameTaken: true,
             uid: -1,
-            username: 'Username already taken',
             tokens: null
         });
     }
 }
 //return interface of register
-export interface registerReturn {
-    success: boolean,
+export interface RegisterReturn {
+    // is the username free?
+    usernameTaken: boolean,
     // the user id of the user, -1 if not success
     uid: number,
-    // username error, null if success or no error
-    username: string,
     // auth tokens, null if not success
     tokens: string
 }
@@ -177,7 +119,7 @@ export async function getUserInfo(username:string,con:any):Promise<UserExistsInf
         const query_str =
             "SELECT uid " +
             "FROM user " +
-            "WHERE Username = " + con.escape(username) + ";";
+            "WHERE username = " + con.escape(username) + ";";
         logger.verbose('SQL: %s',query_str);
 
         con.query(query_str,function(err:any,result:any){
