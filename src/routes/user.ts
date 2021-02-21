@@ -15,6 +15,7 @@ import {NewNormalChatData} from "../models/chat";
 import User from "../chatData/user";
 import {UserInfoSelf} from "../models/user";
 import {validateEmail} from "../util/validateEmail";
+import {isEmailUsed} from "../chatData/database/email";
 
 const router = express.Router();
 
@@ -201,9 +202,17 @@ router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
         if(typeof email !== "string" || !validateEmail(email))
             throw new TypeError('invalid email');
 
-        await user.setEmail(email)
+        if(await isEmailUsed(email))
+            res.send({
+                emailTaken: true
+            })
+        else {
+            await user.setEmail(email)
 
-        res.send();
+            res.send({
+                emailTaken: false
+            })
+        }
     }catch (err){
         logger.error(err);
         res.status(400);

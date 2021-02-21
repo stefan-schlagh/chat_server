@@ -1163,6 +1163,14 @@ paths:
       responses:
         '200':
           description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  emailTaken:
+                    type: boolean
+                    description: is the email address available? (emails can only be used once)
         '400':
           description: bad request
         '403':

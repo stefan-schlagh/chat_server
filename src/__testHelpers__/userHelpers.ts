@@ -1,6 +1,7 @@
 import request, {Response} from "supertest";
 import {app} from "../app";
 import {GroupChatMemberDataAll} from "../models/chat";
+import {instanceOfUserInfoSelf, UserInfoSelf} from "../models/user";
 
 export interface AccountInfo {
     uid: number,

@@ -2,10 +2,17 @@ import request, {Response} from "supertest";
 import {app, closeServer, startServer} from "../../src/app";
 import {mailStorage} from "../../src/verification/mailStorage";
 import {AccountInfo} from "../../src/__testHelpers__/userHelpers";
+import {instanceOfUserInfoSelf, UserInfoSelf} from "../../src/models/user";
 
 const test_username = "test345678";
 let account:AccountInfo;
 let newpassword = "password2";
+
+const email1 = "pwReset1@test.com";
+const email2 = "pwReset2@test.com";
+
+let oldEmail;
+let newEmail = email1;
 
 describe("Test API /pwReset",() => {
     // start the server before the tests
@@ -15,6 +22,7 @@ describe("Test API /pwReset",() => {
     });
     // stop the server after the tests
     afterAll((done) => {
+        mailStorage.clear();
         closeServer();
         done();
     });
@@ -59,12 +67,29 @@ describe("Test API /pwReset",() => {
             }
         }
     });
+    it("get unused email",async () => {
+        // get current email
+        const res1:Response = await request(app)
+            .get('/user/self')
+            .set('Authorization',account.tokens)
+            .send();
+        expect(res1.status).toEqual(200);
+        const user:UserInfoSelf = res1.body;
+        expect(instanceOfUserInfoSelf(user)).toEqual(true);
+        expect(user.username).toEqual(test_username);
+
+        oldEmail = user.email;
+        if(oldEmail === email1)
+            newEmail = email2;
+        else
+            newEmail = email1;
+    });
     it("setEmail",async () => {
         const res:Response = await request(app)
             .post('/user/setEmail')
             .set('Authorization',account.tokens)
             .send({
-                email: "stefanjkf.test@gmail.com"
+                email: newEmail
             })
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: email verification")).toEqual("string");
@@ -81,7 +106,7 @@ describe("Test API /pwReset",() => {
             .post('/pwReset/requestLink')
             .send({
                 username: test_username,
-                email: "stefanjkf.test@gmail.com"
+                email: newEmail
             })
         expect(res.status).toEqual(200);
         expect(typeof mailStorage.get("Chat App: password reset")).toEqual("string");
@@ -91,7 +116,7 @@ describe("Test API /pwReset",() => {
             .post('/pwReset/requestLink')
             .send({
                 username: test_username + "abcd",
-                email: "stefanjkf.test@gmail.com"
+                email: newEmail
             })
         expect(res.status).toEqual(404);
     });
