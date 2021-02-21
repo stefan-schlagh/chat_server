@@ -119,9 +119,7 @@ export async function getUserInfo(username:string,con:any):Promise<UserExistsInf
         const query_str =
             "SELECT uid " +
             "FROM user " +
-            "WHERE " +
-                "username = " + con.escape(username) + " " +
-                "OR email = " + con.escape(username) + ";";
+            "WHERE username = " + con.escape(username) + ";";
         logger.verbose('SQL: %s',query_str);
 
         con.query(query_str,function(err:any,result:any){
