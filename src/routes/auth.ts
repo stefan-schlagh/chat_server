@@ -1,9 +1,12 @@
 import express from 'express';
-import {login, LoginReturn, register, RegisterReturn} from "../authentication/authentication";
+import {login, LoginReturn, register} from "../authentication/authentication";
 import {logger} from "../util/logger";
 import {pool} from "../app";
 import {AuthError, errorTypes} from "../authentication/authError";
-import {instanceOfLoginData, instanceOfRegisterData, LoginData, RegisterData} from "../models/auth";
+import {instanceOfLoginData, instanceOfRegisterData, LoginData, RegisterData, RegisterReturn} from "../models/auth";
+import {isEmailUsed} from "../chatData/database/email";
+import chatData from "../chatData/chatData";
+import User from "../chatData/user";
 
 const router = express.Router();
 
@@ -58,8 +61,29 @@ router.post('/register',async (req,res) => {
         // type check
         instanceOfRegisterData(body);
         const {username,password} = body;
-
+        // is email in body?
+        if('email' in body)
+            // if email used --> do not register
+            if(await isEmailUsed(body.email)) {
+                const data:RegisterReturn = {
+                    usernameTaken: null,
+                    emailTaken: true,
+                    uid: -1,
+                    tokens: null
+                };
+                res.send(data);
+                //ignore the rest
+                return;
+            }
+        // register
         const data:RegisterReturn = await register(username, password, pool);
+        // set email if register worked
+        if(!(data.usernameTaken || data.uid == -1) && 'email' in body) {
+            // get user
+            const user: User = chatData.addNewUser(data.uid, username);
+            // set email
+            await user.setEmail(body.email);
+        }
 
         res.send(data);
     }catch (err) {
