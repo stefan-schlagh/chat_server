@@ -4,6 +4,7 @@ import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {UserExistsInfo} from "../models/user";
 import {logger} from "../util/logger";
 import {AuthError, errorTypes} from "./authError";
+import {RegisterReturn} from "../models/auth";
 
 /*
     login function
@@ -77,6 +78,7 @@ export async function register (username:string,password:string,con:any):Promise
 
         return({
             usernameTaken: false,
+            emailTaken: false,
             uid: uid,
             tokens: token
         })
@@ -84,19 +86,11 @@ export async function register (username:string,password:string,con:any):Promise
     }else{
         return({
             usernameTaken: true,
+            emailTaken: false,
             uid: -1,
             tokens: null
         });
     }
-}
-//return interface of register
-export interface RegisterReturn {
-    // is the username free?
-    usernameTaken: boolean,
-    // the user id of the user, -1 if not success
-    uid: number,
-    // auth tokens, null if not success
-    tokens: string
 }
 /*
     checks if the user exists in the database

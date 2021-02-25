@@ -155,6 +155,10 @@ paths:
                 type: string
               password:
                 type: string
+              email:
+                type: string
+                description: email address, optional
+                required: false
       responses:
         '200':
           description: default response
@@ -166,6 +170,9 @@ paths:
                   usernameTaken:
                     type: boolean
                     description: is the username already taken?
+                  emailTaken:
+                    type: boolean
+                    description: is the email already taken?
                   success:
                     type: boolean
                     description: was the login successfull?
