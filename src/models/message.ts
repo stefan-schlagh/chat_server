@@ -81,7 +81,7 @@ export function instanceOfMessageDataOut(object: any): object is MessageDataOut 
         throw new TypeError('invalid MessageDataOut');
     return true;
 }
-type MessageContent = NormalMessageContent | StatusMessageContent;
+export type MessageContent = NormalMessageContent | StatusMessageContent;
 // type check
 export function instanceOfMessageContent(object: any): object is MessageContent {
     return (instanceOfNormalMessageContent(object)

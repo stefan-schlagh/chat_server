@@ -6,6 +6,8 @@ export interface ChatInfo {
     id: number,
     chatName: string,
     members: SimpleUser[],
+    // if groupChat: is the user still member?
+    isStillMember?: boolean,
     //TODO type
     firstMessage: any,
     unreadMessages: number

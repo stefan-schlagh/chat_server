@@ -4,7 +4,7 @@ import NormalMessage from "../message/normalMessage";
 import StatusMessage from "../message/statusMessage";
 import User from "../user";
 import {
-    LoadedMessages,
+    LoadedMessages, MessageContent,
     MessageDataIn,
     messageTypes,
     NormalMessageContent,
@@ -72,21 +72,21 @@ export abstract class Chat{
         switch(data.type){
 
             case messageTypes.normalMessage: {
-                const content:NormalMessageContent = data.content;
+                const content:MessageContent = data.content;
                 message = new NormalMessage(this,author);
                 /*
                     message is saved in DB, mid is saved
                  */
-                await message.initNewMessage(content);
+                await message.initNewMessage(content as NormalMessageContent);
                 break;
             }
             case messageTypes.statusMessage: {
-                const content:StatusMessageContent = data.content;
+                const content:MessageContent = data.content;
                 message = new StatusMessage(this,author);
                 /*
                     message is saved in DB, mid is saved
                  */
-                await message.initNewMessage(content);
+                await message.initNewMessage(content as StatusMessageContent);
                 break;
             }
         }

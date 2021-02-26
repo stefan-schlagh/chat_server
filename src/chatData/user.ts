@@ -18,6 +18,7 @@ import {GroupChat} from "./chat/groupChat";
 import {Socket} from "socket.io";
 import {SimpleUser} from "../models/user";
 import {ChatInfo, NewChatData} from "../models/chat";
+import GroupChatMember from "./chat/groupChatMember";
 
 class Emitter extends EventEmitter {}
 
@@ -55,8 +56,7 @@ export default class User{
     /*
         chats of the user are loaded
      */
-    //TODO return type
-    async loadChats():Promise<any> {
+    async loadChats():Promise<ChatInfo[]> {
 
         this.chatsLoading = true;
         /*
@@ -242,16 +242,6 @@ export default class User{
             this.chats.forEach(async (value:Chat,key:number) => {
 
                 try {
-                    /*
-                        if groupChat -->
-                            is the user still member in this chat?
-                            TODO
-                     */
-                    if (value.type === chatTypes.groupChat) {
-
-                        (value as GroupChat).getMember(this.uid);
-                    }
-
                     const members:SimpleUser[] = await value.getMemberObject(this.uid);
                     const chatName:string = value.getChatName(this.uid);
                     // TODO type
@@ -259,17 +249,27 @@ export default class User{
                     /*
                         Objekt wird erstellt und zum Array hinzugefügt
                      */
-                    rc.push({
+                    const chatInfo:ChatInfo = {
                         type: value.getChatTypeString(),
                         id: key,
                         chatName: chatName,
                         members: members,
                         firstMessage: fm,
                         unreadMessages: value.getUnreadMessages(this.uid)
-                    });
+                    };
+                    /*
+                        if groupChat -->
+                            does the member exist? --> throw error if not
+                            set isStillMember
+                     */
+                    if (value.type === chatTypes.groupChat) {
+                        const member:GroupChatMember = (value as GroupChat).getMember(this.uid);
+                        chatInfo.isStillMember = member.isStillMember;
+                    }
+                    rc.push(chatInfo);
 
-                }catch(e) {
-
+                }catch(err) {
+                    logger.error(err);
                 }finally {
 
                     i++;

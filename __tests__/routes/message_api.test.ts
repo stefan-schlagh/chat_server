@@ -221,7 +221,7 @@ describe('test API /message',() => {
             for(let i = 0;i < data.messages.length;i++){
                 const message:MessageDataOut = data.messages[i];
                 if(message.type === messageTypes.normalMessage)
-                    if (message.content.text === text)
+                    if ("text" in message.content && message.content.text === text)
                         return true;
             }
             return false;

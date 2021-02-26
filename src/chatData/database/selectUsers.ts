@@ -47,7 +47,6 @@ export async function getUser(uidFrom:number,uidReq:number):Promise<UserInfo> {
             
             resolve(result);
         });
-
     });
 }
 /*
