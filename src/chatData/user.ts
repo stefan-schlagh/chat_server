@@ -190,6 +190,14 @@ export default class User{
          */
         if(this.currentChat !== null) {
             /*
+                if currentChat is a groupChat, validate if member is still in chat
+             */
+            if(this.currentChat.type === chatTypes.groupChat){
+                const member = (this.currentChat as GroupChat).getMember(this.uid);
+                if(!member.isStillMember)
+                    throw new Error('member not in chat anymore!')
+            }
+            /*
                 a new message is added to the chat
              */
             const message = await this.currentChat.addMessage(this,data);
