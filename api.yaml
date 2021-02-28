@@ -41,34 +41,36 @@ components:
               0:    normalMessage
               1:    statusMessage
         content:
-          type: object
-          properties:
-            text:
-              type: string
-              description: if normalMessage
-            mentions:
-              type: array
-              description: if normalMessage, not yet implemented
-              items:
-                type: object
-                properties:
-                  uid:
-                    type: integer
-                    description: the uid of the mentioned user
-                  textColumn:
-                    type: integer
-                    description: the column in the text where the user is mentioned
-            media:
-              type: array
-              description: if normalMessage, not yet implemented
-            type:
-              type: integer
-              description: if statusMessage, the type of the statusMessage
-            passiveusers:
-              type: array
-              description: the ids of the passive users mentioned in this statusMessage
-              items:
+          $ref: '#components/schemas/MessageContent'
+    MessageContent:
+      type: object
+      properties:
+        text:
+          type: string
+          description: if normalMessage
+        mentions:
+          type: array
+          description: if normalMessage, not yet implemented
+          items:
+            type: object
+            properties:
+              uid:
                 type: integer
+                description: the uid of the mentioned user
+              textColumn:
+                type: integer
+                description: the column in the text where the user is mentioned
+        media:
+          type: array
+          description: if normalMessage, not yet implemented
+        type:
+          type: integer
+          description: if statusMessage, the type of the statusMessage
+        passiveusers:
+          type: array
+          description: the ids of the passive users mentioned in this statusMessage
+          items:
+            type: integer
     MessageInput:
       type: object
       properties:
@@ -223,7 +225,63 @@ paths:
                             type: string
                             description: the name of the user
                     firstMessage:
-                      $ref: '#components/schemas/Message'
+                      type: object
+                      properties:
+                        empty:
+                          required: true
+                          type: boolean
+                          description: is the messahe empty?
+                        canBeShown:
+                          required: true
+                          type: boolean
+                          description: |
+                            is the message allowes to be shown
+                              not: if not on chat anymore
+                        uid:
+                          type: integer
+                          description: the user id from the author of the message
+                        mid:
+                          type: integer
+                          description: the id of the message
+                        date:
+                          type: string
+                          description: the date when the message was written
+                          format: date-time
+                        type:
+                          type: integer
+                          description: |
+                            the type of the message
+                              0:    normalMessage
+                              1:    statusMessage
+                        content:
+                          type: object
+                          properties:
+                            text:
+                              type: string
+                              description: if normalMessage
+                            mentions:
+                              type: array
+                              description: if normalMessage, not yet implemented
+                              items:
+                                type: object
+                                properties:
+                                  uid:
+                                    type: integer
+                                    description: the uid of the mentioned user
+                                  textColumn:
+                                    type: integer
+                                    description: the column in the text where the user is mentioned
+                            media:
+                              type: array
+                              description: if normalMessage, not yet implemented
+                            type:
+                              type: integer
+                              description: if statusMessage, the type of the statusMessage
+                            passiveusers:
+                              type: array
+                              description: the ids of the passive users mentioned in this statusMessage
+                              items:
+                                type: integer
         '400':
           description: timeout
         '403':

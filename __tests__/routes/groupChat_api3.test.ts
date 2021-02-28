@@ -182,6 +182,24 @@ describe('test API /group 3', () => {
             expect(instanceOfNewMessageReturn(data)).toEqual(true);
             lastMsgId = data.mid;
         });
+        it('send message - removed user',async () => {
+            const res:Response = await request(app)
+                .put('/message/add')
+                .set('Authorization',accounts[9].tokens)
+                .send({
+                    chatType: 'groupChat',
+                    chatId: chatId,
+                    message: {
+                        type: messageTypes.normalMessage.valueOf(),
+                        content: {
+                            media: [],
+                            mentions: [],
+                            text: messages[0]
+                        }
+                    }
+                });
+            expect(res.status).toEqual(500);
+        });
         it('load messages - removed user',async () => {
             const res:Response = await request(app)
                 .post('/message/load')

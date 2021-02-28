@@ -1,5 +1,5 @@
 import {instanceOfSimpleUser, SimpleUser} from "./user";
-import {instanceOfMessageDataOut, MessageDataOut} from "./message";
+import {instanceOfMessageDataOut, MessageDataOut, NewestMessage} from "./message";
 
 export interface ChatInfo {
     type:string,
@@ -8,8 +8,7 @@ export interface ChatInfo {
     members: SimpleUser[],
     // if groupChat: is the user still member?
     isStillMember?: boolean,
-    //TODO type
-    firstMessage: any,
+    firstMessage: NewestMessage,
     unreadMessages: number
 }
 export function instanceOfChatInfo(object: any): object is ChatInfo {
