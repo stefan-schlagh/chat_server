@@ -27,7 +27,6 @@ export class GroupChat extends Chat{
         this.description = description;
         this.isPublic = isPublic;
         this.socketRoomName = randomString(10);
-
     }
     /*
         subscribeUsersToSocket
@@ -40,7 +39,7 @@ export class GroupChat extends Chat{
             let callCounter = 0;
 
             this.members.forEach(((value:GroupChatMember, key:number) => {
-                if(value.user.online){
+                if(value.user.online && value.user.socket !== null && value.isStillMember){
                     value.user.socket.join(this.socketRoomName);
                 }
                 callCounter ++;
@@ -511,7 +510,7 @@ export class GroupChat extends Chat{
         };
         if(includeSender)
             chatServer.io.to(this.socketRoomName).emit(socketMessage,data);
-        else
+        else if(sentBy.socket !== null)
             sentBy.socket.to(this.socketRoomName).emit(socketMessage,data);
         logger.info({
             info: 'send socket message to all users',
@@ -523,11 +522,12 @@ export class GroupChat extends Chat{
         });
     }
     /*
-        is called:
-            loadCHats.js ca. 150
+        subscribe users o the room in the socket:
+            not, if member not in chat anymore
      */
     subscribeToRoom(user:User):void {
-        if(user.socket !== null)
+        const member:GroupChatMember = this.getMember(user.uid);
+        if(user.socket !== null && member.isStillMember)
             user.socket.join(this.socketRoomName);
     }
 

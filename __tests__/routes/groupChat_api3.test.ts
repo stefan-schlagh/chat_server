@@ -4,8 +4,23 @@ import names from "../../src/__testHelpers__/names/names.json";
 import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
 import {ChatInfo, GroupChatData, GroupChatMemberData, instanceOfChatInfo} from "../../src/models/chat";
 import request, {Response} from "supertest";
+import {
+    instanceOfLoadedMessages,
+    instanceOfNewMessageReturn,
+    LoadedMessages,
+    messageTypes,
+    NewMessageReturn
+} from "../../src/models/message";
+import {findMessage} from "../../src/__testHelpers__/messageHelpers";
 
 describe('test API /group 3', () => {
+
+    const messages = [
+        'test 1',
+        'test 2',
+        'test 3'
+    ];
+    let lastMsgId:number;
 
     describe('test without socket', () => {
 
@@ -56,6 +71,27 @@ describe('test API /group 3', () => {
             expect(res.status).toEqual(200);
             expect(res.body.chatId).toBeGreaterThan(0);
             chatId = res.body.chatId;
+        });
+        it('send message - user 1',async () => {
+            const res:Response = await request(app)
+                .put('/message/add')
+                .set('Authorization',accounts[1].tokens)
+                .send({
+                    chatType: 'groupChat',
+                    chatId: chatId,
+                    message: {
+                        type: messageTypes.normalMessage.valueOf(),
+                        content: {
+                            media: [],
+                            mentions: [],
+                            text: messages[0]
+                        }
+                    }
+                });
+            expect(res.status).toEqual(200);
+            const data:NewMessageReturn = res.body;
+            expect(instanceOfNewMessageReturn(data)).toEqual(true);
+            lastMsgId = data.mid;
         });
         it('remove member',async () => {
             const uid = accounts[9].uid;
@@ -108,6 +144,80 @@ describe('test API /group 3', () => {
             const chatInfo:ChatInfo = searchForChat();
             expect(chatInfo).not.toEqual(null);
             expect(chatInfo.isStillMember).toEqual(false);
+        });
+        it('send messages - user 1',async () => {
+            const res1:Response = await request(app)
+                .put('/message/add')
+                .set('Authorization',accounts[1].tokens)
+                .send({
+                    chatType: 'groupChat',
+                    chatId: chatId,
+                    message: {
+                        type: messageTypes.normalMessage.valueOf(),
+                        content: {
+                            media: [],
+                            mentions: [],
+                            text: messages[1]
+                        }
+                    }
+                });
+            expect(res1.status).toEqual(200);
+            const res2:Response = await request(app)
+                .put('/message/add')
+                .set('Authorization',accounts[1].tokens)
+                .send({
+                    chatType: 'groupChat',
+                    chatId: chatId,
+                    message: {
+                        type: messageTypes.normalMessage.valueOf(),
+                        content: {
+                            media: [],
+                            mentions: [],
+                            text: messages[2]
+                        }
+                    }
+                });
+            expect(res2.status).toEqual(200);
+            const data:NewMessageReturn = res2.body;
+            expect(instanceOfNewMessageReturn(data)).toEqual(true);
+            lastMsgId = data.mid;
+        });
+        it('load messages - removed user',async () => {
+            const res:Response = await request(app)
+                .post('/message/load')
+                .set('Authorization',accounts[9].tokens)
+                .send({
+                    chatType: 'groupChat',
+                    chatId: chatId,
+                    lastMsgId: lastMsgId,
+                    num: 10
+                });
+            expect(res.status).toEqual(200);
+            const data:LoadedMessages = res.body;
+            expect(instanceOfLoadedMessages(data)).toEqual(true);
+            // 2 --> the message with lastMsgId is already loaded
+            expect(data.messages.length).toBeGreaterThanOrEqual(1);
+
+            expect(findMessage(messages[0],data)).toEqual(true);
+            expect(findMessage(messages[1],data)).toEqual(false);
+        });
+        it('load messages - admin',async () => {
+            const res:Response = await request(app)
+                .post('/message/load')
+                .set('Authorization',accounts[0].tokens)
+                .send({
+                    chatType: 'groupChat',
+                    chatId: chatId,
+                    lastMsgId: lastMsgId,
+                    num: 10
+                });
+            expect(res.status).toEqual(200);
+            const data:LoadedMessages = res.body;
+            expect(instanceOfLoadedMessages(data)).toEqual(true);
+            // 2 --> the message with lastMsgId is already loaded
+            expect(data.messages.length).toBeGreaterThanOrEqual(1);
+
+            expect(findMessage(messages[1],data)).toEqual(true);
         });
     });
 });

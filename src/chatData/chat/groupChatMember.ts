@@ -8,6 +8,10 @@ export enum groupChatMemberChangeTypes {
     joined = 0,
     left = 1
 }
+interface GroupChatMemberChange {
+    date: Date,
+    type: groupChatMemberChangeTypes
+}
 export default class GroupChatMember{
 
     // the id in the database
@@ -29,6 +33,8 @@ export default class GroupChatMember{
         has the member already left the chat?
      */
     private _isStillMember:boolean;
+    // the last change
+    private _latestChange:GroupChatMemberChange = null;
 
     constructor(
         gcmid:number = -1,
@@ -249,6 +255,61 @@ export default class GroupChatMember{
                 resolve();
             });
         });
+        // update latest change
+        await this.getLatestGroupChatMemberChange();
+    }
+    private async getLatestGroupChatMemberChange(){
+        /*
+            get last change
+                if no change -> date 0
+         */
+        this.latestChange = await new Promise<GroupChatMemberChange>((resolve, reject) => {
+            /*const query_str =
+                "SELECT * " +
+                "FROM groupchatmemberchange " +
+                "WHERE gcmid = " + this.gcmid + " AND DATEDIFF( date, FROM_UNIXTIME(" + date.getTime() + " / 1000) ) < 1 " +
+                "ORDER BY DATEDIFF( date, FROM_UNIXTIME(" + date.getTime() + " / 1000) ) " +
+                "LIMIT 1;";*/
+            const query_str =
+                "SELECT date, type " +
+                "FROM groupchatmemberchange " +
+                "WHERE gcmid = " + this.gcmid + " " +
+                "ORDER BY gcmcid DESC " +
+                "LIMIT 1;";
+            pool.query(query_str, (err: Error, result: any) => {
+                if (err)
+                    reject(err);
+                else if (!result || result.length === 0)
+                    resolve({
+                        type: this.isStillMember ? groupChatMemberChangeTypes.joined : groupChatMemberChangeTypes.left,
+                        date: new Date(0)
+                    });
+                else
+                    resolve({
+                        type: result[0].type,
+                        date: result[0].date
+                    });
+            });
+        });
+    }
+    /*
+        was the groupChatMember at this point of time in the chat?
+     */
+    async wasInChat(date:Date):Promise<boolean> {
+        if(this.latestChange === null)
+            await this.getLatestGroupChatMemberChange();
+
+        if(this.latestChange.type === groupChatMemberChangeTypes.joined)
+            return true;
+        else // result.type === groupChatMemberChangeTypes.left
+            // if user left before message was sent, return false
+            return !(this.latestChange.date.getTime() < date.getTime())
+    }
+
+    async getLastMemberChangeDate():Promise<Date> {
+        if(this.latestChange === null)
+            await this.getLatestGroupChatMemberChange();
+        return this.latestChange.date;
     }
 
     get gcmid(): number {
@@ -297,5 +358,13 @@ export default class GroupChatMember{
 
     set isStillMember(value: boolean) {
         this._isStillMember = value;
+    }
+
+    get latestChange(): GroupChatMemberChange {
+        return this._latestChange;
+    }
+
+    set latestChange(value: GroupChatMemberChange) {
+        this._latestChange = value;
     }
 }

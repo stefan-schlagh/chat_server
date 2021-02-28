@@ -3,6 +3,8 @@ import User from "../user";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {MessageDataOut, messageTypes} from "../../models/message";
+import GroupChatMember from "../chat/groupChatMember";
+import {GroupChat} from "../chat/groupChat";
 
 export default abstract class Message{
 
@@ -79,6 +81,24 @@ export default abstract class Message{
                 }
             });
         });
+    }
+    /*
+        can the message be shown
+            current members can see all messages
+            if groupChatMember not in chat anymore --> not
+     */
+    async authenticateMessage(user:User):Promise<boolean> {
+        // is chat a groupChat
+        if(this.chat.type === chatTypes.groupChat) {
+            // get the member
+            const member: GroupChatMember = (this.chat as GroupChat).getMember(user.uid);
+            if(member.isStillMember)
+                return true;
+            else
+            // was the member in the chat at the time of the message?
+                return await member.wasInChat(this.date);
+        } else
+            return true;
     }
 
     get mid(): number {

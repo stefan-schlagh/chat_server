@@ -60,16 +60,21 @@ router.put('/add',async (req:any,res) => {
         instanceOfNewMessageData(data);
 
         try {
-            user.online = true;
-            await user.loadChats();
+            const chatsLoadedBefore = user.chatsLoaded || user.chatsLoading;
+            if(!chatsLoadedBefore) {
+                user.online = true;
+                await user.loadChatsIfNotLoaded();
+            }
             chatData.changeChat(user, data.chatType, data.chatId);
             /*
                 message is sent
              */
             const mid = await chatData.sendMessage(user, data.message);
 
-            await user.saveAndDeleteChats();
-            user.online = false;
+            if(!chatsLoadedBefore) {
+                await user.saveAndDeleteChats();
+                user.online = false;
+            }
 
             res.send({
                 mid: mid

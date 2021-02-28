@@ -102,24 +102,18 @@ export abstract class Chat{
         return message;
     }
     /*
-        indexes werden vom Arrayende angegeben
-        msgIdStart: wenn -1, wird mit der letzten Nachricht angefangen
-        num: Anzahl der msg, die geladen werden sollen
+        indexes start at array end
+        msgIdStart:
+            the last mid that is loaded
+            if -1, start with last message
+        num: number how many messages should be loaded
      */
-    async getMessages(msgIdStart:number,num:number):Promise<LoadedMessages> {
+    async getMessages(msgIdStart:number,num:number,user:User):Promise<LoadedMessages> {
         /*
-            if msgIdStart is -1, it is started with maxMid
+            if msgIdStart is -1, msgIdStart is maxMid
          */
         if(msgIdStart === -1)
-
-            if(this.messageStorage.loadedAllMessages){
-
-                return({
-                    status: 'reached top',
-                    messages: []
-                });
-            }
-            //TODO return first messages otherwise
+            msgIdStart = this.messageStorage.maxMid;
 
         const mid = await this.messageStorage.getMidBelow(msgIdStart);
 
@@ -129,10 +123,13 @@ export abstract class Chat{
                 messages: []
             });
         else {
-            const messages = await this.messageStorage.getMessagesByMid(mid, num);
+            const messages = await this.messageStorage.getMessagesByMid(mid, num,user);
             return ({
                 status:
+                    // are all messages loaded?
                     this.messageStorage.loadedAllMessages
+                    // and are all at the client?
+                    && messages[0].mid === this.messageStorage.getEarliestMessage().mid
                         ? 'reached top'
                         : 'success',
                 messages: messages

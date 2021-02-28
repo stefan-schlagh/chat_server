@@ -3,7 +3,7 @@ import User from "./user";
 import {setChatData} from "./data";
 import {pool} from "../app";
 import {logger} from "../util/logger";
-import {MessageDataIn} from "../models/message";
+import {LoadedMessages, MessageDataIn} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
 import {Chat, chatTypes, getChatType} from "./chat/chat";
 import {Socket} from "socket.io";
@@ -57,8 +57,13 @@ export class ChatData{
 
             returns: messages
      */
-    //TODO return type
-    async loadMessages(user:User,type:chatTypes,id:number,lastMsgId:number,num:number){
+    async loadMessages(
+        user:User,
+        type:chatTypes,
+        id:number,
+        lastMsgId:number,
+        num:number
+    ):Promise<LoadedMessages> {
         /*
             does the chat exist?
          */
@@ -67,12 +72,27 @@ export class ChatData{
             /*
                 messages in this chat are loaded
              */
-            return await chat.getMessages(lastMsgId,num);
+            return await chat.getMessages(lastMsgId,num,user);
         else{
             /*
-                chat not found, Promise rejected with error
+                chat not found,
+                    if chats not loaded --> load chats of user
              */
-            throw new Error('chat not found');
+            if(!user.chatsLoaded){
+                const chatsLoadingBefore = user.chatsLoading;
+                let messages:LoadedMessages;
+                await user.loadChatsIfNotLoaded();
+                const chat = this.chats.getChat(type,id);
+                if(chat)
+                    messages = await chat.getMessages(lastMsgId,num,user);
+                else
+                    throw new Error('chat not found');
+                if(!chatsLoadingBefore)
+                    await user.saveAndDeleteChats();
+                return messages;
+            }else{
+                throw new Error('chat not found');
+            }
         }
     }
     /*

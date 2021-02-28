@@ -59,6 +59,15 @@ export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
         throw new TypeError('invalid MessageDataIn');
     return true;
 }
+export interface NewestMessage {
+    empty: boolean,
+    canBeShown: boolean,
+    uid?: number,
+    mid?: number,
+    date?: string,
+    type?: messageTypes,
+    content?: MessageContent
+}
 export interface MessageDataOut {
     // the id of the user who wrote the message
     uid: number,
