@@ -8,7 +8,7 @@ import {
     MessageDataIn,
     messageTypes,
     NormalMessageContent,
-    StatusMessageContent
+    StatusMessageContent, statusMessageTypes
 } from "../../models/message";
 import {SimpleUser} from "../../models/user";
 

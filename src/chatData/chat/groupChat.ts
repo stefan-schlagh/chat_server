@@ -108,7 +108,7 @@ export class GroupChat extends Chat{
          */
         if(groupChatMember){
 
-            await groupChatMember.undoDelete();
+            await groupChatMember.undoRemove();
         }else {
             /*
                 else --> new groupChatMember is created
@@ -166,6 +166,8 @@ export class GroupChat extends Chat{
             message,
             true
         );
+
+        this.emitChatUpdated();
     }
     /*
         multiple members are added to the chat
@@ -205,6 +207,8 @@ export class GroupChat extends Chat{
             message,
             true
         );
+
+        this.emitChatUpdated();
     }
     /*
         member is removed from groupChat by admin
@@ -216,7 +220,7 @@ export class GroupChat extends Chat{
         /*
             member is removed from DB
          */
-        await memberOther.deleteGroupChatMember();
+        await memberOther.removeGroupChatMember();
         /*
             statusMessage is added
          */
@@ -237,6 +241,8 @@ export class GroupChat extends Chat{
             socket room is left
          */
         this.leaveRoom(memberOther.user);
+
+        this.emitChatUpdated();
     }
     /*
         member joins chat --> only when public
@@ -259,6 +265,8 @@ export class GroupChat extends Chat{
             user,
             message
         );
+
+        this.emitChatUpdated();
     }
     /*
         chat is left by the user
@@ -267,7 +275,7 @@ export class GroupChat extends Chat{
         /*
             member is removed from DB
          */
-        await member.deleteGroupChatMember();
+        await member.removeGroupChatMember();
         /*
             statusMessage is added
          */
@@ -288,6 +296,8 @@ export class GroupChat extends Chat{
             socket room is left
          */
         this.leaveRoom(member.user);
+
+        this.emitChatUpdated();
     }
     /*
         statusMessage is addedd
@@ -449,7 +459,7 @@ export class GroupChat extends Chat{
         const groupChatMember = this.members.get(uid);
 
         if(groupChatMember)
-            groupChatMember.setUnreadMessages(unreadMessages);
+            await groupChatMember.setUnreadMessages(unreadMessages);
 
     }
     /*
@@ -582,6 +592,8 @@ export class GroupChat extends Chat{
                     resolve();
             });
         });
+
+        this.emitChatUpdated();
     }
     // the name of the chat gets returned
     getChatName(uidSelf:number):string {
@@ -704,7 +716,18 @@ export class GroupChat extends Chat{
             });
         });
 
-        //TODO: emit via socket
+        this.emitChatUpdated()
+    }
+    /*
+        emit updated groupChat info
+     */
+    emitChatUpdated():void {
+        this.sendToAll(
+            null,
+            "groupChat updated",
+            null,
+            true
+        );
     }
     async forAllMembers(callback: (value:GroupChatMember,key:number) => void):Promise<void> {
         await new Promise<void>((resolve, reject) => {

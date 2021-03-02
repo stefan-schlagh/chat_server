@@ -5,6 +5,8 @@ import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
 import User from "../user";
+import {statusMessageTypes} from "../../models/message";
+import StatusMessage from "../message/statusMessage";
 
 export default class NormalChat extends Chat{
 

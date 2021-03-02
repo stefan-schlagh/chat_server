@@ -2,7 +2,7 @@ import User from "../user";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {statusMessageTypes} from "../../models/message";
-import {Chat} from "./chat";
+import {GroupChat} from "./groupChat";
 
 export enum groupChatMemberChangeTypes {
     joined = 0,
@@ -19,7 +19,7 @@ export default class GroupChatMember{
     /*
         the parent chat
      */
-    private _chat:Chat;
+    private _chat:GroupChat;
     private _user:User;
     /*
         is this groupChatMember admin in the chat?
@@ -179,9 +179,9 @@ export default class GroupChatMember{
         );
     }
     /*
-        groupChatMember is deleted in the database
+        remove groupChatMember from the chat
      */
-    async deleteGroupChatMember():Promise<void>{
+    async removeGroupChatMember():Promise<void>{
         // add groupChatMemberChange
         await this.addGroupChatMemberChange(groupChatMemberChangeTypes.left);
         /*
@@ -196,11 +196,17 @@ export default class GroupChatMember{
             isStillMember is updated in the Database
          */
         await this.update();
+        // send message to client, if online
+        if(this.user.socket !== null)
+            this.user.socket.emit("removed chat",{
+                id: this.chat.chatId,
+                type: this.chat.getChatTypeString()
+            });
     }
     /*
-        delete is undone
+        remove is undone
      */
-    async undoDelete():Promise<void>{
+    async undoRemove():Promise<void>{
         // add groupChatMemberChange, joined again
         await this.addGroupChatMemberChange(groupChatMemberChangeTypes.joined);
         /*
@@ -320,11 +326,11 @@ export default class GroupChatMember{
         this._gcmid = value;
     }
 
-    get chat(): any {
+    get chat(): GroupChat {
         return this._chat;
     }
 
-    set chat(value: any) {
+    set chat(value: GroupChat) {
         this._chat = value;
     }
 
