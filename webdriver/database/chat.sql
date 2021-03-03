@@ -76,6 +76,19 @@ CREATE TABLE `groupchatmember` (
    `isStillMember` tinyint(4) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `groupchatmemberchange`
+--
+
+CREATE TABLE `groupchatmemberchange` (
+  `gcmcid` int(11) NOT NULL,
+  `date` datetime NOT NULL,
+  `gcmid` int(11) NOT NULL,
+  `type` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 --
 -- Daten für Tabelle `groupchatmember`
 --
@@ -764,6 +777,12 @@ ALTER TABLE `groupchatmember`
     ADD PRIMARY KEY (`gcmid`);
 
 --
+-- Indizes für die Tabelle `groupchatmemberchange`
+--
+ALTER TABLE `groupchatmemberchange`
+  ADD PRIMARY KEY (`gcmcid`);
+
+--
 -- Indizes für die Tabelle `media`
 --
 ALTER TABLE `media`
@@ -844,6 +863,12 @@ ALTER TABLE `groupchat`
 --
 ALTER TABLE `groupchatmember`
     MODIFY `gcmid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=327;
+
+--
+-- AUTO_INCREMENT für Tabelle `groupchatmemberchange`
+--
+ALTER TABLE `groupchatmemberchange`
+  MODIFY `gcmcid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `media`
