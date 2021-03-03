@@ -592,8 +592,6 @@ export class GroupChat extends Chat{
                     resolve();
             });
         });
-
-        this.emitChatUpdated();
     }
     // the name of the chat gets returned
     getChatName(uidSelf:number):string {
