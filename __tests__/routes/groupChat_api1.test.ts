@@ -5,11 +5,12 @@ import {AccountInfo, findUserName, initAccount} from "../../src/__testHelpers__/
 import request, {Response} from "supertest";
 import {
     GroupChatData,
-    GroupChatInfo,
+    GroupChatInfo, GroupChatInfoWithoutMembers,
     GroupChatMemberData
 } from "../../src/models/chat";
-import {instanceOfSimpleUser, SimpleUser} from "../../src/models/user";
+import {instanceOfSimpleUser, SimpleUser, UserInfo} from "../../src/models/user";
 import {groupChatErrors} from "../../src/routes/group";
+import {findGroupChatInUserInfo} from "../../src/__testHelpers__/chatHelpers";
 
 describe('test API /group 1', () => {
 
@@ -116,6 +117,21 @@ describe('test API /group 1', () => {
             for (let i = 1; i < 10; i++) {
                 expect(findUserName(accounts[i].uid, groupChatInfo.members)).toEqual(accounts[i].username);
             }
+        });
+        it('get userInfo find groupchat',async () => {
+            const res: Response = await request(app)
+                .get('/user/' + accounts[1].uid)
+                .set('Authorization', accounts[0].tokens)
+                .send();
+            expect(res.status).toEqual(200);
+            const data:UserInfo = res.body;
+            expect(data.username).toEqual(accounts[1].username);
+            expect(data.userExists).toEqual(true);
+            expect(data.blocked).toEqual(false);
+            const group:GroupChatInfoWithoutMembers = findGroupChatInUserInfo(data,chatId);
+            expect(group).not.toEqual(null);
+            expect(group.chatName).toEqual(groupName1);
+            expect(group.description).toEqual(groupDescription1);
         });
         it('test groupChatInfo not member', async () => {
             const res: Response = await request(app)

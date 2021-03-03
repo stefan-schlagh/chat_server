@@ -84,13 +84,16 @@ export function instanceOfGroupChatData(object: any): object is GroupChatData {
         throw new TypeError('invalid GroupChatData');
     return true;
 }
-export interface GroupChatInfo {
-    // the type of the chat, either normalChat or groupChat
-    type: string,
+export interface GroupChatInfoWithoutMembers {
     id: number,
     chatName: string,
     description: string,
-    public: boolean,
+    public: boolean
+}
+export interface GroupChatInfo extends GroupChatInfoWithoutMembers {
+    // the type of the chat, either normalChat or groupChat
+    type: string,
+    // memberSelf and members are optional
     memberSelf: {
         isAdmin: boolean,
         isStillMember: boolean
