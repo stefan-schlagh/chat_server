@@ -92,7 +92,8 @@ export interface GroupChatInfo {
     description: string,
     public: boolean,
     memberSelf: {
-        isAdmin: boolean
+        isAdmin: boolean,
+        isStillMember: boolean
     },
     members: GroupChatMemberDataAll[]
 }

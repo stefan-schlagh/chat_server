@@ -659,7 +659,8 @@ export class GroupChat extends Chat{
             description: this.description,
             public: this.isPublic,
             memberSelf: {
-                isAdmin: memberSelf.isAdmin
+                isAdmin: memberSelf.isAdmin,
+                isStillMember: memberSelf.isStillMember
             },
             members: await this.getMemberObjectAll(),
         });
