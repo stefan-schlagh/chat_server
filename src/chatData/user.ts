@@ -13,11 +13,12 @@ import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
 import {sendEmailVerificationMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {Chat, chatTypes} from "./chat/chat";
-import {MessageDataIn} from "../models/message";
+import {MessageDataIn, NewestMessage} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
 import {Socket} from "socket.io";
 import {SimpleUser} from "../models/user";
 import {ChatInfo, NewChatData} from "../models/chat";
+import GroupChatMember from "./chat/groupChatMember";
 
 class Emitter extends EventEmitter {}
 
@@ -51,12 +52,10 @@ export default class User{
         this.online = online;
         this.currentChat = null;
     }
-
     /*
         chats of the user are loaded
      */
-    //TODO return type
-    async loadChats():Promise<any> {
+    async loadChats():Promise<ChatInfo[]> {
 
         this.chatsLoading = true;
         /*
@@ -82,6 +81,43 @@ export default class User{
         this.eventEmitter.emit('chats loaded', chats);
 
         return chats;
+    }
+    /*
+        chats of the user are loaded if not already
+     */
+    async loadChatsIfNotLoaded():Promise<void> {
+        /*
+            if chats are loaded, return them
+         */
+        if(!this.chatsLoaded) {
+            /*
+                are chats currently loading?
+                    --> set event listener
+             */
+            if (this.chatsLoading) {
+                await new Promise<void>((resolve, reject) => {
+                    // event listener
+                    this.eventEmitter.on('chats loaded', () => {
+                        //when triggered, delete
+                        this.eventEmitter.removeAllListeners('chats loaded');
+                        resolve();
+                    });
+                    /*
+                        timeout after 10 seconds
+                     */
+                    setTimeout(() => {
+                        this.eventEmitter.removeAllListeners('chats loaded');
+                        reject(new Error('timeout'));
+                    }, 10000);
+                })
+            }
+            /*
+                otherwise, load chat and unload after
+             */
+            else {
+                await this.loadChats();
+            }
+        }
     }
     /*
         chats of user are saved and deleted
@@ -153,6 +189,14 @@ export default class User{
             only when a chat is selected it can be sent
          */
         if(this.currentChat !== null) {
+            /*
+                if currentChat is a groupChat, validate if member is still in chat
+             */
+            if(this.currentChat.type === chatTypes.groupChat){
+                const member = (this.currentChat as GroupChat).getMember(this.uid);
+                if(!member.isStillMember)
+                    throw new Error('member not in chat anymore!')
+            }
             /*
                 a new message is added to the chat
              */
@@ -242,34 +286,33 @@ export default class User{
             this.chats.forEach(async (value:Chat,key:number) => {
 
                 try {
-                    /*
-                        if groupChat -->
-                            is the user still member in this chat?
-                            TODO
-                     */
-                    if (value.type === chatTypes.groupChat) {
-
-                        (value as GroupChat).getMember(this.uid);
-                    }
-
                     const members:SimpleUser[] = await value.getMemberObject(this.uid);
                     const chatName:string = value.getChatName(this.uid);
-                    // TODO type
-                    const fm = value.messageStorage.getNewestMessageObject();
+                    const fm:NewestMessage = await value.messageStorage.getNewestMessageObject(this);
                     /*
                         Objekt wird erstellt und zum Array hinzugefügt
                      */
-                    rc.push({
+                    const chatInfo:ChatInfo = {
                         type: value.getChatTypeString(),
                         id: key,
                         chatName: chatName,
                         members: members,
                         firstMessage: fm,
                         unreadMessages: value.getUnreadMessages(this.uid)
-                    });
+                    };
+                    /*
+                        if groupChat -->
+                            does the member exist? --> throw error if not
+                            set isStillMember
+                     */
+                    if (value.type === chatTypes.groupChat) {
+                        const member:GroupChatMember = (value as GroupChat).getMember(this.uid);
+                        chatInfo.isStillMember = member.isStillMember;
+                    }
+                    rc.push(chatInfo);
 
-                }catch(e) {
-
+                }catch(err) {
+                    logger.error(err);
                 }finally {
 
                     i++;
@@ -295,7 +338,7 @@ export default class User{
                 chatName: chat.getChatName(this.uid),
                 members: await chat.getMemberObject(this.uid),
                 //if groupChat: statusMessage
-                firstMessage: chat.messageStorage.getNewestMessageObject()
+                firstMessage: chat.messageStorage.getNewestMessage().getMessageObject()
             };
 
             this.socket.emit("new chat", data);

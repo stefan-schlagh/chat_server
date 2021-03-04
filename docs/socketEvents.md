@@ -149,6 +149,24 @@ origin: user.addNewChat
 }
 ````
 
+### removed chat
+
+#### info
+gets emitted when a user is removed from a chat
+
+#### parameters
+````json
+{
+  "type": "type of the chat",
+  "id": "id of the chat"
+}
+````
+
+### groupChat updated
+
+#### info
+gets emitted when a groupChat gets updated
+
 ### disconnect
 
 #### info

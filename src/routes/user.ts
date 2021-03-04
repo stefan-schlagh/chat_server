@@ -106,6 +106,8 @@ router.post('/noChat',isAuthenticated,setUser,(req:any,res:any) => {
  */
 router.post('/notInGroup/:gcid',isAuthenticated,setUser,(req:any,res:any) => {
     try {
+        if(isNaN(req.params.gcid))
+            throw new TypeError('gcid is nan!');
         const gcid = parseInt(req.params.gcid);
 
         const data:SearchUser = req.body;

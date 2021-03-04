@@ -3,22 +3,8 @@ import {chatData} from "../data";
 import User from "../user";
 import {Chat} from "../chat/chat";
 import {logger} from "../../util/logger";
-import {MessageDataOut, messageTypes, StatusMessageContent} from "../../models/message";
+import {MessageDataOut, messageTypes, StatusMessageContent, statusMessageTypes} from "../../models/message";
 import {pool} from "../../app";
-
-export enum statusMessageTypes {
-    chatCreated,
-    usersAdded ,
-    usersRemoved,
-    usersJoined,
-    usersLeft,
-    usersMadeAdmin,
-    usersRemovedAdmin,
-    /*
-        when user resigns from admin status
-     */
-    userResignedAdmin
-}
 
 export default class StatusMessage extends Message {
 

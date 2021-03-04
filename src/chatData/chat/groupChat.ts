@@ -4,11 +4,13 @@ import {randomString} from "../../util/random";
 import {chatServer} from "../../chatServer";
 import User from "../user";
 import GroupChatMember from "./groupChatMember";
-import StatusMessage, {statusMessageTypes} from "../message/statusMessage";
+import StatusMessage from "../message/statusMessage";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
 import {GroupChatInfo, GroupChatMemberDataAll} from "../../models/chat";
+import {statusMessageTypes} from "../../models/message";
+import {selectGroupChatMembers,GroupChatMemberDB} from "../database/groupChatMember";
 
 export class GroupChat extends Chat{
 
@@ -25,7 +27,6 @@ export class GroupChat extends Chat{
         this.description = description;
         this.isPublic = isPublic;
         this.socketRoomName = randomString(10);
-
     }
     /*
         subscribeUsersToSocket
@@ -38,7 +39,7 @@ export class GroupChat extends Chat{
             let callCounter = 0;
 
             this.members.forEach(((value:GroupChatMember, key:number) => {
-                if(value.user.online){
+                if(value.user.online && value.user.socket !== null && value.isStillMember){
                     value.user.socket.join(this.socketRoomName);
                 }
                 callCounter ++;
@@ -97,7 +98,7 @@ export class GroupChat extends Chat{
     /*
         member is added to chat
      */
-    async addGroupChatMember(user:User):Promise<GroupChatMember> {
+    private async addGroupChatMember(user:User):Promise<GroupChatMember> {
         /*
             is there already a groupChatMember for this user?
          */
@@ -107,7 +108,7 @@ export class GroupChat extends Chat{
          */
         if(groupChatMember){
 
-            await groupChatMember.undoDelete();
+            await groupChatMember.undoRemove();
         }else {
             /*
                 else --> new groupChatMember is created
@@ -165,6 +166,8 @@ export class GroupChat extends Chat{
             message,
             true
         );
+
+        this.emitChatUpdated();
     }
     /*
         multiple members are added to the chat
@@ -204,6 +207,8 @@ export class GroupChat extends Chat{
             message,
             true
         );
+
+        this.emitChatUpdated();
     }
     /*
         member is removed from groupChat by admin
@@ -215,7 +220,7 @@ export class GroupChat extends Chat{
         /*
             member is removed from DB
          */
-        await memberOther.deleteGroupChatMember();
+        await memberOther.removeGroupChatMember();
         /*
             statusMessage is added
          */
@@ -236,6 +241,8 @@ export class GroupChat extends Chat{
             socket room is left
          */
         this.leaveRoom(memberOther.user);
+
+        this.emitChatUpdated();
     }
     /*
         member joins chat --> only when public
@@ -258,6 +265,8 @@ export class GroupChat extends Chat{
             user,
             message
         );
+
+        this.emitChatUpdated();
     }
     /*
         chat is left by the user
@@ -266,7 +275,7 @@ export class GroupChat extends Chat{
         /*
             member is removed from DB
          */
-        await member.deleteGroupChatMember();
+        await member.removeGroupChatMember();
         /*
             statusMessage is added
          */
@@ -287,6 +296,8 @@ export class GroupChat extends Chat{
             socket room is left
          */
         this.leaveRoom(member.user);
+
+        this.emitChatUpdated();
     }
     /*
         statusMessage is addedd
@@ -321,11 +332,6 @@ export class GroupChat extends Chat{
                 member is not in this chat
              */
             throw new Error('member does not exist');
-        if(!member.isStillMember)
-            /*
-                member is not in the chat anymore
-             */
-            throw new Error('member not in chat anymore');
         return member;
     }
     /*
@@ -379,7 +385,7 @@ export class GroupChat extends Chat{
      */
     async loadGroupChatMembers():Promise<void> {
 
-        const usersChatDB:any = await this.selectGroupChatMembers();
+        const usersChatDB:GroupChatMemberDB[] = await selectGroupChatMembers(this.chatId);
         this.members = new Map<number,GroupChatMember>();
         /*
             loop through users, if not exists --> gets created
@@ -392,6 +398,7 @@ export class GroupChat extends Chat{
             const isStillMember = userChatDB.isStillMember === 1;
             /*
                 does user already exist in the Map
+                    if not: add
              */
             if (!chatData.user.has(userChatDB.uid)) {
                 /*
@@ -404,8 +411,9 @@ export class GroupChat extends Chat{
                 // add user
                 chatData.user.set(newUser.uid, newUser);
             }
-
+            // get the user from chatData
             const newUser = chatData.user.get(userChatDB.uid);
+            // create new groupChatMember
             const groupChatMember =
                 new GroupChatMember(
                     userChatDB.gcmid,
@@ -415,6 +423,7 @@ export class GroupChat extends Chat{
                     unreadMessages,
                     isStillMember
                 );
+            // add member to member list
             this.members.set(
                 newUser.uid,
                 groupChatMember
@@ -423,16 +432,13 @@ export class GroupChat extends Chat{
         /*
             chat gets added to the members
          */
-        await new Promise<number[]>((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
 
             let callCounter = 0;
 
             this.members.forEach((value:GroupChatMember, key:number) => {
-                /*
-                is the member still member --> add chat?
-             */
-                if(value.isStillMember)
-                    value.user.addLoadedChat(this);
+                // add chat
+                value.user.addLoadedChat(this);
                 callCounter ++;
                 if(callCounter === this.members.size)
                     resolve();
@@ -444,34 +450,6 @@ export class GroupChat extends Chat{
         await this.subscribeUsersToSocket();
     }
     /*
-        groupChatMembers are selected
-     */
-    // TODO return type
-    async selectGroupChatMembers(){
-
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT u.uid, " +
-                    "u.username, " +
-                    "gcm.isAdmin, " +
-                    "gcm.gcmid, " +
-                    "gcm.unreadMessages, " +
-                    "gcm.isStillMember " +
-                "FROM user u " +
-                "JOIN groupchatmember gcm " +
-                "ON u.uid = gcm.uid " +
-                "WHERE gcm.gcid = '" + this.chatId + "';";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                resolve(result);
-            });
-        });
-    }
-    /*
         unreadMessages of the user with this uid are set
      */
     async setUnreadMessages(uid:number,unreadMessages:number):Promise<void>  {
@@ -481,7 +459,7 @@ export class GroupChat extends Chat{
         const groupChatMember = this.members.get(uid);
 
         if(groupChatMember)
-            groupChatMember.setUnreadMessages(unreadMessages);
+            await groupChatMember.setUnreadMessages(unreadMessages);
 
     }
     /*
@@ -542,7 +520,7 @@ export class GroupChat extends Chat{
         };
         if(includeSender)
             chatServer.io.to(this.socketRoomName).emit(socketMessage,data);
-        else
+        else if(sentBy.socket !== null)
             sentBy.socket.to(this.socketRoomName).emit(socketMessage,data);
         logger.info({
             info: 'send socket message to all users',
@@ -554,11 +532,12 @@ export class GroupChat extends Chat{
         });
     }
     /*
-        is called:
-            loadCHats.js ca. 150
+        subscribe users o the room in the socket:
+            not, if member not in chat anymore
      */
     subscribeToRoom(user:User):void {
-        if(user.socket !== null)
+        const member:GroupChatMember = this.getMember(user.uid);
+        if(user.socket !== null && member.isStillMember)
             user.socket.join(this.socketRoomName);
     }
 
@@ -647,6 +626,7 @@ export class GroupChat extends Chat{
             let callCounter = 0;
             let members:GroupChatMemberDataAll[] = [];
             this.members.forEach((member:GroupChatMember, key:number) => {
+                // if member is not member anymore --> do not show
                 if(member.isStillMember)
                     members.push({
                         uid: member.user.uid,
@@ -677,7 +657,8 @@ export class GroupChat extends Chat{
             description: this.description,
             public: this.isPublic,
             memberSelf: {
-                isAdmin: memberSelf.isAdmin
+                isAdmin: memberSelf.isAdmin,
+                isStillMember: memberSelf.isStillMember
             },
             members: await this.getMemberObjectAll(),
         });
@@ -734,7 +715,18 @@ export class GroupChat extends Chat{
             });
         });
 
-        //TODO: emit via socket
+        this.emitChatUpdated()
+    }
+    /*
+        emit updated groupChat info
+     */
+    emitChatUpdated():void {
+        this.sendToAll(
+            null,
+            "groupChat updated",
+            null,
+            true
+        );
     }
     async forAllMembers(callback: (value:GroupChatMember,key:number) => void):Promise<void> {
         await new Promise<void>((resolve, reject) => {

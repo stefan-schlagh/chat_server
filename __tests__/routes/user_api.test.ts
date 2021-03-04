@@ -93,7 +93,6 @@ describe('test API /user',() => {
         expect(res.status).toEqual(200);
         const userInfo:UserInfo = res.body;
         expect(instanceOfUserInfo(userInfo)).toEqual(true);
-        expect(userInfo.uidSelf).toEqual(accounts[2].uid);
         expect(userInfo.username).toEqual(accounts[3].username);
         expect(userInfo.blocked).toEqual(false);
         expect(userInfo.userExists).toEqual(true);

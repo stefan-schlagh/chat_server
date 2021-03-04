@@ -6,7 +6,9 @@ import Message from "./message";
 import {Chat, chatTypes} from "../chat/chat";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
-import {MessageDataOut, messageTypes} from "../../models/message";
+import {MessageDataOut, messageTypes, NewestMessage} from "../../models/message";
+import User from "../user";
+import {GroupChat} from "../chat/groupChat";
 
 export default class MessageStorage {
     /*
@@ -30,11 +32,12 @@ export default class MessageStorage {
     }
     /*
         messages are returned
-            the mid of the first message that should not be selected
+            firstMid: the mid of the first message that should not be selected
                 ->all selected messages have lower mid
             num -> how many messages should be selected
+            user: the user who requested the messages
      */
-    async getMessagesByMid(firstMid:number,num:number):Promise<MessageDataOut[]> {
+    async getMessagesByMid(firstMid:number,num:number,user:User):Promise<MessageDataOut[]> {
         /*
             nextIndex is selected
             if index is -1 --> error is thrown
@@ -55,14 +58,14 @@ export default class MessageStorage {
                 i --> loadedMessages
              */
             for(
-                let i=0;
-                i<num;
+                let i = 0;
+                i < num;
                 iMessage--,i++
-                ){
+            ){
                 /*
                     if there are no more messages --> load
                  */
-                if(iMessage<0){
+                if(iMessage < 0){
                     /*
                         the mid of the earliest message now is selected
                      */
@@ -81,7 +84,13 @@ export default class MessageStorage {
                      */
                     iMessage = this.messages.getIndex(emid);
                 }
-                rMessages.unshift(this.messages[iMessage].value.getMessageObject());
+                // add at the end of the array
+                const message:Message = this.messages[iMessage].value;
+                if(await message.authenticateMessage(user))
+                    rMessages.unshift(message.getMessageObject());
+                else
+                    // i--, because message does not get added
+                    i--;
             }
             /*
                 messages are returned
@@ -94,8 +103,9 @@ export default class MessageStorage {
                 the next date that should not be selected
                     ->all selected messages have a lower date
                 num -> how many messages should be selected
+                user: the user who requested the messages
          */
-    async getMessagesByDate(nextDate:Date,num:number){
+    async getMessagesByDate(nextDate:Date,num:number,user:User){
 
         let found = false;
         for(let i=this.messages.length-1; i>=0 && !found; i--){
@@ -106,7 +116,7 @@ export default class MessageStorage {
             const arr:any = this;
             if(arr.value.date.getTime() < nextDate.getTime()){
                 const mid = arr.value.mid;
-                return await this.getMessagesByMid(mid,num);
+                return await this.getMessagesByMid(mid,num,user);
             }
         }
         return [];
@@ -114,11 +124,11 @@ export default class MessageStorage {
     /*
         messages are loaded
      */
-    async loadMessages(num:number){
+    async loadMessages(num:number):Promise<number> {
 
         if(!this.minMid) {
             await this.getMaxMid();
-            this.minMid = this._maxMid+1;
+            this.minMid = this.maxMid+1;
         }
 
         const result:any = await this.selectMessages(num);
@@ -153,11 +163,11 @@ export default class MessageStorage {
                 switch(messageType){
 
                     case messageTypes.normalMessage: {
-                        message = new NormalMessage(this._chat,user,mid);
+                        message = new NormalMessage(this.chat,user,mid);
                         break;
                     }
                     case messageTypes.statusMessage: {
-                        message = new StatusMessage(this._chat,user,mid);
+                        message = new StatusMessage(this.chat,user,mid);
                         break;
                     }
                 }
@@ -290,24 +300,48 @@ export default class MessageStorage {
     /*
         the earliest loaded message is returned
      */
-    getEarliestMessage(){
+    getEarliestMessage():Message {
         return this.messages[0].value;
+    }
+    getNewestMessage():Message {
+        return this.messages[this.messages.length - 1].value;
     }
     /*
         an object containing the newest message is returned
      */
-    // TODO type
-    getNewestMessageObject():any {
-
-        const newestMsg = this.messages[this._messages.length - 1];
+    async getNewestMessageObject(user:User):Promise<NewestMessage> {
         /*
             does there exist a message?
          */
-        if(newestMsg){
-            return newestMsg.value.getMessageObject();
+        if(this.messages.length > 0){
+            /*
+                authenticate message if it can be shown
+             */
+            if(await this.getNewestMessage().authenticateMessage(user)) {
+                const messageObject: MessageDataOut = this.getNewestMessage().getMessageObject();
+                return {
+                    empty: false,
+                    canBeShown: true,
+                    ...messageObject
+                }
+            }else{
+                /*
+                    get date when the user left
+                 */
+                const member = (this.chat as GroupChat).getMember(user.uid);
+                const changeDate:Date = await member.getLastMemberChangeDate();
+                const newestMsg = this.getNewestMessage();
+                return {
+                    empty: false,
+                    canBeShown: false,
+                    mid: newestMsg.mid,
+                    date: changeDate.toISOString()
+                }
+            }
         }else{
             return {
-                empty: true
+                empty: true,
+                canBeShown:true
             };
         }
     }

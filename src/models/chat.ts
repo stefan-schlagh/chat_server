@@ -1,13 +1,14 @@
 import {instanceOfSimpleUser, SimpleUser} from "./user";
-import {instanceOfMessageDataOut, MessageDataOut} from "./message";
+import {instanceOfMessageDataOut, MessageDataOut, NewestMessage} from "./message";
 
 export interface ChatInfo {
     type:string,
     id: number,
     chatName: string,
     members: SimpleUser[],
-    //TODO type
-    firstMessage: any,
+    // if groupChat: is the user still member?
+    isStillMember?: boolean,
+    firstMessage: NewestMessage,
     unreadMessages: number
 }
 export function instanceOfChatInfo(object: any): object is ChatInfo {
@@ -83,15 +84,19 @@ export function instanceOfGroupChatData(object: any): object is GroupChatData {
         throw new TypeError('invalid GroupChatData');
     return true;
 }
-export interface GroupChatInfo {
-    // the type of the chat, either normalChat or groupChat
-    type: string,
+export interface GroupChatInfoWithoutMembers {
     id: number,
     chatName: string,
     description: string,
-    public: boolean,
+    public: boolean
+}
+export interface GroupChatInfo extends GroupChatInfoWithoutMembers {
+    // the type of the chat, either normalChat or groupChat
+    type: string,
+    // memberSelf and members are optional
     memberSelf: {
-        isAdmin: boolean
+        isAdmin: boolean,
+        isStillMember: boolean
     },
     members: GroupChatMemberDataAll[]
 }

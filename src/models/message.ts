@@ -1,8 +1,19 @@
-import {statusMessageTypes} from "../chatData/message/statusMessage";
-
 export enum messageTypes {
     normalMessage = 0,
     statusMessage = 1
+}
+export enum statusMessageTypes {
+    chatCreated,
+    usersAdded,
+    usersRemoved,
+    usersJoined,
+    usersLeft,
+    usersMadeAdmin,
+    usersRemovedAdmin,
+    /*
+        when user resigns from admin status
+     */
+    userResignedAdmin
 }
 export interface NewMessageData {
     chatType: string,
@@ -35,8 +46,7 @@ export function instanceOfNewMessageReturn(object: any): object is NewMessageRet
 }
 export interface MessageDataIn {
     type: messageTypes,
-    // TODO: find a better way of doing this
-    content: any
+    content: MessageContent
 }
 // type check
 export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
@@ -44,9 +54,19 @@ export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
         typeof object === 'object'
         && 'type' in object && typeof object.type === 'number'
         && 'content' in object && typeof object.content === 'object'
+        && instanceOfMessageContent(object.content)
     ))
         throw new TypeError('invalid MessageDataIn');
     return true;
+}
+export interface NewestMessage {
+    empty: boolean,
+    canBeShown: boolean,
+    uid?: number,
+    mid?: number,
+    date?: string,
+    type?: messageTypes,
+    content?: MessageContent
 }
 export interface MessageDataOut {
     // the id of the user who wrote the message
@@ -54,8 +74,7 @@ export interface MessageDataOut {
     mid: number,
     date: string,
     type: messageTypes,
-    // TODO: find a better way of doing this
-    content: any
+    content: MessageContent
 }
 // type check
 export function instanceOfMessageDataOut(object: any): object is MessageDataOut {
@@ -66,19 +85,43 @@ export function instanceOfMessageDataOut(object: any): object is MessageDataOut 
         && 'date' in object && typeof object.date === 'string'
         && 'type' in object && typeof object.type === 'number'
         && 'content' in object && typeof object.content === 'object'
+        && instanceOfMessageContent(object.content)
     ))
         throw new TypeError('invalid MessageDataOut');
     return true;
+}
+export type MessageContent = NormalMessageContent | StatusMessageContent;
+// type check
+export function instanceOfMessageContent(object: any): object is MessageContent {
+    return (instanceOfNormalMessageContent(object)
+        || instanceOfStatusMessageContent(object))
 }
 export interface NormalMessageContent {
     text: string
     mentions: Mention[],
     media: Media[]
 }
+// type check
+export function instanceOfNormalMessageContent(object: any): object is NormalMessageContent {
+    return (
+        typeof object === 'object'
+        && 'text' in object && typeof object.text === 'string'
+        && 'mentions' in object && typeof object.mentions === 'object'
+        && 'media' in object && typeof object.media === 'object'
+    )
+}
 export interface StatusMessageContent {
     type: statusMessageTypes,
     // a array with user ids
     passiveUsers: number[]
+}
+// type check
+export function instanceOfStatusMessageContent(object: any): object is StatusMessageContent {
+    return (
+        typeof object === 'object'
+        && 'type' in object && typeof object.type === 'number'
+        && 'passiveUsers' in object && typeof object.passiveUsers === 'object'
+    )
 }
 // TODO
 export interface Mention {

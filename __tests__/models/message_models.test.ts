@@ -1,10 +1,15 @@
 import {
-    instanceOfLoadedMessages,
-    instanceOfMessageDataIn, instanceOfMessageDataOut,
-    instanceOfNewMessageData, instanceOfNewMessageReturn, LoadedMessages,
-    MessageDataIn, messageTypes,
+    instanceOfLoadedMessages, instanceOfMessageContent,
+    instanceOfMessageDataIn,
+    instanceOfMessageDataOut,
+    instanceOfNewMessageData,
+    instanceOfNewMessageReturn, instanceOfNormalMessageContent, instanceOfStatusMessageContent,
+    LoadedMessages, Media, Mention,
+    MessageDataIn,
+    messageTypes,
     NewMessageData,
-    NewMessageReturn
+    NewMessageReturn,
+    statusMessageTypes
 } from "../../src/models/message";
 
 describe('message models test',() => {
@@ -118,7 +123,10 @@ describe('message models test',() => {
                     uid: 1,
                     date: new Date(Date.now()).toISOString(),
                     type: 0,
-                    content: {}
+                    content: {
+                        type: statusMessageTypes.chatCreated,
+                        passiveUsers:[1,2]
+                    }
                 }
             ]
         }
@@ -145,5 +153,40 @@ describe('message models test',() => {
         }
         expect(err).not.toEqual(null);
         expect(err instanceof TypeError);
+    });
+    it('(status) messageContent - success',() => {
+        const data = {
+            type: statusMessageTypes.chatCreated,
+            passiveUsers: [1,2]
+        }
+        expect(instanceOfMessageContent(data)).toEqual(true);
+        expect(instanceOfStatusMessageContent(data)).toEqual(true);
+    });
+    it('(status) messageContent - invalid',() => {
+        const data = {
+            type: "abc",
+            passiveUsers: [1,2]
+        }
+        expect(instanceOfMessageContent(data)).toEqual(false);
+        expect(instanceOfStatusMessageContent(data)).toEqual(false);
+    });
+    it('(normal) messageContent - success',() => {
+        const mentions:Mention[] = [];
+        const media:Media[] = [];
+        const data = {
+            text: "abc",
+            mentions: mentions,
+            media: media
+        }
+        expect(instanceOfMessageContent(data)).toEqual(true);
+        expect(instanceOfNormalMessageContent(data)).toEqual(true);
+    });
+    it('(normal) messageContent - invalid',() => {
+        const data = {
+            type: "abc",
+            passiveUsers: [1,2]
+        }
+        expect(instanceOfMessageContent(data)).toEqual(false);
+        expect(instanceOfNormalMessageContent(data)).toEqual(false);
     });
 });

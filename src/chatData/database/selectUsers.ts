@@ -1,20 +1,23 @@
 import {pool} from "../../app";
 import {instanceOfUserInfoSelf, SimpleUser, UserInfo, UserInfoSelf} from "../../models/user";
 import {logger} from "../../util/logger";
+import {GroupChatInfoWithoutMembers} from "../../models/chat";
+import {isResultEmpty, ResultEmptyError} from "../../util/sqlHelpers";
 
 /*
     A user gets requested
         uidFrom --> uid of the requesting user
-        uidReq -->  uid that should be requested
+        uid -->  uid that should be requested
  */
-export async function getUser(uidFrom:number,uidReq:number):Promise<UserInfo> {
+// TODO blocked
+export async function getUserInfo(uidFrom:number,uid:number):Promise<UserInfo> {
 
-    return new Promise(function(resolve, reject) {
+    const userInfo:UserInfo = await new Promise(function(resolve, reject) {
 
         const query_str =
             "SELECT username " +
             "FROM user " +
-            "WHERE uid = " + uidReq + ";";
+            "WHERE uid = " + uid + ";";
         logger.verbose('SQL: %s',query_str);
 
         pool.query(query_str, function (err:Error, rows:any, fields:any) {
@@ -27,28 +30,70 @@ export async function getUser(uidFrom:number,uidReq:number):Promise<UserInfo> {
             // call resolve with results
             if (err) {
                 reject(err);
-            } else if(!rows || rows.length === 0){
+            } else if(isResultEmpty(rows)){
                 userExists = false
             } else if(rows.length === 1){
                 username = rows[0].username;
                 userExists = true;
                 blocked = false;
             } else {
-                throw new Error('uid ' + uidReq + ' appears more than once!');
+                throw new Error('uid ' + uid + ' appears more than once!');
             }
-            
-            const result = {
-                // TODO: uidSelf?
-                uidSelf: uidFrom,
+
+            let result:UserInfo = {
                 username: username,
                 blocked: blocked,
-                userExists: userExists
+                userExists: userExists,
+                groups: null
             };
             
             resolve(result);
         });
-
     });
+    if(userInfo.userExists && !userInfo.blocked){
+        userInfo.groups = await getGroupsOfUser(uidFrom,uid);
+    }
+    return userInfo;
+}
+/*
+    Get all chats a user has together with the requesting
+        uidFrom --> uid of the requesting user
+        uidReq -->  uid that should be requested
+ */
+export async function getGroupsOfUser(uidFrom:number,uid:number):Promise<GroupChatInfoWithoutMembers[]> {
+    /*
+        SELECT *
+        FROM groupchat
+        WHERE gcid = ANY (SELECT gcid FROM groupchatmember WHERE uid = 1 AND isStillMember = 1)
+        AND gcid = ANY (SELECT gcid FROM groupchatmember WHERE uid = 2 AND isStillMember = 1)
+     */
+    return await new Promise<GroupChatInfoWithoutMembers[]>((resolve, reject) => {
+
+        const query_str =
+            "SELECT gcid, name, description, isPublic " +
+            "FROM groupchat " +
+            "WHERE gcid = ANY (SELECT gcid FROM groupchatmember WHERE uid = " + uidFrom + " AND isStillMember = 1) " +
+            "AND gcid = ANY (SELECT gcid FROM groupchatmember WHERE uid = " + uid + " AND isStillMember = 1);";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+               reject(err);
+            if(isResultEmpty(rows))
+               resolve([]);
+            const groups:GroupChatInfoWithoutMembers[] = new Array<GroupChatInfoWithoutMembers>(rows.length);
+            for(let i = 0;i < rows.length;i++){
+                groups[i] = {
+                    id: rows[i].gcid,
+                    chatName: rows[i].name,
+                    description: rows[i].description,
+                    public: rows[i].isPublic === 1
+                }
+            }
+            resolve(groups);
+        });
+    })
+
 }
 /*
     all Users where the specified user does not have a chat with get selected and returned
@@ -135,13 +180,6 @@ export async function selectAllUsers(
     });
 }
 /*
-    get the info of a user
- */
-export async function getUserInfo(uidFrom:number,uidReq:number):Promise<UserInfo> {
-
-    return await getUser(uidFrom, uidReq);
-}
-/*
     users who are not in the group are returned
  */
 export async function selectUsersNotInGroup(
@@ -211,5 +249,4 @@ export async function getUserInfoSelf(uid:number):Promise<UserInfoSelf> {
                 }
         });
     });
-
 }

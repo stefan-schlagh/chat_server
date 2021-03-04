@@ -1,8 +1,17 @@
-import {statusMessageTypes} from "../message/statusMessage";
 import User from "../user";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
+import {statusMessageTypes} from "../../models/message";
+import {GroupChat} from "./groupChat";
 
+export enum groupChatMemberChangeTypes {
+    joined = 0,
+    left = 1
+}
+interface GroupChatMemberChange {
+    date: Date,
+    type: groupChatMemberChangeTypes
+}
 export default class GroupChatMember{
 
     // the id in the database
@@ -10,7 +19,7 @@ export default class GroupChatMember{
     /*
         the parent chat
      */
-    private _chat:any;
+    private _chat:GroupChat;
     private _user:User;
     /*
         is this groupChatMember admin in the chat?
@@ -24,6 +33,8 @@ export default class GroupChatMember{
         has the member already left the chat?
      */
     private _isStillMember:boolean;
+    // the last change
+    private _latestChange:GroupChatMemberChange = null;
 
     constructor(
         gcmid:number = -1,
@@ -34,19 +45,19 @@ export default class GroupChatMember{
         isStillMember:boolean = true
     ) {
 
-        this._gcmid = gcmid;
-        this._chat = chat;
-        this._user = user;
-        this._isAdmin = isAdmin;
-        this._unreadMessages = unreadMessages;
-        this._isStillMember = isStillMember;
+        this.gcmid = gcmid;
+        this.chat = chat;
+        this.user = user;
+        this.isAdmin = isAdmin;
+        this.unreadMessages = unreadMessages;
+        this.isStillMember = isStillMember;
     }
     /*
         groupChatMember is saved in the database
      */
     async saveGroupChatMemberInDB():Promise<number>{
-
-        return new Promise((resolve,reject) => {
+        //save groupChatMember
+        const gcmid:number = await new Promise((resolve,reject) => {
 
             const query_str1 =
                 "INSERT " +
@@ -83,6 +94,10 @@ export default class GroupChatMember{
                 }
             })
         });
+        // groupChatMemberChanged
+        await this.addGroupChatMemberChange(groupChatMemberChangeTypes.joined);
+        // return groupChatMemberId
+        return gcmid;
     }
     /*
         unread messages are updated in the Database
@@ -120,7 +135,7 @@ export default class GroupChatMember{
             is the chat the currentChat of the user?
                 --> do nothing
          */
-        if(!this._user.isCurrentChat(this.chat)) {
+        if(!this.user.isCurrentChat(this.chat)) {
 
             this.unreadMessages += num;
             await this.updateUnreadMessages();
@@ -164,9 +179,11 @@ export default class GroupChatMember{
         );
     }
     /*
-        groupChatMember is deleted in the database
+        remove groupChatMember from the chat
      */
-    async deleteGroupChatMember():Promise<void>{
+    async removeGroupChatMember():Promise<void>{
+        // add groupChatMemberChange
+        await this.addGroupChatMemberChange(groupChatMemberChangeTypes.left);
         /*
             isStillMember is set to false
          */
@@ -179,11 +196,19 @@ export default class GroupChatMember{
             isStillMember is updated in the Database
          */
         await this.update();
+        // send message to client, if online
+        if(this.user.socket !== null)
+            this.user.socket.emit("removed chat",{
+                id: this.chat.chatId,
+                type: this.chat.getChatTypeString()
+            });
     }
     /*
-        delete is undone
+        remove is undone
      */
-    async undoDelete():Promise<void>{
+    async undoRemove():Promise<void>{
+        // add groupChatMemberChange, joined again
+        await this.addGroupChatMemberChange(groupChatMemberChangeTypes.joined);
         /*
             isStillMember is set to true
          */
@@ -217,6 +242,81 @@ export default class GroupChatMember{
             });
         });
     }
+    /*
+        add a new groupChatMemberChange
+     */
+    async addGroupChatMemberChange(type:groupChatMemberChangeTypes):Promise<void> {
+
+        await new Promise<void>((resolve, reject) => {
+
+            const query_str =
+                "INSERT " +
+                "INTO groupchatmemberchange (date,gcmid,type) " +
+                "VALUES (CURRENT_TIMESTAMP()," + this.gcmid + "," + type.valueOf() + ");";
+            logger.verbose('SQL: %s',query_str);
+
+            pool.query(query_str,(err:Error) => {
+                if(err)
+                    reject(err);
+                resolve();
+            });
+        });
+        // update latest change
+        await this.getLatestGroupChatMemberChange();
+    }
+    private async getLatestGroupChatMemberChange(){
+        /*
+            get last change
+                if no change -> date 0
+         */
+        this.latestChange = await new Promise<GroupChatMemberChange>((resolve, reject) => {
+            /*const query_str =
+                "SELECT * " +
+                "FROM groupchatmemberchange " +
+                "WHERE gcmid = " + this.gcmid + " AND DATEDIFF( date, FROM_UNIXTIME(" + date.getTime() + " / 1000) ) < 1 " +
+                "ORDER BY DATEDIFF( date, FROM_UNIXTIME(" + date.getTime() + " / 1000) ) " +
+                "LIMIT 1;";*/
+            const query_str =
+                "SELECT date, type " +
+                "FROM groupchatmemberchange " +
+                "WHERE gcmid = " + this.gcmid + " " +
+                "ORDER BY gcmcid DESC " +
+                "LIMIT 1;";
+            pool.query(query_str, (err: Error, result: any) => {
+                if (err)
+                    reject(err);
+                else if (!result || result.length === 0)
+                    resolve({
+                        type: this.isStillMember ? groupChatMemberChangeTypes.joined : groupChatMemberChangeTypes.left,
+                        date: new Date(0)
+                    });
+                else
+                    resolve({
+                        type: result[0].type,
+                        date: result[0].date
+                    });
+            });
+        });
+    }
+    /*
+        was the groupChatMember at this point of time in the chat?
+     */
+    async wasInChat(date:Date):Promise<boolean> {
+        if(this.latestChange === null)
+            await this.getLatestGroupChatMemberChange();
+
+        if(this.latestChange.type === groupChatMemberChangeTypes.joined)
+            return true;
+        else // result.type === groupChatMemberChangeTypes.left
+            // if user left before message was sent, return false
+            return !(this.latestChange.date.getTime() < date.getTime())
+    }
+
+    async getLastMemberChangeDate():Promise<Date> {
+        if(this.latestChange === null)
+            await this.getLatestGroupChatMemberChange();
+        return this.latestChange.date;
+    }
 
     get gcmid(): number {
         return this._gcmid;
@@ -226,11 +326,11 @@ export default class GroupChatMember{
         this._gcmid = value;
     }
 
-    get chat(): any {
+    get chat(): GroupChat {
         return this._chat;
     }
 
-    set chat(value: any) {
+    set chat(value: GroupChat) {
         this._chat = value;
     }
 
@@ -264,5 +364,13 @@ export default class GroupChatMember{
 
     set isStillMember(value: boolean) {
         this._isStillMember = value;
+    }
+
+    get latestChange(): GroupChatMemberChange {
+        return this._latestChange;
+    }
+
+    set latestChange(value: GroupChatMemberChange) {
+        this._latestChange = value;
     }
 }

@@ -13,6 +13,7 @@ import {
 import {Chat, chatTypes} from "../chatData/chat/chat";
 import {instanceOfSimpleUser} from "../models/user";
 import User from "../chatData/user";
+import GroupChatMember from "../chatData/chat/groupChatMember";
 
 export const groupChatErrors =  {
     noAdminLeft: 0,
@@ -260,10 +261,11 @@ router.post(
     (req:any,res) => {
 
         const user = req.user;
-        const memberOther = req.memberOther;
+        const memberOther:GroupChatMember = req.memberOther;
 
         memberOther.setAdmin(user,true)
             .then(() => {
+                memberOther.chat.emitChatUpdated();
                 res.send();
             })
             .catch((err:Error) => {
@@ -288,10 +290,11 @@ router.post(
     (req:any,res) => {
 
         const user = req.user;
-        const memberOther = req.memberOther;
+        const memberOther:GroupChatMember = req.memberOther;
 
         memberOther.setAdmin(user,false)
             .then(() => {
+                memberOther.chat.emitChatUpdated();
                 res.send();
             })
             .catch((err:Error) => {
@@ -367,10 +370,11 @@ router.post(
     isAdminLeft,
     (req:any,res) => {
 
-        const member = req.memberSelf;
+        const member:GroupChatMember = req.memberSelf;
 
         member.setAdmin(member.user,false)
             .then(() => {
+                member.chat.emitChatUpdated();
                 res.send();
             })
             .catch((err:Error) => {

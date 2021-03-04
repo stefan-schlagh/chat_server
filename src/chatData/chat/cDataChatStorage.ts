@@ -9,6 +9,7 @@ import {logger} from "../../util/logger";
 import {Chat, chatTypes} from "./chat";
 import {MessageDataIn} from "../../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
+import {GroupChatDataOfUser, NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../database/chat";
 
 export default class CDataChatStorage extends ChatStorage {
 
@@ -199,7 +200,7 @@ export default class CDataChatStorage extends ChatStorage {
      */
     async loadNormalChats(user:User):Promise<void> {
 
-        const normalChatsDB:any = await this.selectNormalChats(user.uid);
+        const normalChatsDB:NormalChatDataDB[] = await selectNormalChats(user.uid);
 
         for(let i=0;i<normalChatsDB.length;i++){
 
@@ -255,42 +256,11 @@ export default class CDataChatStorage extends ChatStorage {
         }
     }
     /*
-        normalChats of the user are selected
-     */
-    //TODO type
-    async selectNormalChats(uid:number):Promise<any> {
-
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT nc.ncid, " +
-                    "nc.uid1, " +
-                    "u1.username AS 'uname1', " +
-                    "nc.unreadMessages1, " +
-                    "nc.uid2, " +
-                    "u2.username AS 'uname2', " +
-                    "nc.unreadMessages2 " +
-                "FROM normalchat nc " +
-                "INNER JOIN user u1 " +
-                "ON nc.uid1 = u1.uid " +
-                "INNER JOIN user u2 " +
-                "ON nc.uid2 = u2.uid " +
-                "WHERE uid1 = '" + uid + "' OR uid2 = '" + uid + "';";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                resolve(result);
-            });
-        });
-    }
-    /*
         all groupChats of the user are loaded
      */
     async loadGroupChats(user:User):Promise<void> {
 
-        const groupChatsDB:any = await this.selectGroupChats(user.uid);
+        const groupChatsDB:GroupChatDataOfUser[] = await selectGroupChatsOfUser(user.uid);
 
         for(let i=0;i<groupChatsDB.length;i++) {
 
@@ -332,29 +302,6 @@ export default class CDataChatStorage extends ChatStorage {
                 this.group.set(newChat.chatId, newChat);
             }
         }
-    }
-    /*
-        all groupChats of the user are selected
-     */
-    //TODO type
-    async selectGroupChats(uid:number):Promise<any> {
-
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT * " +
-                "FROM groupchatmember gcm " +
-                "JOIN groupchat gc " +
-                "ON gcm.gcid = gc.gcid " +
-                "WHERE gcm.uid = '" + uid + "';";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                resolve(result);
-            });
-        });
     }
 
     get chatData(): ChatData {
