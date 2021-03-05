@@ -6,6 +6,13 @@ export interface ChatInfo {
     id: number,
     chatName: string,
     members: SimpleUser[],
+    /*
+        if normalChat:
+            blockedBySelf: did the requesting user block the other user?
+            blockedByOther: did the other user block the requesting user?
+     */
+    blockedBySelf?: boolean,
+    blockedByOther?: boolean,
     // if groupChat: is the user still member?
     isStillMember?: boolean,
     firstMessage: NewestMessage,

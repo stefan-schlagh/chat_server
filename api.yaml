@@ -213,6 +213,20 @@ paths:
                     chatName:
                       type: string
                       description: the name of the chat
+                    isStillMember:
+                      type: boolean
+                      required: false
+                      description: |
+                        is the member still member?
+                        only at groupChats
+                    blockedBySelf:
+                      type: boolean
+                      required: false
+                      description: did the requesting user block the other user?
+                    blockedByOther:
+                      type: boolean
+                      required: false
+                      description: did the other user block the requesting user?
                     members:
                       type: array
                       items:
@@ -224,6 +238,9 @@ paths:
                           username:
                             type: string
                             description: the name of the user
+                    unreadMessages:
+                      type: number
+                      description: the number of unread messages in the chat
                     firstMessage:
                       type: object
                       properties:
@@ -1148,18 +1165,35 @@ paths:
               schema:
                 type: object
                 properties:
-                  uidSelf:
-                    type: number
-                    description: the id of the requesting
                   username:
                     type: string
                     description: the username of the user
-                  blocked:
+                  blockedBySelf:
                     type: boolean
-                    description: is the user blocked by you?
+                    description: has the requesting user blocked the other user?
+                  blockedByOther:
+                    type: boolean
+                    description: has the other user blocked the requesting user?
                   userExists:
                     type: boolean
                     description: does the user exist?
+                  groups:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          description: the id of the chat
+                        chatName:
+                          type: string
+                          description: the name of the chat
+                        description:
+                          type: string
+                          description: the description of the chat
+                        public:
+                          type: boolean
+                          description: id the chat public
         '400':
           description: bad request
         '403':
@@ -1254,6 +1288,46 @@ paths:
           schema:
             type: string
             description: the verification code
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+  /user/block/:uid:
+    get:
+      description: block a user
+      summary: block a user
+      operationId: blockUser
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+            description: the id of the other user
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+  /user/unblock/:uid:
+    get:
+      description: unblock a user
+      summary: unblock a user
+      operationId: unblockUser
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+            description: the id of the other user
       responses:
         '200':
           description: success

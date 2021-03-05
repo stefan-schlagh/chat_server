@@ -39,9 +39,14 @@ router.put('/',(req:any,res) => {
                 });
             })
             .catch(err => {
-                logger.error(err);
-                res.status(500);
-                res.send();
+                // cannot send message because blocked the chat
+                if(err.message === 'block')
+                    res.sendStatus(403);
+                else {
+                    logger.error(err);
+                    res.status(500);
+                    res.send();
+                }
             });
     }catch (err) {
         logger.error(err);
@@ -80,9 +85,14 @@ router.put('/add',async (req:any,res) => {
                 mid: mid
             });
         }catch(err) {
-            logger.error(err);
-            res.status(500);
-            res.send();
+            // cannot send message because blocked the chat
+            if(err.message === 'block')
+                res.sendStatus(403);
+            else {
+                logger.error(err);
+                res.status(500);
+                res.send();
+            }
         }
     }catch (err) {
         logger.error(err);

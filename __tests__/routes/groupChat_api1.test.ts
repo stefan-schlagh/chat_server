@@ -127,7 +127,8 @@ describe('test API /group 1', () => {
             const data:UserInfo = res.body;
             expect(data.username).toEqual(accounts[1].username);
             expect(data.userExists).toEqual(true);
-            expect(data.blocked).toEqual(false);
+            expect(data.blockedBySelf).toEqual(false);
+            expect(data.blockedByOther).toEqual(false);
             const group:GroupChatInfoWithoutMembers = findGroupChatInUserInfo(data,chatId);
             expect(group).not.toEqual(null);
             expect(group.chatName).toEqual(groupName1);

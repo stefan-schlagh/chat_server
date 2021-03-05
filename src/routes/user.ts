@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-    getUserInfo, getUserInfoSelf,
     selectAllUsers,
     selectUsersNoChat,
     selectUsersNotInGroup
@@ -13,9 +12,15 @@ import {logger} from "../util/logger";
 import {MessageDataIn} from "../models/message";
 import {NewNormalChatData} from "../models/chat";
 import User from "../chatData/user";
-import {UserInfoSelf} from "../models/user";
+import {UserBlockInfo, UserInfoSelf} from "../models/user";
 import {validateEmail} from "../util/validateEmail";
 import {isEmailUsed} from "../chatData/database/email";
+import {
+    getUserInfo,
+    getUserInfoSelf,
+    blockUser,
+    unblockUser, getUserBlockInfo,
+} from "../chatData/database/user";
 
 const router = express.Router();
 
@@ -165,9 +170,9 @@ router.get('/:uid',isAuthenticated,setUser,(req:any,res:any) => {
         });
 });
 /*
-    a new normalCHat is created
+    a new normalChat is created
  */
-router.put('/chat',isAuthenticated,setUser,(req:any,res:any) => {
+router.put('/chat',isAuthenticated,setUser,async (req:any,res:any) => {
 
     try {
         const userSelf = req.user;
@@ -175,15 +180,24 @@ router.put('/chat',isAuthenticated,setUser,(req:any,res:any) => {
         const data: NewNormalChat = req.body;
         instanceOfNewNormalChat(data);
 
-        chatData.newNormalChat(userSelf, data.uid, data.username, data.message)
-            .then((result:NewNormalChatData) => {
-                res.send(result)
-            })
-            .catch((err: Error) => {
-                logger.error(err);
-                res.status(500);
-                res.send();
-            });
+        try {
+            // get blockInfo of the user
+            const blockInfo:UserBlockInfo = await getUserBlockInfo(req.user.uid,data.uid);
+            /*
+                if user blocked other user or the other way round, reject with 403
+             */
+            if(blockInfo.blockedBySelf || blockInfo.blockedByOther){
+                res.sendStatus(403);
+            }else {
+                // create new normalChat
+                const result: NewNormalChatData = await chatData.newNormalChat(userSelf, data.uid, data.username, data.message)
+                res.send(result);
+            }
+        }catch(err){
+            logger.error(err);
+            res.status(500);
+            res.send();
+        }
     }catch (err) {
         /*
                 400 -> bad request
@@ -207,9 +221,9 @@ router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
         if(await isEmailUsed(email))
             res.send({
                 emailTaken: true
-            })
+            });
         else {
-            await user.setEmail(email)
+            await user.setEmail(email);
 
             res.send({
                 emailTaken: false
@@ -224,7 +238,7 @@ router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
 /*
     email is verified
  */
-router.get("/verifyEmail/:code",async (req:any,res:any) => {
+router.get('/verifyEmail/:code',async (req:any,res:any) => {
     try {
         const code = req.params.code;
 
@@ -242,6 +256,46 @@ router.get("/verifyEmail/:code",async (req:any,res:any) => {
     }catch (err){
         logger.error(err);
         res.status(400);
+        res.send();
+    }
+});
+/*
+    a user gets blocked
+ */
+router.get('/block/:uid',isAuthenticated,setUser,async (req:any,res:any) => {
+    try{
+        const uid:number = parseInt(req.params.uid);
+        if(isNaN(uid))
+            res.sendStatus(400);
+        else {
+            // block user
+            const uidFrom = req.user.uid;
+            await blockUser(uidFrom, uid);
+            res.send();
+        }
+    }catch (err){
+        logger.error(err);
+        res.status(500);
+        res.send();
+    }
+});
+/*
+    a user gets unblocked
+ */
+router.get('/unblock/:uid',isAuthenticated,setUser,async (req:any,res:any) => {
+    try{
+        const uid:number = parseInt(req.params.uid);
+        if(isNaN(uid))
+            res.sendStatus(400);
+        else {
+            // block user
+            const uidFrom = req.user.uid;
+            await unblockUser(uidFrom, uid);
+            res.send();
+        }
+    }catch (err){
+        logger.error(err);
+        res.status(500);
         res.send();
     }
 })
