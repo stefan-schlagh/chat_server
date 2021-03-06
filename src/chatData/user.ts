@@ -16,9 +16,11 @@ import {Chat, chatTypes} from "./chat/chat";
 import {MessageDataIn, NewestMessage} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
 import {Socket} from "socket.io";
-import {SimpleUser} from "../models/user";
+import {SimpleUser, UserBlockInfo} from "../models/user";
 import {ChatInfo, NewChatData} from "../models/chat";
 import GroupChatMember from "./chat/groupChatMember";
+import NormalChat from "./chat/normalChat";
+import {getUserBlockInfo} from "./database/user";
 
 class Emitter extends EventEmitter {}
 
@@ -198,6 +200,14 @@ export default class User{
                     throw new Error('member not in chat anymore!')
             }
             /*
+                if currentChat is a normalChat, validate if member is not blocked
+             */
+            else if(this.currentChat.type === chatTypes.normalChat){
+                // get blockInfo of the chat
+                if(await (this.currentChat as NormalChat).isSomeOneBlocked())
+                    throw new Error('block')
+            }
+            /*
                 a new message is added to the chat
              */
             const message = await this.currentChat.addMessage(this,data);
@@ -308,6 +318,16 @@ export default class User{
                     if (value.type === chatTypes.groupChat) {
                         const member:GroupChatMember = (value as GroupChat).getMember(this.uid);
                         chatInfo.isStillMember = member.isStillMember;
+                    }
+                    /*
+                        if normalChat
+                            get blockInfo
+                     */
+                    else if(value.type === chatTypes.normalChat) {
+                        const blockInfo:UserBlockInfo =
+                            await getUserBlockInfo(this.uid,(value as NormalChat).getOtherUser(this).uid);
+                        chatInfo.blockedBySelf = blockInfo.blockedBySelf;
+                        chatInfo.blockedByOther = blockInfo.blockedByOther;
                     }
                     rc.push(chatInfo);
 

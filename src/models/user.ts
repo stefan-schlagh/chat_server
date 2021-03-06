@@ -22,9 +22,8 @@ export interface UserExistsInfo {
     // the user id of the user, -1 if user does not exist
     uid: number
 }
-export interface UserInfo {
+export interface UserInfo extends UserBlockInfo {
     username: string,
-    blocked: boolean,
     userExists: boolean,
     groups: GroupChatInfoWithoutMembers[]
 }
@@ -33,14 +32,14 @@ export function instanceOfUserInfo(object: any): object is UserInfo {
     if(!(
         typeof object === 'object'
         && 'username' in object && typeof object.username === 'string'
-        && 'blocked' in object && typeof object.blocked === 'boolean'
         && 'userExists' in object && typeof object.userExists === 'boolean'
         && 'groups' in object && typeof object.groups === 'object'
+        && instanceOfUserBlockInfo(object)
     ))
         throw new TypeError('invalid UserInfo');
     return true;
 }
-export interface UserInfoSelf extends SimpleUser{
+export interface UserInfoSelf extends SimpleUser {
     email: string,
     emailVerified: boolean,
     accountCreationTime: string,
@@ -55,5 +54,18 @@ export function instanceOfUserInfoSelf(object: any): object is UserInfoSelf {
         && instanceOfSimpleUser(object)
     ))
         throw new TypeError('invalid UserInfoSelf');
+    return true;
+}
+export interface UserBlockInfo {
+    blockedBySelf: boolean,
+    blockedByOther: boolean
+}
+export function instanceOfUserBlockInfo(object: any): object is UserBlockInfo {
+    if(!(
+        typeof object === 'object'
+        && 'blockedBySelf' in object && typeof object.blockedBySelf === 'boolean'
+        && 'blockedByOther' in object && typeof object.blockedByOther === 'boolean'
+    ))
+        throw new TypeError('invalid UserBlockInfo');
     return true;
 }

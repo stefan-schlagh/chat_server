@@ -3,10 +3,9 @@ import {chatServer} from "../../chatServer";
 import chatData from "../chatData";
 import {logger} from "../../util/logger";
 import {pool} from "../../app";
-import {SimpleUser} from "../../models/user";
+import {SimpleUser, UserBlockInfo} from "../../models/user";
 import User from "../user";
-import {statusMessageTypes} from "../../models/message";
-import StatusMessage from "../message/statusMessage";
+import {getUserBlockInfo} from "../database/user";
 
 export default class NormalChat extends Chat{
 
@@ -91,37 +90,25 @@ export default class NormalChat extends Chat{
          */
 
         if(this.user1.uid === sentBy.uid){
-            /*
-                es wird geschaut, ob Socket definiert ist
-             */
-            if(this.user2.online) {
-                chatServer.io.to(this.user2.socket.id).emit(socketMessage, data);
-                logger.info({
-                    info: 'send socket message to other user',
-                    message: socketMessage,
-                    socketMessage: socketMessage,
-                    socketId: this.user2.socket.id,
-                    uid: this.user2.uid
-                });
-            }else
-                logger.info('send socket message to other user: %s, other user not online',socketMessage);
+            this.sendToUser(this.user2,socketMessage,data);
         }
         else {
-            /*
-                es wird geschaut, ob Socket definiert ist
-             */
-            if(this.user1.online) {
-                chatServer.io.to(this.user1.socket.id).emit(socketMessage, data);
-                logger.info({
-                    info: 'send socket message to other user',
-                    message:socketMessage,
-                    socketMessage: socketMessage,
-                    socketId: this.user1.socket.id,
-                    uid: this.user1.uid
-                });
-            }else
-                logger.info('send socket message to other user: %s, other user not online',socketMessage);
+            this.sendToUser(this.user1,socketMessage,data);
         }
+    }
+    sendToUser(user:User,socketMessage:string,data:any):void {
+        // is socket not null?
+        if(user.online && user.socket !== null) {
+            chatServer.io.to(user.socket.id).emit(socketMessage, data);
+            logger.info({
+                info: 'send socket message to other user',
+                message: socketMessage,
+                socketMessage: socketMessage,
+                socketId: user.socket.id,
+                uid: user.uid
+            });
+        }else
+            logger.info('send socket message to other user: %s, other user not online',socketMessage);
     }
     /*
         the number of unread messages in the database is updated
@@ -264,6 +251,18 @@ export default class NormalChat extends Chat{
                 }]);
             }
         })
+    }
+    // is there one user blocking the other?
+    async isSomeOneBlocked():Promise<boolean> {
+        // get blockInfo of the user
+        const blockInfo:UserBlockInfo = await getUserBlockInfo(this.user1.uid,this.user2.uid);
+        return blockInfo.blockedBySelf || blockInfo.blockedByOther;
+    }
+
+    getOtherUser(user:User){
+        if(user.uid === this.user1.uid)
+            return this.user2;
+        return this.user1;
     }
 
     get user1(): User {

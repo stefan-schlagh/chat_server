@@ -113,7 +113,14 @@ export abstract class Chat{
             if msgIdStart is -1, msgIdStart is maxMid
          */
         if(msgIdStart === -1)
-            msgIdStart = this.messageStorage.maxMid;
+            // if message storage is empty and all messages have been loaded
+            if(this.messageStorage.messages.length === 0 && this.messageStorage.loadedAllMessages)
+                return({
+                    status: 'reached top',
+                    messages: []
+                });
+            else
+                msgIdStart = this.messageStorage.maxMid;
 
         const mid = await this.messageStorage.getMidBelow(msgIdStart);
 

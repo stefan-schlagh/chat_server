@@ -2,18 +2,19 @@ import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
 import {app, closeServer, startServer} from "../../src/app";
 // @ts-ignore
 import names from "../../src/__testHelpers__/names/names.json";
-import {instanceOfSimpleUser, SimpleUser} from "../../src/models/user";
+import {instanceOfSimpleUser, SimpleUser, UserBlockInfo} from "../../src/models/user";
 import request, {Response} from "supertest";
 import {ChatInfo, instanceOfChatInfo, instanceOfNewNormalChatData, NewNormalChatData} from "../../src/models/chat";
 import {
     instanceOfLoadedMessages,
     instanceOfNewMessageReturn,
-    LoadedMessages, MessageDataOut,
+    LoadedMessages,
     messageTypes,
     NewMessageReturn
 } from "../../src/models/message";
-import {logger} from "../../src/util/logger";
 import {findMessage} from "../../src/__testHelpers__/messageHelpers";
+import {getUserBlockInfo} from "../../src/chatData/database/user";
+import {findChatChatName} from "../../src/__testHelpers__/chatHelpers";
 
 describe('test API /message',() => {
 
@@ -26,7 +27,9 @@ describe('test API /message',() => {
     const messages = [
         'first message',
         'second message',
-        'message by other user'
+        'message by other user',
+        'blockMessage1',
+        'blockMessage2'
     ]
 
     beforeAll((done) => {
@@ -231,5 +234,112 @@ describe('test API /message',() => {
                 num: '10'
             });
         expect(res.status).toEqual(400);
+    });
+    it('block user', async () => {
+        const res1:Response = await request(app)
+            .get('/user/block/' + accounts[1].uid)
+            .set('Authorization',accounts[0].tokens)
+            .send();
+        expect(res1.status).toEqual(200);
+        // check the block info of the user blocking
+        const blockInfo: UserBlockInfo = await getUserBlockInfo(accounts[0].uid, accounts[1].uid);
+        expect(blockInfo.blockedByOther).toEqual(false);
+        expect(blockInfo.blockedBySelf).toEqual(true);
+    });
+    it('send message - blocked user',async () => {
+        const res2:Response = await request(app)
+            .put('/message/add')
+            .set('Authorization',accounts[1].tokens)
+            .send({
+                chatType: 'normalChat',
+                chatId: normalChatId,
+                message: {
+                    type: messageTypes.normalMessage.valueOf(),
+                    content: {
+                        media: [],
+                        mentions: [],
+                        text: messages[3]
+                    }
+                }
+            });
+        expect(res2.status).toEqual(403);
+    });
+    it('send message - to blocked user',async () => {
+        const res2:Response = await request(app)
+            .put('/message/add')
+            .set('Authorization',accounts[0].tokens)
+            .send({
+                chatType: 'normalChat',
+                chatId: normalChatId,
+                message: {
+                    type: messageTypes.normalMessage.valueOf(),
+                    content: {
+                        media: [],
+                        mentions: [],
+                        text: messages[4]
+                    }
+                }
+            });
+        expect(res2.status).toEqual(403);
+    });
+    it('get chat - blocked user',async () => {
+        const res:Response = await request(app)
+            .get('/chats/')
+            .set('Authorization',accounts[1].tokens)
+            .send();
+        expect(res.status).toEqual(200);
+        const data:ChatInfo[] = res.body;
+        expect(data.length).toBeGreaterThanOrEqual(1);
+        expect(instanceOfChatInfo(data[0])).toEqual(true);
+        // find chat
+        const chatInfo:ChatInfo = findChatChatName(data,accounts[0].username);
+        expect(normalChatId).toEqual(chatInfo.id);
+        expect(chatInfo.blockedBySelf).toEqual(false);
+        expect(chatInfo.blockedByOther).toEqual(true);
+    });
+    it('send message - unblocked user',async () => {
+        const res1:Response = await request(app)
+            .get('/user/unblock/' + accounts[1].uid)
+            .set('Authorization',accounts[0].tokens)
+            .send();
+        expect(res1.status).toEqual(200);
+        const res2:Response = await request(app)
+            .put('/message/add')
+            .set('Authorization',accounts[1].tokens)
+            .send({
+                chatType: 'normalChat',
+                chatId: normalChatId,
+                message: {
+                    type: messageTypes.normalMessage.valueOf(),
+                    content: {
+                        media: [],
+                        mentions: [],
+                        text: messages[3]
+                    }
+                }
+            });
+        expect(res2.status).toEqual(200);
+        const data:NewMessageReturn = res2.body;
+        expect(instanceOfNewMessageReturn(data)).toEqual(true);
+    });
+    it('send message - to unblocked user',async () => {
+        const res2:Response = await request(app)
+            .put('/message/add')
+            .set('Authorization',accounts[0].tokens)
+            .send({
+                chatType: 'normalChat',
+                chatId: normalChatId,
+                message: {
+                    type: messageTypes.normalMessage.valueOf(),
+                    content: {
+                        media: [],
+                        mentions: [],
+                        text: messages[4]
+                    }
+                }
+            });
+        expect(res2.status).toEqual(200);
+        const data:NewMessageReturn = res2.body;
+        expect(instanceOfNewMessageReturn(data)).toEqual(true);
     });
 });
