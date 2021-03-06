@@ -16,8 +16,9 @@ export default class MessageStorage {
      */
     private _loadedAllMessages:boolean = false;
     private _chat:Chat;
-    private _minMid:number;
-    private _maxMid:number;
+    // -1 --> default values when empty
+    private _minMid:number = -1;
+    private _maxMid:number = -1;
     private _messages = new BinSearchArray();
 
     constructor(chat:any) {
@@ -126,9 +127,9 @@ export default class MessageStorage {
      */
     async loadMessages(num:number):Promise<number> {
 
-        if(!this.minMid) {
+        if(this.minMid === -1) {
             await this.getMaxMid();
-            this.minMid = this.maxMid+1;
+            this.minMid = this.maxMid + 1;
         }
 
         const result:any = await this.selectMessages(num);
@@ -351,7 +352,9 @@ export default class MessageStorage {
     async getMidBelow(mid:number):Promise<number> {
 
         const index = this.messages.getIndex(mid);
-
+        /*
+            if message not found --> error
+         */
         if(index === -1)
             throw new Error('mid does not exist');
         else{
