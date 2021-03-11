@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 25. Feb 2021 um 20:23
+-- Erstellungszeit: 08. Mrz 2021 um 18:51
 -- Server-Version: 10.4.13-MariaDB
 -- PHP-Version: 7.4.8
 
@@ -159,6 +159,18 @@ CREATE TABLE `normalmessage` (
 -- --------------------------------------------------------
 
 --
+-- Tabellenstruktur für Tabelle `pushsubscription`
+--
+
+CREATE TABLE `pushsubscription` (
+  `psid` int(11) NOT NULL,
+  `uid` int(11) NOT NULL,
+  `subscription` varchar(500) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Tabellenstruktur für Tabelle `statusmessage`
 --
 
@@ -274,6 +286,12 @@ ALTER TABLE `normalmessage`
   ADD PRIMARY KEY (`nmid`);
 
 --
+-- Indizes für die Tabelle `pushsubscription`
+--
+ALTER TABLE `pushsubscription`
+  ADD PRIMARY KEY (`psid`);
+
+--
 -- Indizes für die Tabelle `statusmessage`
 --
 ALTER TABLE `statusmessage`
@@ -360,6 +378,12 @@ ALTER TABLE `normalchat`
 --
 ALTER TABLE `normalmessage`
   MODIFY `nmid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT für Tabelle `pushsubscription`
+--
+ALTER TABLE `pushsubscription`
+  MODIFY `psid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `statusmessage`

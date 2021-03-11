@@ -203,3 +203,75 @@ export async function unblockUser(uidFrom:number,uid:number):Promise<void> {
         })
     })
 }
+export interface UserUnreadMessages {
+    chatsWithUnreadMessages:number,
+    unreadMessages:number
+}
+/*
+    return number of unread messages in all chats
+        and number of chats with unread messages
+ */
+export async function getUnreadMessagesOfUser(uid:number):Promise<UserUnreadMessages> {
+
+    const unreadMessages = {
+        chatsWithUnreadMessages: 0,
+        unreadMessages: 0
+    }
+    /*
+        get normalChats with unread messages:
+
+        SELECT uid1 AS 'uid', unreadMessages1 AS 'unreadMessages'
+        FROM normalchat
+        WHERE uid1 = uid AND unreadMessages1 > 1
+        UNION
+        SELECT uid2 AS 'uid', unreadMessages2 AS 'unreadMessages'
+        FROM normalchat
+        WHERE uid2 = uid AND unreadMessages2 > 1
+     */
+    await new Promise<void>((resolve, reject) => {
+        const query_str =
+            "SELECT uid1 AS 'uid', unreadMessages1 AS 'unreadMessages'" +
+            "FROM normalchat " +
+            "WHERE uid1 = " + uid + " AND unreadMessages1 > 0 " +
+            "UNION " +
+            "SELECT uid2 AS 'uid', unreadMessages2 AS 'unreadMessages'" +
+            "FROM normalchat " +
+            "WHERE uid2 = " + uid + " AND unreadMessages2 > 0 " +
+            ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            else if(!isResultEmpty(rows))
+                for (const row of rows) {
+                    unreadMessages.chatsWithUnreadMessages ++;
+                    unreadMessages.unreadMessages += row.unreadMessages;
+                }
+            resolve();
+        });
+
+    })
+    /*
+        get groupChats with unread messages
+     */
+    await new Promise<void>((resolve, reject) => {
+        const query_str =
+            "SELECT uid, unreadMessages " +
+            "FROM groupchatmember " +
+            "WHERE uid = " + uid + " AND unreadMessages > 0 AND isStillMember = 1;";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            else if(!isResultEmpty(rows))
+                for (const row of rows) {
+                    unreadMessages.chatsWithUnreadMessages ++;
+                    unreadMessages.unreadMessages += row.unreadMessages;
+                }
+            resolve();
+        })
+    })
+    return unreadMessages;
+}

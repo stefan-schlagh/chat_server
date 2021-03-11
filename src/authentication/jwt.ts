@@ -18,14 +18,14 @@ export async function generateToken(user:SimpleUser):Promise<string> {
     if(user.uid < 1)
         throw new Error('user.uid cannot be smaller than 1')
 
-    //TODO: add expiration date
     return await new Promise((resolve, reject) => {
 
         jwt.sign(
             user,//data stored in jwt
             privateKey,//private key
             {
-                algorithm: 'HS256'
+                algorithm: 'HS256',
+                expiresIn: '30d'
             },
             function (err, token) {
                 if (err)

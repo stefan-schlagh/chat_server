@@ -11,6 +11,7 @@ import {SimpleUser} from "../../models/user";
 import {GroupChatInfo, GroupChatMemberDataAll} from "../../models/chat";
 import {statusMessageTypes} from "../../models/message";
 import {selectGroupChatMembers,GroupChatMemberDB} from "../database/groupChatMember";
+import {NotificationTypes, sendNotification} from "../../push/push";
 
 export class GroupChat extends Chat{
 
@@ -364,7 +365,7 @@ export class GroupChat extends Chat{
     /*
         all uids of the groupChatMembers are returned
      */
-   async getMemberUids(uidExclude:number):Promise<number[]> {
+    async getMemberUids(uidExclude:number):Promise<number[]> {
 
        return new Promise<number[]>((resolve, reject) => {
 
@@ -531,6 +532,23 @@ export class GroupChat extends Chat{
             groupName: this.getChatName(0)
         });
     }
+    // a push notification is sent to all users who are not online
+    async sendNotification(type:NotificationTypes) {
+        await new Promise<void>((resolve, reject) => {
+            let callCounter:number = 0;
+            this.members.forEach(async (value:GroupChatMember, key:number) => {
+                /*
+                    if member is not online, send notification
+                 */
+                if(!value.user.online)
+                    await sendNotification(value.user.uid,await value.user.getNotificationString(type));
+
+                callCounter ++;
+                if(callCounter === this.members.size)
+                    resolve();
+            });
+        });
+    }
     /*
         subscribe users o the room in the socket:
             not, if member not in chat anymore
@@ -571,8 +589,8 @@ export class GroupChat extends Chat{
             let callCounter = 0;
             this.members.forEach((value:GroupChatMember, key:number) => {
                 /*
-                if the uid is not the one of the removing user
-             */
+                    if the uid is not the one of the removing user
+                 */
                 if(value.user.uid !== uid) {
                     /*
                         if there are no other chats, the user gets deleted

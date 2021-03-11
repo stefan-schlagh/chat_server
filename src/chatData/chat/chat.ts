@@ -4,13 +4,15 @@ import NormalMessage from "../message/normalMessage";
 import StatusMessage from "../message/statusMessage";
 import User from "../user";
 import {
-    LoadedMessages, MessageContent,
+    LoadedMessages,
+    MessageContent,
     MessageDataIn,
     messageTypes,
     NormalMessageContent,
-    StatusMessageContent, statusMessageTypes
+    StatusMessageContent
 } from "../../models/message";
 import {SimpleUser} from "../../models/user";
+import {NotificationTypes} from "../../push/push";
 
 export enum chatTypes {
     normalChat = 0,
@@ -46,10 +48,9 @@ export abstract class Chat{
             return 'groupChat';
     }
     /*
-        neue Message wird zu message-array hinzugefügt
-        im Callback wird die msgId zurückgegeben
+        new message gets sent to users
      */
-    async sendMessage(author:any,message:Message,includeSender:boolean = false):Promise<void> {
+    async sendMessage(author:User,message:Message,includeSender:boolean = false):Promise<void> {
         /*
             message gets sent to all users
          */
@@ -59,6 +60,8 @@ export abstract class Chat{
             message.getMessageObject(),
             includeSender
         );
+        // send notification
+        await this.sendNotification(NotificationTypes.newMessage);
     }
     /*
         a new message is added to the chat
@@ -145,6 +148,8 @@ export abstract class Chat{
     }
     // a message is sent to all members of the chat via a socket
     abstract sendToAll(author:User,socketMessage:string,messageObject:any,includeSender:boolean): void;
+    // a push notification is sent to all users who are not online
+    abstract async sendNotification(type:NotificationTypes): Promise<void>;
     // increment the unread messages by the number
     abstract async incrementUnreadMessages(num:number): Promise<void>;
     // set the unreadMessages of the user with this uid to the specified number

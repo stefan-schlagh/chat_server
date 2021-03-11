@@ -20,7 +20,8 @@ import {SimpleUser, UserBlockInfo} from "../models/user";
 import {ChatInfo, NewChatData} from "../models/chat";
 import GroupChatMember from "./chat/groupChatMember";
 import NormalChat from "./chat/normalChat";
-import {getUserBlockInfo} from "./database/user";
+import {getUnreadMessagesOfUser, getUserBlockInfo} from "./database/user";
+import {NotificationTypes} from "../push/push";
 
 class Emitter extends EventEmitter {}
 
@@ -520,6 +521,22 @@ export default class User{
         }else{
             return false;
         }
+    }
+    async getNotificationString(type:NotificationTypes):Promise<string> {
+        if(type === NotificationTypes.newMessage)
+            return this.getNewMessageNotificationString();
+        return '';
+    }
+    /*
+        get string with unreadMessages
+     */
+    private async getNewMessageNotificationString():Promise<string> {
+        // get unread messages
+        const unreadMessages = await getUnreadMessagesOfUser(this.uid);
+
+        if(unreadMessages.chatsWithUnreadMessages === 1)
+            return `${unreadMessages.unreadMessages} ungelesene Nachrichten in einem Chat`;
+        return `${unreadMessages.unreadMessages} ungelesene Nachrichten in ${unreadMessages.chatsWithUnreadMessages} Chats`;
     }
 
     get eventEmitter():EventEmitter {

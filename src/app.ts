@@ -35,6 +35,7 @@ import groupRouter from './routes/group';
 import chatRouter from './routes/chats';
 import messageRouter from './routes/message';
 import pwResetRouter from './routes/passwordReset';
+import pushRouter from './routes/push';
 
 import {Pool, createPool} from 'mysql2';
 import {chatServer, createChatServer} from './chatServer';
@@ -46,7 +47,7 @@ const httpPort = process.env.NODE_HTTP_PORT;
 const httpsPort = process.env.NODE_HTTPS_PORT;
 
 export let app:Express;
-export let pool:Pool;
+export let pool:any;
 let httpServer:Server;
 let httpsServer:sServer;
 
@@ -96,13 +97,14 @@ export function startServer(){
     app.use(cookieParser());
     app.use(compression());
 
-    pool = createPool({
+    const poolOptions:any = {
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
         charset : 'utf8mb4'
-    });
+    };
+    pool = createPool(poolOptions);
     /*
         chatServer is created
      */
@@ -121,6 +123,7 @@ export function startServer(){
     app.use('/chats',chatRouter);
     app.use('/message',messageRouter);
     app.use('/pwReset',pwResetRouter);
+    app.use('/push',pushRouter);
 
     app.get('/', function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });

@@ -894,6 +894,34 @@ paths:
           $ref: '#components/responses/NotAllowed'
         '500':
           description: internal server error
+  /push/vapidPublicKey:
+    get:
+      description: get the vapid public id to register a push service worker
+      operationId: vapidPublicKey
+      parameters:
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              subscription:
+                type: object
+                description: the push subscription
+      responses:
+        '201':
+          description: success
+        '403':
+          description: authorization failed
+  /push/register:
+    post:
+      description: register a new push service worker
+      operationId: registerPush
+      responses:
+        '201':
+          description: success
+        '403':
+          description: authorization failed
   /pwReset/isValid/:code:
     get:
       description: is the verification code valid?
