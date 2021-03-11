@@ -6,6 +6,7 @@ import {pool} from "../../app";
 import {SimpleUser, UserBlockInfo} from "../../models/user";
 import User from "../user";
 import {getUserBlockInfo} from "../database/user";
+import {NotificationTypes, sendNotification} from "../../push/push";
 
 export default class NormalChat extends Chat{
 
@@ -95,6 +96,14 @@ export default class NormalChat extends Chat{
         else {
             this.sendToUser(this.user1,socketMessage,data);
         }
+    }
+    // a push notification is sent to all users who are not online
+    async sendNotification(type:NotificationTypes) {
+        // if user is not online, send notification
+        if(!this.user1.online)
+            await sendNotification(this.user1.uid,await this.user1.getNotificationString(type));
+        else if(!this.user2.online)
+            await sendNotification(this.user2.uid,await this.user2.getNotificationString(type));
     }
     sendToUser(user:User,socketMessage:string,data:any):void {
         // is socket not null?

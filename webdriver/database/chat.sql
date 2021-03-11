@@ -631,6 +631,19 @@ INSERT INTO `normalmessage` (`nmid`, `mid`, `text`) VALUES
 (1772, 882, 'hallo'),
 (1773, 883, 'testesttest');
 
+--
+-- Tabellenstruktur für Tabelle `pushsubscription`
+--
+
+CREATE TABLE `pushsubscription` (
+    `psid` int(11) NOT NULL,
+    `uid` int(11) NOT NULL,
+    `subscription` varchar(500) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+
 -- --------------------------------------------------------
 
 --
@@ -813,6 +826,13 @@ ALTER TABLE `normalmessage`
     ADD PRIMARY KEY (`nmid`);
 
 --
+-- Indizes für die Tabelle `pushsubscription`
+--
+ALTER TABLE `pushsubscription`
+    ADD PRIMARY KEY (`psid`);
+
+
+--
 -- Indizes für die Tabelle `statusmessage`
 --
 ALTER TABLE `statusmessage`
@@ -899,6 +919,13 @@ ALTER TABLE `normalchat`
 --
 ALTER TABLE `normalmessage`
     MODIFY `nmid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1772;
+
+--
+-- AUTO_INCREMENT für Tabelle `pushsubscription`
+--
+ALTER TABLE `pushsubscription`
+    MODIFY `psid` int(11) NOT NULL AUTO_INCREMENT;
+
 
 --
 -- AUTO_INCREMENT für Tabelle `statusmessage`
