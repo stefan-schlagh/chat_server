@@ -9,7 +9,7 @@ import {logger} from "../../util/logger";
 import {Chat, chatTypes} from "./chat";
 import {MessageDataIn} from "../../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
-import {GroupChatDataOfUser, NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../database/chat";
+import {GroupChatDataOfUser, NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../../database/chat/chat";
 
 export default class CDataChatStorage extends ChatStorage {
 

@@ -1,10 +1,7 @@
 import Message from "./message";
-import Mention from "./mention";
-import Media from "./media";
-import {chatData} from "../data";
-import {logger} from "../../util/logger";
 import {MessageDataOut, messageTypes, NormalMessageContent} from "../../models/message";
-import {pool} from "../../app";
+import {saveMessageInDB} from "../../database/message/message";
+import {loadNormalMessage, saveNormalMessageInDB} from "../../database/message/normalMessage";
 
 export default class NormalMessage extends Message {
 
@@ -24,35 +21,13 @@ export default class NormalMessage extends Message {
     // load message
     async loadMessage(){
 
-        await this.loadMessageText();
-        await this.loadMentions();
-        await this.loadMedia();
+        const {nmid,text} = await loadNormalMessage(this.mid);
+        this.nmid = nmid;
+        this.text = text;
+        //await this.loadMentions();
+        //await this.loadMedia();
     }
-
-    async loadMessageText(){
-
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT nmid, text " +
-                "FROM normalmessage " +
-                "WHERE mid = " + this.mid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any) => {
-                if(err)
-                    reject(err);
-                try {
-                    this.nmid = result[0].nmid;
-                    this.text = result[0].text;
-                    resolve();
-                }catch (e) {
-                    reject(new Error('result is undefined!'))
-                }
-            });
-        });
-    }
-
+/*
     async loadMentions() {
 
         return new Promise((resolve, reject) => {
@@ -68,7 +43,7 @@ export default class NormalMessage extends Message {
                     reject(err);
                 /*
                      it is looped through the result
-                 */
+                 *
                 this.mentions = new Array(result.length);
                 for (let i = 0; i < result.length; i++) {
                     this.mentions[i] =
@@ -109,7 +84,7 @@ export default class NormalMessage extends Message {
                resolve();
             });
         });
-    }
+    }*/
     /*
         normalMessage is initialized
      */
@@ -117,7 +92,12 @@ export default class NormalMessage extends Message {
         /*
             message gets saved
          */
-        await super.initNewMessageInner();
+        this.mid = await saveMessageInDB(
+            this.chat.type,
+            this.chat.chatId,
+            this.messageType,
+            this.author.uid
+        );
 
         this.text = data.text;
         /*
@@ -133,61 +113,23 @@ export default class NormalMessage extends Message {
                         {type,pathToFile}
                     ]
          */
-        await this.saveTextInDB();
-        await this.saveMentionsInDB(data.mentions);
-        await this.saveMediaInDB(data.media);
-    }
-    /*
-        the text is saved in the database
-     */
-    async saveTextInDB(){
-
-        return new Promise((resolve, reject) => {
-
-            const text = pool.escape(this.text);
-            const query_str1 =
-               "INSERT " +
-               "INTO normalmessage(mid,text) " +
-               "VALUES (" + this.mid + "," + text + ");";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error,result:any,fields:any) => {
-                if (err)
-                    reject(err);
-                /*
-                    nmid is selected
-                 */
-                const query_str2 =
-                    "SELECT max(nmid) AS 'nmid' " +
-                    "FROM normalmessage;";
-                logger.verbose('SQL: %s',query_str2);
-
-                pool.query(query_str2,(err:Error,result:any,fields:any) => {
-                    if (err)
-                        reject(err);
-                    try {
-                        this.nmid = result[0].nmid;
-                        resolve();
-                    }catch (e) {
-                        reject(new Error('result is undefined!'))
-                    }
-                });
-            });
-        });
+        await saveNormalMessageInDB(this.mid,this.text);
+        //await this.saveMentionsInDB(data.mentions);
+        //await this.saveMediaInDB(data.media);
     }
     /*
         mentions are saved in the database
-     */
+     *
     async saveMentionsInDB(mentions:any){
         /*
             mentions-array that will be saved in this is created
-         */
+         *
         this.mentions = new Array(mentions.length);
 
         for(let i=0;i<mentions.length;i++){
             /*
                 user is searched
-             */
+             *
             const uid = mentions[i].uid;
             const user = chatData.user.get(uid);
             if(!user)
@@ -195,25 +137,25 @@ export default class NormalMessage extends Message {
             /*
                 mention - object is created
                     - gets saved in the Database
-             */
+             *
             const mention = new Mention(-1,-1,mentions[i].textColumn);
             mention.user = user;
             await mention.saveMentionInDB(this.nmid);
             /*
                 mention is added to the array
-             */
+             *
             this.mentions[i] = mention;
         }
 
     }
     /*
         media is saved in the database
-     */
+     *
     async saveMediaInDB(media:any){
         /*
             TODO
-         */
-    }
+         *
+    }*/
     /*
         an object containing this message is returned
      */

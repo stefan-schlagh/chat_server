@@ -3,7 +3,7 @@ import {
     selectAllUsers,
     selectUsersNoChat,
     selectUsersNotInGroup
-} from "../chatData/database/selectUsers";
+} from "../database/user/selectUsers";
 import {chatData} from "../chatData/data";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
@@ -14,13 +14,16 @@ import {NewNormalChatData} from "../models/chat";
 import User from "../chatData/user";
 import {UserBlockInfo, UserInfoSelf} from "../models/user";
 import {validateEmail} from "../util/validateEmail";
-import {isEmailUsed} from "../chatData/database/email";
+import {isEmailUsed} from "../database/email";
 import {
     getUserInfo,
     getUserInfoSelf,
     blockUser,
-    unblockUser, getUserBlockInfo,
-} from "../chatData/database/user";
+    unblockUser,
+    getUserBlockInfo,
+    setEmail,
+} from "../database/user/user";
+import {verifyEmail} from "../database/user/verification";
 
 const router = express.Router();
 
@@ -175,14 +178,14 @@ router.get('/:uid',isAuthenticated,setUser,(req:any,res:any) => {
 router.put('/chat',isAuthenticated,setUser,async (req:any,res:any) => {
 
     try {
-        const userSelf = req.user;
+        const userSelf:User = req.user;
 
         const data: NewNormalChat = req.body;
         instanceOfNewNormalChat(data);
 
         try {
             // get blockInfo of the user
-            const blockInfo:UserBlockInfo = await getUserBlockInfo(req.user.uid,data.uid);
+            const blockInfo:UserBlockInfo = await getUserBlockInfo(userSelf.uid,data.uid);
             /*
                 if user blocked other user or the other way round, reject with 403
              */
@@ -212,7 +215,7 @@ router.put('/chat',isAuthenticated,setUser,async (req:any,res:any) => {
  */
 router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
     try {
-        const user = req.user;
+        const user:User = req.user;
 
         const email = req.body.email;
         if(typeof email !== "string" || !validateEmail(email))
@@ -223,7 +226,7 @@ router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
                 emailTaken: true
             });
         else {
-            await user.setEmail(email);
+            await setEmail(user.uid,email);
 
             res.send({
                 emailTaken: false
@@ -246,7 +249,7 @@ router.get('/verifyEmail/:code',async (req:any,res:any) => {
         //load user
         const user = await chatData.getUser(parts.uid,true);
         //verify code
-        if(await user.verifyEmail(parts)){
+        if(await verifyEmail(user.uid,parts)){
             res.send();
         }else{
             res.status(403);

@@ -2,11 +2,11 @@ import {Chat, chatTypes} from "./chat";
 import {chatServer} from "../../chatServer";
 import chatData from "../chatData";
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {SimpleUser, UserBlockInfo} from "../../models/user";
 import User from "../user";
-import {getUserBlockInfo} from "../database/user";
-import {NotificationTypes, sendNotification} from "../../push/push";
+import {getUserBlockInfo} from "../../database/user/user";
+import {NotificationTypes, sendNotification} from "../../database/push";
+import {saveChatInDB, updateUnreadMessages} from "../../database/chat/normalChat";
 
 export default class NormalChat extends Chat{
 
@@ -36,42 +36,8 @@ export default class NormalChat extends Chat{
      */
     async saveChatInDB():Promise<number> {
 
-        return new Promise((resolve,reject) => {
-
-            const query_str1 =
-                "INSERT " +
-                "INTO normalchat(uid1,uid2)" +
-                "VALUES('" +
-                    this.user1.uid + "','" +
-                    this.user2.uid +
-                "');";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                /*
-                    if no error has occured, the chatID gets requested
-                 */
-                if(err) {
-                    reject(err);
-                }else{
-
-                    const query_str2 =
-                        "SELECT max(ncid) AS 'ncid' " +
-                        "FROM normalchat;";
-                    logger.verbose('SQL: %s',query_str2);
-
-                    pool.query(query_str2,(err:Error,result:any,fields:any) => {
-
-                        if(err){
-                            reject(err);
-                        }else{
-                            this.chatId = result[0].ncid;
-                            resolve(this.chatId);
-                        }
-                    });
-                }
-            })
-        });
+        this.chatId = await saveChatInDB(this.user1.uid,this.user2.uid);
+        return this.chatId;
     }
     /*
         event is emitted to all participants of the chat
@@ -124,21 +90,11 @@ export default class NormalChat extends Chat{
      */
     async updateUnreadMessages():Promise<void> {
 
-        await new Promise((resolve, reject) => {
-            const query_str =
-                "UPDATE normalchat " +
-                "SET unreadMessages1 = " + this.unreadMessages1 + ", " +
-                "unreadMessages2 = " + this.unreadMessages2 + " " +
-                "WHERE ncid = " + this.chatId + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error) => {
-                if(err)
-                    reject(err);
-                else
-                    resolve();
-            });
-        })
+        await updateUnreadMessages(
+            this.unreadMessages1,
+            this.unreadMessages2,
+            this.chatId
+        );
     }
     /*
         unreadMessages of the user with this uid are set

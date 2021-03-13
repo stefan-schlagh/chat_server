@@ -4,9 +4,10 @@ import {logger} from "../util/logger";
 import {pool} from "../app";
 import {AuthError, errorTypes} from "../authentication/authError";
 import {instanceOfLoginData, instanceOfRegisterData, LoginData, RegisterData, RegisterReturn} from "../models/auth";
-import {isEmailUsed} from "../chatData/database/email";
+import {isEmailUsed} from "../database/email";
 import chatData from "../chatData/chatData";
 import User from "../chatData/user";
+import {setEmail} from "../database/user/user";
 
 const router = express.Router();
 
@@ -82,7 +83,7 @@ router.post('/register',async (req,res) => {
             // get user
             const user: User = chatData.addNewUser(data.uid, username);
             // set email
-            await user.setEmail(body.email);
+            await setEmail(user.uid,body.email);
         }
 
         res.send(data);

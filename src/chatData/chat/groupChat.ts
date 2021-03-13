@@ -6,12 +6,12 @@ import User from "../user";
 import GroupChatMember from "./groupChatMember";
 import StatusMessage from "../message/statusMessage";
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
 import {GroupChatInfo, GroupChatMemberDataAll} from "../../models/chat";
 import {statusMessageTypes} from "../../models/message";
-import {selectGroupChatMembers,GroupChatMemberDB} from "../database/groupChatMember";
-import {NotificationTypes, sendNotification} from "../../push/push";
+import {selectGroupChatMembers,GroupChatMemberDB} from "../../database/chat/groupChatMember";
+import {NotificationTypes, sendNotification} from "../../database/push";
+import {saveChatInDB, updateGroupChat} from "../../database/chat/groupChat";
 
 export class GroupChat extends Chat{
 
@@ -54,47 +54,12 @@ export class GroupChat extends Chat{
      */
     async saveChatInDB():Promise<number> {
 
-        const id:number =  await new Promise<number>((resolve,reject) => {
-
-            const isPublic = this.isPublic ? 1 : 0;
-
-            const query_str1 =
-                "INSERT " +
-                "INTO groupchat (name,description,isPublic) " +
-                "VALUES (" +
-                    pool.escape(this.chatName) + "," +
-                    pool.escape(this.description) + "," +
-                    isPublic +
-                ")";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                /*
-                    if no error has occured, the chatID gets requested
-                 */
-                if(err) {
-                    reject(err);
-                }else{
-
-                    const query_str2 =
-                        "SELECT max(gcid) AS 'gcid' " +
-                        "FROM groupchat;";
-                    logger.verbose('SQL: %s',query_str2);
-
-                    pool.query(query_str2,(err:Error,result:any,fields:any) => {
-
-                        if(err){
-                            reject(err);
-                        }else{
-                            this.chatId = result[0].gcid;
-                            resolve(this.chatId);
-                        }
-                    });
-                }
-            });
-        });
-        this.chatId = id;
-        return id;
+        this.chatId = await saveChatInDB(
+            this.chatName,
+            this.description,
+            this.isPublic
+        );
+        return this.chatId;
     }
     /*
         member is added to chat
@@ -710,28 +675,7 @@ export class GroupChat extends Chat{
      */
     async update():Promise<void> {
 
-        await new Promise((resolve,reject) => {
-
-            const isPublic = this.isPublic ? 1 : 0;
-
-            const query_str1 =
-                "UPDATE groupchat " +
-                "SET name = " + pool.escape(this.chatName) + ", " +
-                "description = " + pool.escape(this.description) + ", " +
-                "isPublic = " + isPublic + " " +
-                "WHERE gcid = " + this.chatId;
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                /*
-                    if no error has occured, the chatID gets requested
-                 */
-                if(err)
-                    reject(err);
-                else
-                    resolve();
-            });
-        });
+        await updateGroupChat(this.chatId,this.chatName,this.description,this.isPublic);
 
         this.emitChatUpdated()
     }

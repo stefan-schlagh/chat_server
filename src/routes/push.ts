@@ -2,7 +2,7 @@ import express, {Router} from "express";
 import webPush, {WebPushError} from "web-push";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
-import {saveSubscription} from "../push/push";
+import {saveSubscription} from "../database/push";
 import {logger} from "../util/logger";
 
 const router:Router = express.Router();

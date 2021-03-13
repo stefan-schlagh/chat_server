@@ -172,3 +172,21 @@ export function instanceOfLoadedMessages(object: any): object is LoadedMessages 
         throw new TypeError('invalid LoadedMessages');
     return true;
 }
+export interface StatusMessageDB {
+    // the id of the statusMessage
+    smid: number,
+    // the type of the message
+    type: statusMessageTypes
+}
+export interface NormalMessageDB {
+    nmid: number,
+    text: string
+}
+export interface MessageDB {
+    mid: number,
+    date: Date,
+    messageType: number,
+    isGroupChat: number,
+    cid: number,
+    uid: number
+}

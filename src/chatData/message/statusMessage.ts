@@ -3,14 +3,26 @@ import {chatData} from "../data";
 import User from "../user";
 import {Chat} from "../chat/chat";
 import {logger} from "../../util/logger";
-import {MessageDataOut, messageTypes, StatusMessageContent, statusMessageTypes} from "../../models/message";
+import {
+    MessageDataOut,
+    messageTypes,
+    StatusMessageContent,
+    statusMessageTypes
+} from "../../models/message";
 import {pool} from "../../app";
+import {saveMessageInDB} from "../../database/message/message";
+import {
+    statusMessage,
+    loadPassiveUsers,
+    saveStatusMessageInDB,
+    savePassiveUsersInDB
+} from "../../database/message/statusMessage";
 
 export default class StatusMessage extends Message {
 
     private _smid:number;
     private _type:statusMessageTypes;
-    private _passiveUsers:any = [];
+    private _passiveUsers:User[] = [];
 
     constructor(chat:Chat,author:User,mid:number = -1) {
         super(
@@ -22,8 +34,11 @@ export default class StatusMessage extends Message {
     }
     // load the message
     async loadMessage(){
-
-        await this.loadStatusMsgType();
+        // load status message
+        const {smid,type} = await statusMessage(this.mid);
+        this.smid = smid;
+        this.type = type;
+        // load passive users
         await this.loadPassiveUsers();
     }
 
@@ -53,33 +68,25 @@ export default class StatusMessage extends Message {
 
     async loadPassiveUsers(){
 
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT * " +
-                "FROM stmsgpassiveu " +
-                "WHERE smid = " + this.smid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                   reject(err);
-
-                this.passiveUsers = new Array(result.length);
-                for(let i=0;i<result.length;i++){
-                    /*
-                        user is searched
-                     */
-                    const user = chatData.user.get(result[i].uid);
-                    if(user){
-                        this.passiveUsers[i] = user;
-                    }else{
-                        throw new Error('user does not exist!');
-                    }
-                }
-                resolve();
-            });
-        });
+        const passiveUsersUid = await loadPassiveUsers(this.smid);
+        this.createPassiveUsers(passiveUsersUid);
+    }
+    /*
+        create passive users out of a array with the user ids
+     */
+    createPassiveUsers(passiveUsersUid:number[]){
+        this.passiveUsers = new Array(passiveUsersUid.length);
+        for(let i = 0;i < passiveUsersUid.length;i++){
+            /*
+                user is searched
+             */
+            const user = chatData.user.get(passiveUsersUid[i]);
+            if(user){
+                this.passiveUsers[i] = user;
+            }else{
+                throw new Error('user does not exist! uid: ' + passiveUsersUid[i]);
+            }
+        }
     }
     /*
         statusMessage is initialized
@@ -89,104 +96,34 @@ export default class StatusMessage extends Message {
         /*
             message gets saved
          */
-        await super.initNewMessageInner();
+        /*
+            message gets saved
+         */
+        this.mid = await saveMessageInDB(
+            this.chat.type,
+            this.chat.chatId,
+            this.messageType,
+            this.author.uid
+        );
 
         this.type = data.type;
         /*
             statusMsg is saved in the Database
             passive users are saved in the database
          */
-        await this.saveStatusMsgInDB();
+        this.smid = await saveStatusMessageInDB(this.mid,this.type);
         await this.savePassiveUsersInDB(data.passiveUsers);
-    }
-    /*
-        statusMsg is saved in the Database
-     */
-    async saveStatusMsgInDB(){
-
-        return new Promise((resolve, reject) => {
-
-            const query_str1 =
-                "INSERT " +
-                "INTO statusmessage(mid,type) " +
-                "VALUES (" + this.mid + "," + this.type + ");";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                if (err)
-                    reject(err);
-                /*
-                    smid of this statusmessage is requested
-                 */
-                const query_str2 =
-                    "SELECT max(smid) AS 'smid'" +
-                    "FROM statusmessage;";
-                logger.verbose('SQL: %s',query_str2);
-
-                pool.query(query_str2,(err:Error,result:any,fields:any) => {
-                    if (err)
-                        reject(err);
-                    try {
-                        this.smid = result[0].smid;
-                        resolve();
-                    }catch (e) {
-                        reject(new Error('result is undefined!'))
-                    }
-                });
-            });
-        });
     }
     /*
         passive users are saved in the Database
      */
-    async savePassiveUsersInDB(passiveUsers:number[]){
-        /*
-            passiveUsers are created
-         */
-        this.passiveUsers = new Array(passiveUsers.length);
+    async savePassiveUsersInDB(passiveUsersUid:number[]){
 
-        for(let i=0;i<passiveUsers.length;i++){
-            /*
-                user is searched
-             */
-            const uid = passiveUsers[i];
-            const user = chatData.user.get(uid);
-            if(!user)
-                throw new Error('user not defined! uid: ' + uid);
-            /*
-                user is added to array
-             */
-            this.passiveUsers[i] = user;
+        this.createPassiveUsers(passiveUsersUid);
+
+        if(this.passiveUsers.length > 0) {
+            await savePassiveUsersInDB(this.smid,passiveUsersUid);
         }
-
-        await new Promise((resolve, reject) => {
-
-            if(this.passiveUsers.length > 0) {
-                let query_str =
-                    "INSERT " +
-                    "INTO stmsgpassiveu(smid,uid) " +
-                    "VALUES ";
-                /*
-                    rows are added to query
-                 */
-                let i = 0;
-                for (;i < this.passiveUsers.length-1; i++) {
-                    query_str += "(" + this.smid + "," + this.passiveUsers[i].uid + "), "
-                }
-                query_str += "(" + this.smid + "," + this.passiveUsers[i].uid + ");";
-                logger.verbose('SQL: %s',query_str);
-                /*
-                    rows are saved in the database
-                 */
-                pool.query(query_str,(err:Error,result:any,fields:any) => {
-                    if (err)
-                        reject(err);
-                    resolve();
-                });
-            }else{
-                resolve();
-            }
-        });
     }
     /*
         an object containing this message is returned

@@ -5,6 +5,7 @@ import {hashPassword} from "../authentication/bcryptWrappers";
 import {sendPasswordResetMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {instanceOfSetPassword, instanceOfUsernameEmail, SetPassword, UsernameEmail} from "../models/code";
+import {setPassword} from "../database/user/user";
 
 const router = express.Router();
 
@@ -39,7 +40,7 @@ router.post("/set",async (req, res) => {
             //generate hash
             const hash = await hashPassword(data.password);
             //set Password at user
-            await user.setPassword(hash,parts.code);
+            await setPassword(user.uid,hash,parts.code);
 
             res.send();
         }

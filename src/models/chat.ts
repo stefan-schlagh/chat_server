@@ -143,3 +143,11 @@ export function instanceOfNewChatData(object: any): object is NewChatData {
         throw new TypeError('invalid NewChatData');
     return true;
 }
+export enum groupChatMemberChangeTypes {
+    joined = 0,
+    left = 1
+}
+export interface GroupChatMemberChange {
+    date: Date,
+    type: groupChatMemberChangeTypes
+}
