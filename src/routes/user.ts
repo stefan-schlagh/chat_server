@@ -24,25 +24,10 @@ import {
     setEmail,
 } from "../database/user/user";
 import {verifyEmail} from "../database/user/verification";
+import {instanceOfSearchData, SearchData} from "../models/search";
 
 const router = express.Router();
 
-export interface SearchUser {
-    search: string,
-    limit: number,
-    start: number
-}
-// type check
-export function instanceOfSearchUser(object: any): object is SearchUser {
-    if(!(
-        typeof object === 'object'
-        && 'search' in object && typeof object.search === 'string'
-        && 'limit' in object && typeof object.limit === 'number'
-        && 'start' in object && typeof object.start === 'number'
-    ))
-        throw new TypeError('invalid SearchUser');
-    return true;
-}
 export interface NewNormalChat {
     uid: number,
     username: string,
@@ -67,8 +52,8 @@ router.post('/',isAuthenticated,setUser,(req:any,res:any) => {
     try {
         const uidFrom = req.user.uid;
 
-        const data:SearchUser = req.body;
-        instanceOfSearchUser(data);
+        const data:SearchData = req.body;
+        instanceOfSearchData(data);
 
         selectAllUsers(uidFrom, data.search, data.limit, data.start)
             .then(data => {
@@ -92,8 +77,8 @@ router.post('/noChat',isAuthenticated,setUser,(req:any,res:any) => {
     try{
         const uidFrom = req.user.uid;
 
-        const data:SearchUser = req.body;
-        instanceOfSearchUser(data);
+        const data:SearchData = req.body;
+        instanceOfSearchData(data);
 
         selectUsersNoChat(uidFrom, data.search, data.limit, data.start)
             .then(data => {
@@ -118,8 +103,8 @@ router.post('/notInGroup/:gcid',isAuthenticated,setUser,(req:any,res:any) => {
             throw new TypeError('gcid is nan!');
         const gcid = parseInt(req.params.gcid);
 
-        const data:SearchUser = req.body;
-        instanceOfSearchUser(data);
+        const data:SearchData = req.body;
+        instanceOfSearchData(data);
 
         selectUsersNotInGroup(gcid, data.search, data.limit, data.start)
             .then(data => {

@@ -91,6 +91,19 @@ export function instanceOfGroupChatData(object: any): object is GroupChatData {
         throw new TypeError('invalid GroupChatData');
     return true;
 }
+export interface GroupChatDataOut extends GroupChatData {
+    // the id of the chat
+    id: number
+}
+export function instanceOfGroupChatDataOut(object: any): object is GroupChatDataOut {
+    if(!(
+        typeof object === 'object'
+        && 'id' in object && typeof object.id === 'number'
+        && instanceOfGroupChatData(object)
+    ))
+        throw new TypeError('invalid GroupChatDataOut');
+    return true;
+}
 export interface GroupChatInfoWithoutMembers {
     id: number,
     chatName: string,

@@ -305,34 +305,59 @@ paths:
           $ref: '#components/responses/NotAllowed'
         '500':
           description: internal server error
-  /group/all/:uid:
-    # TODO
-    get:
-      description: returns all groups of a specific user, not yet implemented
-      summary: get all groups of user
-      operationId: getGroupsByUser
-      parameters:
-        - $ref: '#components/securitySchemes/authorization'
-        - name: uid
-          in: path
-          required: false
-          schema:
-            type: integer
-            description: the id of the user
-      responses:
-        '501':
-          description: not yet implemented
   /group/public:
-    # TODO
-    get:
+    post:
       description: returns all public groups, not yet implemented
       summary: get all public groups
       operationId: getGroupsPublic
       parameters:
         - $ref: '#components/securitySchemes/authorization'
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              search:
+                type: string
+                description: this value should be searched
+              limit:
+                type: number
+                description: how many results should be returned
+              start:
+                type: number
+                description: where to start in the list of results
+              isNotPart:
+                type: boolean
+                description: |
+                  if true: show only chats where user is not part of
+                  else: show all chats
       responses:
-        '501':
-          description: not yet implemented
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                    description: the id of the chat
+                  name:
+                    type: string
+                    description: the name of the chat
+                  description:
+                    type: string
+                    description: the description of the chat
+                  isPublic:
+                    type: boolean
+                    description: is the chat public?, true by default
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
   /group:
     put:
       description: create a new group
@@ -346,7 +371,6 @@ paths:
           schema:
             type: object
             properties:
-              # TODO: remove surrounding 'data'
               data:
                 type: object
                 properties:

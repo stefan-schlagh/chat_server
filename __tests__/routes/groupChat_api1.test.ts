@@ -141,6 +141,13 @@ describe('test API /group 1', () => {
                 .send();
             expect(res.status).not.toEqual(200);
         });
+        it('join chat - chat not public',async () => {
+            const res:Response = await request(app)
+                .post('/group/' + chatId + '/join')
+                .set('Authorization',accounts[10].tokens)
+                .send()
+            expect(res.status).toEqual(403)
+        })
         it('add additional members empty data', async () => {
             const res: Response = await request(app)
                 .put('/group/' + chatId + '/members/')

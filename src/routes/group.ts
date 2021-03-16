@@ -5,6 +5,7 @@ import {setUser} from "../chatData/setUser";
 import {logger} from "../util/logger";
 import {
     GroupChatData,
+    GroupChatDataOut,
     GroupChatInfo,
     GroupChatMemberData,
     instanceOfGroupChatData,
@@ -14,6 +15,8 @@ import {Chat, chatTypes} from "../chatData/chat/chat";
 import {instanceOfSimpleUser} from "../models/user";
 import User from "../chatData/user";
 import GroupChatMember from "../chatData/chat/groupChatMember";
+import {instanceOfSearchData, SearchData} from "../models/search";
+import {getPublicGroups} from "../database/chat/groupChat";
 
 export const groupChatErrors =  {
     noAdminLeft: 0,
@@ -24,25 +27,42 @@ const router = express.Router();
 
 router.use(isAuthenticated);
 router.use(setUser);
-/*
-    route for all groups of the specified user
- */
-router.get('/all/:uid',(req,res) => {
-    /*
-        not yet implemented
-     */
-    res.status(501);
-    res.send();
-});
+
+export interface SearchPublicGroup extends SearchData {
+    // if true: show only chats where user is not part of
+    isNotPart: boolean
+}
+// type check
+export function instanceOfSearchPublicGroup(object: any): object is SearchPublicGroup {
+    if(!(
+        typeof object === 'object'
+        && 'isNotPart' in object && typeof object.isNotPart === 'boolean'
+        && instanceOfSearchData(object)
+    ))
+        throw new TypeError('invalid SearchPublicGroup');
+    return true;
+}
 /*
     route to receive all public groups
  */
-router.get('/public',(req,res) => {
-    /*
-        not yet implemented
-     */
-    res.status(501);
-    res.send();
+router.post('/public',async (req:any,res:any) => {
+    try {
+        const uidFrom = req.user.uid;
+
+        const search:SearchPublicGroup = req.body;
+        instanceOfSearchPublicGroup(search);
+
+        const data:GroupChatDataOut[] = await getPublicGroups(uidFrom,search);
+
+        res.send(data);
+    }catch (err) {
+        logger.error(err);
+        if(err instanceof TypeError)
+            res.status(400);
+        else
+            res.status(500);
+        res.send();
+    }
 });
 /*
     route for creating a groupChat
