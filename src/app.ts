@@ -36,7 +36,7 @@ import messageRouter from './routes/message';
 import pwResetRouter from './routes/passwordReset';
 import pushRouter from './routes/push';
 
-import {chatServer, createChatServer} from './chatServer';
+import {socketServer, createSocketServer} from './socketServer';
 import {logger} from "./util/logger";
 import {startPool,endPool} from "./database/pool";
 /*
@@ -95,21 +95,14 @@ export function startServer(){
     app.use(cookieParser());
     app.use(compression());
 
-    const poolOptions:any = {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE,
-        charset : 'utf8mb4'
-    };
     startPool();
     /*
         chatServer is created
      */
     if(process.env.NODE_ENV !== "test") {
-        createChatServer(httpsServer, app);
+        createSocketServer(httpsServer);
     }else{
-        createChatServer(httpServer, app);
+        createSocketServer(httpServer);
     }
 
     /*
@@ -147,7 +140,7 @@ export function startServer(){
 
 }
 export function closeServer(){
-    chatServer.io.close();
+    socketServer.io.close();
     httpServer.close();
     httpsServer.close();
     endPool();

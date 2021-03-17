@@ -9,6 +9,7 @@ import {
     getLatestGroupChatMemberChange
 } from "../../database/chat/groupChatMember";
 import {GroupChatMemberChange, groupChatMemberChangeTypes} from "../../models/chat";
+import {socketServer} from "../../socketServer";
 
 export default class GroupChatMember{
 
@@ -147,8 +148,8 @@ export default class GroupChatMember{
          */
         await this.update();
         // send message to client, if online
-        if(this.user.socket !== null)
-            this.user.socket.emit("removed chat",{
+        if(socketServer.clients.has(this.user.uid))
+            socketServer.getSocket(this.user.uid).emit("removed chat",{
                 id: this.chat.chatId,
                 type: this.chat.getChatTypeString()
             });

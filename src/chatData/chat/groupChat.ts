@@ -1,7 +1,7 @@
 import {Chat, chatTypes} from "./chat";
 import chatData from "../chatData";
 import {randomString} from "../../util/random";
-import {chatServer} from "../../chatServer";
+import {socketServer} from "../../socketServer";
 import User from "../user";
 import GroupChatMember from "./groupChatMember";
 import StatusMessage from "../message/statusMessage";
@@ -39,10 +39,9 @@ export class GroupChat extends Chat{
         await new Promise((resolve, reject) => {
             let callCounter = 0;
 
-            this.members.forEach(((value:GroupChatMember, key:number) => {
-                if(value.user.online && value.user.socket !== null && value.isStillMember){
-                    value.user.socket.join(this.socketRoomName);
-                }
+            this.members.forEach(((value:GroupChatMember,key:number) => {
+                if(socketServer.clients.has(value.user.uid) && value.isStillMember)
+                    socketServer.getSocket(value.user.uid).join(this.socketRoomName);
                 callCounter ++;
                 if(callCounter === this.members.size)
                     resolve();
@@ -485,9 +484,11 @@ export class GroupChat extends Chat{
             ...messageObject
         };
         if(includeSender)
-            chatServer.io.to(this.socketRoomName).emit(socketMessage,data);
-        else if(sentBy.socket !== null)
-            sentBy.socket.to(this.socketRoomName).emit(socketMessage,data);
+            socketServer.io.to(this.socketRoomName).emit(socketMessage,data);
+        else if(socketServer.clients.has(sentBy.uid))
+            socketServer.getSocket(sentBy.uid).to(this.socketRoomName).emit(socketMessage,data);
+        else
+            socketServer.io.to(this.socketRoomName).emit(socketMessage,data);
         logger.info({
             info: 'send socket message to all users',
             message: socketMessage,
@@ -520,13 +521,13 @@ export class GroupChat extends Chat{
      */
     subscribeToRoom(user:User):void {
         const member:GroupChatMember = this.getMember(user.uid);
-        if(user.socket !== null && member.isStillMember)
-            user.socket.join(this.socketRoomName);
+        if(socketServer.clients.has(user.uid) && member.isStillMember)
+            socketServer.getSocket(user.uid).join(this.socketRoomName);
     }
 
     leaveRoom(user:User):void {
-        if(user.socket !== null)
-            user.socket.leave(this.socketRoomName);
+        if(socketServer.clients.has(user.uid))
+            socketServer.getSocket(user.uid).leave(this.socketRoomName);
     }
     /*
         returns if there is someone online in this chat

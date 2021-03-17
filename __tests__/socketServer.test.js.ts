@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 import {AccountInfo, initAccount} from "../src/__testHelpers__/userHelpers";
 // @ts-ignore
 import names from '../src/__testHelpers__/names/names.json';
-import {chatServer} from "../src/chatServer";
+import {socketServer} from "../src/socketServer";
 
 describe('test chatServer', () => {
 
@@ -72,10 +72,10 @@ describe('test chatServer', () => {
             expect(success).toEqual(true);
         });
         it('account 0 should be online',() => {
-            expect(chatServer.isUserOnline(accounts[0].uid)).toEqual(true);
+            expect(socketServer.isUserOnline(accounts[0].uid)).toEqual(true);
         });
         it('account 0 should not be online',() => {
-            expect(chatServer.isUserOnline(accounts[1].uid)).toEqual(false);
+            expect(socketServer.isUserOnline(accounts[1].uid)).toEqual(false);
         });
     });
     describe('socket test - no authentication - fail',() => {

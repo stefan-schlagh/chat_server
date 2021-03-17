@@ -4,7 +4,6 @@ import {setChatData} from "./data";
 import {LoadedMessages, MessageDataIn} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
 import {Chat, chatTypes, getChatType} from "./chat/chat";
-import {Socket} from "socket.io";
 import {SimpleUser} from "../models/user";
 import {getSimpleUserInfo, getUserEmail} from "../database/user/user";
 
@@ -143,12 +142,12 @@ export class ChatData{
     /*
         the socket of a user is initialized
      */
-    async initUserSocket(uid:number,username:string,socket:Socket):Promise<User> {
+    async initUser(uid:number,username:string):Promise<User> {
         /*
             if user does not exist -> is created new
          */
         if(!this.user.has(uid)) {
-            const user = new User(uid, username,socket,true);
+            const user = new User(uid, username,true);
             /*
                 user is added to array
              */
@@ -165,7 +164,6 @@ export class ChatData{
          */
         else{
             const user = this.user.get(uid);
-            user.socket = socket;
             user.online = true;
             /*
                 chats are loaded

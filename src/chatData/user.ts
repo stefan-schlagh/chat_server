@@ -10,13 +10,13 @@ import {logger} from "../util/logger";
 import {Chat, chatTypes} from "./chat/chat";
 import {MessageDataIn, NewestMessage} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
-import {Socket} from "socket.io";
 import {SimpleUser, UserBlockInfo} from "../models/user";
 import {ChatInfo, NewChatData} from "../models/chat";
 import GroupChatMember from "./chat/groupChatMember";
 import NormalChat from "./chat/normalChat";
 import {getUnreadMessagesOfUser, getUserBlockInfo} from "../database/user/user";
 import {NotificationTypes} from "../database/push/push";
+import {socketServer} from "../socketServer";
 
 class Emitter extends EventEmitter {}
 
@@ -26,7 +26,6 @@ export default class User{
      */
     private _eventEmitter = new Emitter();
     private _chats:ChatStorage = new ChatStorage();
-    private _socket:Socket;
     private _uid:number;
     private _username:string;
     private _online:boolean;
@@ -43,10 +42,9 @@ export default class User{
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
      */
-    constructor(uid:number,username:string,socket:Socket = null,online:boolean = false) {
+    constructor(uid:number,username:string,online:boolean = false) {
         this.uid = uid;
         this.username = username;
-        this.socket = socket;
         this.online = online;
         this.currentChat = null;
     }
@@ -357,7 +355,7 @@ export default class User{
                 firstMessage: chat.messageStorage.getNewestMessage().getMessageObject()
             };
 
-            this.socket.emit("new chat", data);
+            socketServer.getSocket(this.uid).emit("new chat", data);
         }
     }
     /*
@@ -411,14 +409,6 @@ export default class User{
 
     set username(value:string) {
         this._username = value;
-    }
-
-    get socket():Socket {
-        return this._socket;
-    }
-
-    set socket(value:Socket) {
-        this._socket = value;
     }
 
     get chats():ChatStorage {

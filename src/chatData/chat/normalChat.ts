@@ -1,5 +1,5 @@
 import {Chat, chatTypes} from "./chat";
-import {chatServer} from "../../chatServer";
+import {socketServer} from "../../socketServer";
 import chatData from "../chatData";
 import {logger} from "../../util/logger";
 import {SimpleUser, UserBlockInfo} from "../../models/user";
@@ -73,13 +73,13 @@ export default class NormalChat extends Chat{
     }
     sendToUser(user:User,socketMessage:string,data:any):void {
         // is socket not null?
-        if(user.online && user.socket !== null) {
-            chatServer.io.to(user.socket.id).emit(socketMessage, data);
+        if(socketServer.clients.has(user.uid)) {
+            socketServer.io.to(socketServer.getSocket(user.uid).id).emit(socketMessage, data);
             logger.info({
                 info: 'send socket message to other user',
                 message: socketMessage,
                 socketMessage: socketMessage,
-                socketId: user.socket.id,
+                socketId: socketServer.getSocket(user.uid).id,
                 uid: user.uid
             });
         }else
