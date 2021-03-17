@@ -12,7 +12,7 @@ import {
     StatusMessageContent
 } from "../../models/message";
 import {SimpleUser} from "../../models/user";
-import {NotificationTypes} from "../../database/push";
+import {NotificationTypes} from "../../database/push/push";
 import {logger} from "../../util/logger";
 
 export enum chatTypes {

@@ -1,10 +1,9 @@
 import express from 'express';
 import {login, LoginReturn, register} from "../authentication/authentication";
 import {logger} from "../util/logger";
-import {pool} from "../app";
 import {AuthError, errorTypes} from "../authentication/authError";
 import {instanceOfLoginData, instanceOfRegisterData, LoginData, RegisterData, RegisterReturn} from "../models/auth";
-import {isEmailUsed} from "../database/email";
+import {isEmailUsed} from "../database/email/email";
 import chatData from "../chatData/chatData";
 import User from "../chatData/user";
 import {setEmail} from "../database/user/user";
@@ -23,7 +22,7 @@ router.post('/login',async (req:any,res:any) => {
         instanceOfLoginData(body);
 
         const {username,password} = body
-        const data:LoginReturn = await login(username, password, pool);
+        const data:LoginReturn = await login(username, password);
 
         res.send(data);
 
@@ -77,7 +76,7 @@ router.post('/register',async (req,res) => {
                 return;
             }
         // register
-        const data:RegisterReturn = await register(username, password, pool);
+        const data:RegisterReturn = await register(username, password);
         // set email if register worked
         if(!(data.usernameTaken || data.uid == -1) && 'email' in body) {
             // get user

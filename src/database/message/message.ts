@@ -1,8 +1,8 @@
 import {chatTypes} from "../../chatData/chat/chat";
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {MessageDB, messageTypes} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
+import {pool} from "../pool";
 
 /*
     message gets saved in the database

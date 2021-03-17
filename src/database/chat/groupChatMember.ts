@@ -1,6 +1,6 @@
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {GroupChatMemberChange,groupChatMemberChangeTypes} from "../../models/chat";
+import {pool} from "../pool";
 
 export interface GroupChatMemberDB {
     uid: number,

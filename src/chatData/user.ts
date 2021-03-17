@@ -16,7 +16,7 @@ import {ChatInfo, NewChatData} from "../models/chat";
 import GroupChatMember from "./chat/groupChatMember";
 import NormalChat from "./chat/normalChat";
 import {getUnreadMessagesOfUser, getUserBlockInfo} from "../database/user/user";
-import {NotificationTypes} from "../database/push";
+import {NotificationTypes} from "../database/push/push";
 
 class Emitter extends EventEmitter {}
 

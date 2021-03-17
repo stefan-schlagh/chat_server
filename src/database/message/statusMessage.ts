@@ -1,10 +1,10 @@
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {StatusMessageDB, statusMessageTypes} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
+import {pool} from "../pool";
 
 // load the statusMessage
-export async function statusMessage(mid:number):Promise<StatusMessageDB> {
+export async function loadStatusMessage(mid:number):Promise<StatusMessageDB> {
 
     return new Promise((resolve, reject) => {
 

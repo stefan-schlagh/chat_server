@@ -1,7 +1,7 @@
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {Parts, verificationCodeTypes, verifyCode} from "../../verification/code";
 import {isResultEmpty, ResultEmptyError} from "../../util/sqlHelpers";
+import {pool} from "../pool";
 
 /*
     returns if the email of the user is verified
@@ -50,7 +50,7 @@ export async function deleteVerificationCodes(uid:number):Promise<void> {
 export async function verifyEmail(uid:number,parts:Parts):Promise<boolean> {
     //verifyCode
     const vcid:number = await verifyCode(parts,verificationCodeTypes.emailVerification);
-    if(vcid != -1){
+    if(vcid !== -1){
         //email change is selected from DB
         const result:any = await new Promise((resolve, reject) => {
             const query_str =

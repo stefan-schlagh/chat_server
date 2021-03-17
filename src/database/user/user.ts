@@ -1,19 +1,19 @@
-import {pool} from "../../app";
 import {
     instanceOfSimpleUser,
     instanceOfUserInfoSelf,
     SimpleUser,
     UserBlockInfo,
+    UserExistsInfo,
     UserInfo,
     UserInfoSelf
 } from "../../models/user";
-import {isResultEmpty, ResultEmptyError} from "../../util/sqlHelpers";
+import {isResultEmpty} from "../../util/sqlHelpers";
 import {logger} from "../../util/logger";
 import {GroupChatInfoWithoutMembers} from "../../models/chat";
 import {generateVerificationCode, Parts, verificationCodeTypes, verifyCode} from "../../verification/code";
 import {deleteVerificationCodes, isVerified} from "./verification";
 import {sendEmailVerificationMail} from "../../verification/sendMail";
-import User from "../../chatData/user";
+import {pool} from "../pool";
 
 /*
     a user gets requested --> only username and id are returned
@@ -39,6 +39,49 @@ export async function getSimpleUserInfo(uid:number):Promise<SimpleUser> {
             else {
                 resolve(rows[0]);
             }
+        });
+    });
+}
+/*
+    checks if the user exists in the database
+    params:
+        string:username --> the username of the user
+        object:con --> the connection to the database, uses library mysql
+    returns
+        {
+            boolean:exists: does the requested user exist?,
+            number:uid: the user id of the user
+        }
+    throws
+        error if the query fails
+        if there is more than one entry with the username
+ */
+export async function getUserExistsInfo(username:string):Promise<UserExistsInfo>{
+
+    return await new Promise(function(resolve, reject){
+
+        const query_str =
+            "SELECT uid " +
+            "FROM user " +
+            "WHERE username = " + pool.escape(username) + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,function(err:Error,rows:any){
+
+            if (err)
+                reject(err);
+            else if(isResultEmpty(rows))
+                resolve({
+                    exists: false,
+                    uid: -1
+                });
+            else if(rows.length > 1)
+                reject(new Error('There are two entries in the database with username: ' + username))
+            else
+                resolve({
+                    exists: true,
+                    uid: rows[0].uid
+                });
         });
     });
 }

@@ -1,5 +1,5 @@
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
+import {pool} from "../pool";
 
 export interface NormalChatDataDB {
     ncid: number,

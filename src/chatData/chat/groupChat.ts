@@ -10,7 +10,7 @@ import {SimpleUser} from "../../models/user";
 import {GroupChatInfo, GroupChatMemberDataAll} from "../../models/chat";
 import {statusMessageTypes} from "../../models/message";
 import {selectGroupChatMembers,GroupChatMemberDB} from "../../database/chat/groupChatMember";
-import {NotificationTypes, sendNotification} from "../../database/push";
+import {NotificationTypes, sendNotification} from "../../database/push/push";
 import {saveChatInDB, updateGroupChat} from "../../database/chat/groupChat";
 
 export class GroupChat extends Chat{

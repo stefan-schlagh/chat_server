@@ -2,14 +2,13 @@ import {Server, Socket} from 'socket.io';
 import {chatData} from "./chatData/data";
 import {verifyToken} from "./authentication/jwt";
 import {Express} from "express";
-import {Pool} from "mysql2";
 import {logger} from "./util/logger";
 import User from "./chatData/user";
 import {ChangeChatData, instanceOfChangeChatData} from "./models/chat";
 
 export let chatServer:ChatServer;
-export function createChatServer(server:any,con:any,app:any){
-    chatServer = new ChatServer(server,con,app);
+export function createChatServer(server:any,app:Express){
+    chatServer = new ChatServer(server,app);
 }
 /*
     The socket that is communicating with the server
@@ -17,14 +16,12 @@ export function createChatServer(server:any,con:any,app:any){
 class ChatServer{
 
     private _server:any;
-    private _pool:Pool;
     private _app:Express;
     private _io:Server;
 
-    constructor(server:any,pool:Pool,app:Express) {
+    constructor(server:any,app:Express) {
 
         this.server = server;
-        this.pool = pool;
         this.app = app;
 
         //@ts-ignore
@@ -143,14 +140,6 @@ class ChatServer{
 
     set server(value: Server) {
         this._server = value;
-    }
-
-    get pool(): Pool {
-        return this._pool;
-    }
-
-    set pool(value: Pool) {
-        this._pool = value;
     }
 
     get app(): Express {

@@ -1,7 +1,7 @@
 import {chatData} from "../data";
 import User from "../user";
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
+import {pool} from "../../database/pool";
 
 export default class Mention {
 

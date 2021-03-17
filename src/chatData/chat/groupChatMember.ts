@@ -1,6 +1,4 @@
 import User from "../user";
-import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {statusMessageTypes} from "../../models/message";
 import {GroupChat} from "./groupChat";
 import {

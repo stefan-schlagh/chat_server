@@ -5,7 +5,7 @@ import {logger} from "../../util/logger";
 import {SimpleUser, UserBlockInfo} from "../../models/user";
 import User from "../user";
 import {getUserBlockInfo} from "../../database/user/user";
-import {NotificationTypes, sendNotification} from "../../database/push";
+import {NotificationTypes, sendNotification} from "../../database/push/push";
 import {saveChatInDB, updateUnreadMessages} from "../../database/chat/normalChat";
 
 export default class NormalChat extends Chat{

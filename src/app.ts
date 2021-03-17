@@ -14,8 +14,7 @@ const cert = fs.readFileSync(process.env.CERT_PATH);
 import http, {Server} from 'http';
 import express_enforces_ssl from 'express-enforces-ssl';
 import https, {Server as sServer} from 'https';
-import express, {Express} from 'express';
-import { Request, Response } from "express";
+import express, {Express, Request, Response} from 'express';
 // @ts-ignore
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
@@ -37,9 +36,9 @@ import messageRouter from './routes/message';
 import pwResetRouter from './routes/passwordReset';
 import pushRouter from './routes/push';
 
-import {Pool, createPool} from 'mysql2';
 import {chatServer, createChatServer} from './chatServer';
 import {logger} from "./util/logger";
+import {startPool,endPool} from "./database/pool";
 /*
     express-server is initialized
  */
@@ -47,7 +46,6 @@ const httpPort = process.env.NODE_HTTP_PORT;
 const httpsPort = process.env.NODE_HTTPS_PORT;
 
 export let app:Express;
-export let pool:any;
 let httpServer:Server;
 let httpsServer:sServer;
 
@@ -104,14 +102,14 @@ export function startServer(){
         database: process.env.DB_DATABASE,
         charset : 'utf8mb4'
     };
-    pool = createPool(poolOptions);
+    startPool();
     /*
         chatServer is created
      */
     if(process.env.NODE_ENV !== "test") {
-        createChatServer(httpsServer, pool, app);
+        createChatServer(httpsServer, app);
     }else{
-        createChatServer(httpServer, pool, app);
+        createChatServer(httpServer, app);
     }
 
     /*
@@ -152,7 +150,7 @@ export function closeServer(){
     chatServer.io.close();
     httpServer.close();
     httpsServer.close();
-    pool.end();
+    endPool();
 
     logger.info('chatServer closed');
 }

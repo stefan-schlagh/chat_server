@@ -1,5 +1,5 @@
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
+import {pool} from "../pool";
 
 /*
     chat is saved in the database

@@ -14,7 +14,7 @@ import {NewNormalChatData} from "../models/chat";
 import User from "../chatData/user";
 import {UserBlockInfo, UserInfoSelf} from "../models/user";
 import {validateEmail} from "../util/validateEmail";
-import {isEmailUsed} from "../database/email";
+import {isEmailUsed} from "../database/email/email";
 import {
     getUserInfo,
     getUserInfoSelf,

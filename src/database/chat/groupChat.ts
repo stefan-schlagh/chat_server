@@ -1,8 +1,8 @@
-import {pool} from "../../app";
 import {logger} from "../../util/logger";
 import {SearchPublicGroup} from "../../routes/group";
-import {GroupChatDataOut} from "../../models/chat";
+import {GroupChatData, GroupChatDataOut} from "../../models/chat";
 import {isResultEmpty} from "../../util/sqlHelpers";
+import {pool} from "../pool";
 
 /*
     chat is saved in the database
@@ -120,4 +120,29 @@ export async function getPublicGroups(uid:number,search:SearchPublicGroup):Promi
             resolve(data);
         })
     })
+}
+export async function getGroupChatData(gcid:number):Promise<GroupChatData> {
+
+    return await new Promise<GroupChatData>((resolve, reject) => {
+
+        const query_str =
+            "SELECT name, description, isPublic " +
+            "FROM groupchat " +
+            "WHERE gcid = " + gcid + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            else if(isResultEmpty(rows))
+                resolve(null);
+            else if(rows.length > 1)
+                reject(new Error('more than 1 chat with gcid: ' + gcid));
+            else
+                resolve({
+                    ...rows[0],
+                    isPublic: rows[0].isPublic === 1
+                });
+        });
+    });
 }

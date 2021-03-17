@@ -1,7 +1,7 @@
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {NormalMessageDB} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
+import {pool} from "../pool";
 
 export async function loadNormalMessage(mid:number):Promise<NormalMessageDB> {
 

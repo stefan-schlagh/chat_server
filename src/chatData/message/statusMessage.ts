@@ -2,17 +2,15 @@ import Message from "./message";
 import {chatData} from "../data";
 import User from "../user";
 import {Chat} from "../chat/chat";
-import {logger} from "../../util/logger";
 import {
     MessageDataOut,
     messageTypes,
     StatusMessageContent,
     statusMessageTypes
 } from "../../models/message";
-import {pool} from "../../app";
 import {saveMessageInDB} from "../../database/message/message";
 import {
-    statusMessage,
+    loadStatusMessage,
     loadPassiveUsers,
     saveStatusMessageInDB,
     savePassiveUsersInDB
@@ -35,35 +33,11 @@ export default class StatusMessage extends Message {
     // load the message
     async loadMessage(){
         // load status message
-        const {smid,type} = await statusMessage(this.mid);
+        const {smid,type} = await loadStatusMessage(this.mid);
         this.smid = smid;
         this.type = type;
         // load passive users
         await this.loadPassiveUsers();
-    }
-
-    async loadStatusMsgType(){
-
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT * " +
-                "FROM statusmessage " +
-                "WHERE mid = " + this.mid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                try {
-                    this.smid = result[0].smid;
-                    this.type = result[0].type;
-                    resolve();
-                }catch (e) {
-                    reject(new Error('result is undefined!'))
-                }
-            })
-        });
     }
 
     async loadPassiveUsers(){

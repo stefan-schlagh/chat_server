@@ -4,8 +4,6 @@ import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
 import Message from "./message";
 import {Chat, chatTypes} from "../chat/chat";
-import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {MessageDataOut, MessageDB, messageTypes, NewestMessage} from "../../models/message";
 import User from "../user";
 import {GroupChat} from "../chat/groupChat";
