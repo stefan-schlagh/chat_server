@@ -21,8 +21,7 @@ class SocketServer{
     constructor(server:any) {
 
         this.server = server;
-
-        //@ts-ignore
+        //create socket server
         this.io = new Server(server);
         /*
             gets called when a connection is established

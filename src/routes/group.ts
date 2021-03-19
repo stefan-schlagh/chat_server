@@ -17,6 +17,7 @@ import User from "../chatData/user";
 import GroupChatMember from "../chatData/chat/groupChatMember";
 import {instanceOfSearchData, SearchData} from "../models/search";
 import {getPublicGroups} from "../database/chat/groupChat";
+import {GroupChat} from "../chatData/chat/groupChat";
 
 export const groupChatErrors =  {
     noAdminLeft: 0,
@@ -440,6 +441,7 @@ function getChat(shouldBeLoaded:boolean){
                             res.status(404);
                             res.send();
                         } else {
+                            chatData.chats.addChat(chat);
                             req.chat = chat;
                             next();
                         }
@@ -554,12 +556,15 @@ function getOtherUsers(createNew:boolean){
  */
 function getGroupChatMemberSelf(req:any,res:any,next:any) {
     try {
+        const chat:GroupChat = req.chat;
         /*
-            groupChatMembesr is searched
+            groupChatMember is searched
+                if chat is public, ignore if chat not found
          */
         req.memberSelf =
-            req.chat.getMember(
-                req.user.uid
+            chat.getMember(
+                req.user.uid,
+                chat.isPublic
             );
         next();
     } catch (err) {
@@ -568,11 +573,10 @@ function getGroupChatMemberSelf(req:any,res:any,next:any) {
             400 -> bad request,
             user should be member of this chat when making the request
         */
-        res.status(400);
-        res.status({
+        res.status(403);
+        res.send({
             errorCode: groupChatErrors.notMemberOfChat
-        })
-        res.send();
+        });
     }
 }
 /*

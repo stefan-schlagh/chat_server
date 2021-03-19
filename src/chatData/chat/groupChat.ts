@@ -132,7 +132,7 @@ export class GroupChat extends Chat{
             true
         );
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         multiple members are added to the chat
@@ -173,7 +173,7 @@ export class GroupChat extends Chat{
             true
         );
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         member is removed from groupChat by admin
@@ -207,7 +207,7 @@ export class GroupChat extends Chat{
          */
         this.leaveRoom(memberOther.user);
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         member joins chat --> only when public
@@ -228,10 +228,11 @@ export class GroupChat extends Chat{
          */
         await this.sendMessage(
             user,
-            message
+            message,
+            true
         );
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         chat is left by the user
@@ -262,7 +263,7 @@ export class GroupChat extends Chat{
          */
         this.leaveRoom(member.user);
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         statusMessage is addedd
@@ -290,13 +291,17 @@ export class GroupChat extends Chat{
     /*
         requested member is returned
      */
-    getMember(uid:number):GroupChatMember {
+    getMember(uid:number,ignoreNotFound:boolean = false):GroupChatMember {
         const member = this.members.get(uid);
-        if(!member)
-            /*
-                member is not in this chat
-             */
-            throw new Error('member does not exist');
+        if(!member) {
+            if (ignoreNotFound)
+                return null;
+            else
+                /*
+                    member is not in this chat
+                 */
+                throw new Error('member does not exist');
+        }
         return member;
     }
     /*
@@ -632,18 +637,28 @@ export class GroupChat extends Chat{
     }
     /*
         groupChatInfo is returned
+            memberSelf: can be null
      */
     async getGroupChatInfo(memberSelf:GroupChatMember):Promise<GroupChatInfo> {
+        let memberSelfObject:any;
+        if(memberSelf === null){
+            memberSelfObject = {
+                isAdmin: false,
+                isStillMember: true
+            }
+        }else{
+            memberSelfObject =  {
+                isAdmin: memberSelf.isAdmin,
+                isStillMember: memberSelf.isStillMember
+            }
+        }
         return({
             type: this.getChatTypeString(),
             id: this.chatId,
             chatName: this.chatName,
             description: this.description,
             public: this.isPublic,
-            memberSelf: {
-                isAdmin: memberSelf.isAdmin,
-                isStillMember: memberSelf.isStillMember
-            },
+            memberSelf: memberSelfObject,
             members: await this.getMemberObjectAll(),
         });
     }
@@ -678,16 +693,16 @@ export class GroupChat extends Chat{
 
         await updateGroupChat(this.chatId,this.chatName,this.description,this.isPublic);
 
-        this.emitChatUpdated()
+        await this.emitChatUpdated()
     }
     /*
         emit updated groupChat info
      */
-    emitChatUpdated():void {
+    async emitChatUpdated():Promise<void> {
         this.sendToAll(
             null,
             "groupChat updated",
-            null,
+            await this.getGroupChatInfo(null),
             true
         );
     }
