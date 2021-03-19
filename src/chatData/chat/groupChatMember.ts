@@ -115,18 +115,10 @@ export default class GroupChatMember{
                     statusMessageTypes.userResignedAdmin
                     : statusMessageTypes.usersRemovedAdmin);
 
-        const statusMessage = await this.chat.addStatusMessage(
+        await this.chat.addStatusMessage(
             statusMessageType,
             userFrom,
             [this.user.uid]
-        );
-        /*
-            send message to all users
-        */
-        await this.chat.sendMessage(
-            userFrom,
-            statusMessage,
-            true
         );
     }
     /*

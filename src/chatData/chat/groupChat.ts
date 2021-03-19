@@ -12,6 +12,7 @@ import {statusMessageTypes} from "../../models/message";
 import {selectGroupChatMembers,GroupChatMemberDB} from "../../database/chat/groupChatMember";
 import {NotificationTypes, sendNotification} from "../../database/push/push";
 import {saveChatInDB, updateGroupChat} from "../../database/chat/groupChat";
+import user from "../../routes/user";
 
 export class GroupChat extends Chat{
 
@@ -118,18 +119,10 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersAdded,
             memberFrom.user,
             [otherUser.uid]
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            memberFrom.user,
-            message,
-            true
         );
 
         await this.emitChatUpdated();
@@ -159,18 +152,10 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersAdded,
             memberFrom.user,
             uids
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            memberFrom.user,
-            message,
-            true
         );
 
         await this.emitChatUpdated();
@@ -189,18 +174,10 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersRemoved,
             memberFrom.user,
             [memberOther.user.uid]
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            memberFrom.user,
-            message,
-            true
         );
         /*
             socket room is left
@@ -218,18 +195,10 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersJoined,
             user,
             []
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            user,
-            message,
-            true
         );
 
         await this.emitChatUpdated();
@@ -245,18 +214,10 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersLeft,
             member.user,
             []
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            member.user,
-            message,
-            true
         );
         /*
             socket room is left
@@ -273,7 +234,7 @@ export class GroupChat extends Chat{
         type:statusMessageTypes,
         userFrom:User,
         passiveUsers:number[]
-    ):Promise<StatusMessage> {
+    ):Promise<void> {
 
         const message = new StatusMessage(this,userFrom);
 
@@ -286,7 +247,14 @@ export class GroupChat extends Chat{
          */
         this.messageStorage.addNewMessage(message);
 
-        return message;
+        /*
+            message is sent
+         */
+        await this.sendMessage(
+            userFrom,
+            message,
+            true
+        );
     }
     /*
         requested member is returned

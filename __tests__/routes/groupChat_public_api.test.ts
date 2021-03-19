@@ -56,6 +56,16 @@ describe('test API /group public', () => {
         expect(res.body.chatId).toBeGreaterThan(0);
         chatId = res.body.chatId;
     });
+    it('get group chat - wrong type',async () => {
+        const res:Response = await request(app)
+            .post('/group/public/')
+            .set('Authorization',accounts[0].tokens)
+            .send({
+                search: false,
+                limit: 10
+            })
+        expect(res.status).toEqual(400)
+    })
     it('get group chat - show all',async () => {
         const res:Response = await request(app)
             .post('/group/public/')

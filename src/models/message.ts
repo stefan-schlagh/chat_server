@@ -13,7 +13,10 @@ export enum statusMessageTypes {
     /*
         when user resigns from admin status
      */
-    userResignedAdmin
+    userResignedAdmin,
+    chatNameChanged,
+    descriptionChanged,
+    isPublicChanged
 }
 export interface NewMessageData {
     chatType: string,
@@ -98,16 +101,12 @@ export function instanceOfMessageContent(object: any): object is MessageContent 
 }
 export interface NormalMessageContent {
     text: string
-    mentions: Mention[],
-    media: Media[]
 }
 // type check
 export function instanceOfNormalMessageContent(object: any): object is NormalMessageContent {
     return (
         typeof object === 'object'
         && 'text' in object && typeof object.text === 'string'
-        && 'mentions' in object && typeof object.mentions === 'object'
-        && 'media' in object && typeof object.media === 'object'
     )
 }
 export interface StatusMessageContent {
@@ -122,16 +121,6 @@ export function instanceOfStatusMessageContent(object: any): object is StatusMes
         && 'type' in object && typeof object.type === 'number'
         && 'passiveUsers' in object && typeof object.passiveUsers === 'object'
     )
-}
-// TODO
-export interface Mention {
-    // the user id of the mentioned user
-    uid: number,
-    textColumn: number
-}
-export interface Media {
-    type: number,
-    pathToFile: string
 }
 export interface LoadMessages {
     chatType: string,

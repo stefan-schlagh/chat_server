@@ -274,7 +274,7 @@ export default class MessageStorage {
             if message not found --> error
          */
         if(index === -1)
-            throw new Error('mid does not exist');
+            throw new Error('message with mid ' + mid + 'does not exist');
         else{
             /*
                 is there no message below --> 1 message is loaded

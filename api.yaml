@@ -563,6 +563,39 @@ paths:
           $ref: '#components/responses/NotAllowed'
         '500':
           description: internal server error
+  /group/:gcid/public:
+    put:
+      description: |
+        change the chats public state
+        requesting user has to be admin
+      summary: change isPublic groupChat
+      operationId: changeIsPublicGroupChat
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: gcid
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: the id of the chat
+        - name: body
+          in: header
+          required: true
+          schema:
+            type: object
+            properties:
+              isPublic:
+                type: boolean
+                description: the new public state
+      responses:
+        '200':
+          description: successful
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '500':
+          description: internal server error
   /group/:gcid/member/:uid:
     put:
       description: |

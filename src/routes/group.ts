@@ -11,13 +11,14 @@ import {
     instanceOfGroupChatData,
     instanceOfGroupChatMemberData
 } from "../models/chat";
-import {Chat, chatTypes} from "../chatData/chat/chat";
+import {Chat} from "../chatData/chat/chat";
 import {instanceOfSimpleUser} from "../models/user";
 import User from "../chatData/user";
 import GroupChatMember from "../chatData/chat/groupChatMember";
 import {instanceOfSearchData, SearchData} from "../models/search";
 import {getPublicGroups} from "../database/chat/groupChat";
 import {GroupChat} from "../chatData/chat/groupChat";
+import {statusMessageTypes} from "../models/message";
 
 export const groupChatErrors =  {
     noAdminLeft: 0,
@@ -103,12 +104,13 @@ router.put('/',async (req:any,res:any) => {
  */
 router.put(
     '/:gcid/chatName',
-    getChat(true),
+    getChat,
     getGroupChatMemberSelf,
     authAdminSelf,
     async (req:any,res:any) => {
 
         try {
+            const user:User = req.user;
             const chat = req.chat;
             const chatName = req.body.chatName;
 
@@ -117,11 +119,14 @@ router.put(
                 res.status(400);
                 res.send();
             }else {
-                //TODO send status message
-                chat.chatName = chatName;
-
-                await chat.update();
-
+                // did anything change?
+                if(chat.chatName !== chatName) {
+                    chat.chatName = chatName;
+                    // update chat
+                    await chat.update();
+                    // add a statusMessage
+                    await chat.addStatusMessage(statusMessageTypes.chatNameChanged, user,[])
+                }
                 res.send();
             }
         } catch(err) {
@@ -135,12 +140,13 @@ router.put(
  */
 router.put(
     '/:gcid/description',
-    getChat(true),
+    getChat,
     getGroupChatMemberSelf,
     authAdminSelf,
     async (req:any,res:any) => {
 
         try {
+            const user:User = req.user;
             const chat = req.chat;
             const description = req.body.description;
 
@@ -149,11 +155,14 @@ router.put(
                 res.status(400);
                 res.send();
             }else {
-                //TODO send status message
-                chat.description = description;
-
-                await chat.update();
-
+                // did anything change?
+                if(chat.description !== description) {
+                    chat.description = description;
+                    // update chat
+                    await chat.update();
+                    // add a statusMessage
+                    await chat.addStatusMessage(statusMessageTypes.descriptionChanged, user,[])
+                }
                 res.send();
             }
         } catch(err) {
@@ -161,6 +170,42 @@ router.put(
             res.status(500);
             res.send();
         }
+});
+/*
+    route for changing the chats public state
+ */
+router.put(
+    '/:gcid/public',
+    getChat,
+    getGroupChatMemberSelf,
+    authAdminSelf,
+    async (req:any,res:any) => {
+
+        try {
+            const user:User = req.user;
+            const chat:GroupChat = req.chat;
+            const isPublic = req.body.isPublic;
+
+            if (!isPublic || typeof isPublic !== "boolean") {
+                logger.error(new TypeError("invalid isPublic"));
+                res.status(400);
+                res.send();
+            }else {
+                // did anything change?
+                if(chat.isPublic !== isPublic) {
+                    chat.isPublic = isPublic;
+                    // update chat
+                    await chat.update();
+                    // add a statusMessage
+                    await chat.addStatusMessage(statusMessageTypes.isPublicChanged, user,[])
+                }
+                res.send();
+            }
+        } catch(err) {
+        logger.error(err);
+        res.status(500);
+        res.send();
+    }
 });
 /*
     route for deleting a groupChat
@@ -177,7 +222,7 @@ router.delete('/:gcid',(req,res) => {
  */
 router.get(
     '/:gcid',
-    getChat(false),
+    getChat,
     getGroupChatMemberSelf,
     async (req:any,res:any) => {
 
@@ -194,7 +239,7 @@ router.get(
  */
 router.put(
     '/:gcid/member/:uid',
-    getChat(true),
+    getChat,
     getOtherUser(true),
     getGroupChatMemberSelf,
     authAdminSelf,
@@ -220,7 +265,7 @@ router.put(
  */
 router.put(
     '/:gcid/members',
-    getChat(true),
+    getChat,
     getOtherUsers(true),
     getGroupChatMemberSelf,
     authAdminSelf,
@@ -247,7 +292,7 @@ router.put(
  */
 router.delete(
     '/:gcid/member/:uid',
-    getChat(true),
+    getChat,
     getOtherUser(false),
     getGroupChatMemberSelf,
     getGroupChatMemberOther,
@@ -274,7 +319,7 @@ router.delete(
  */
 router.post(
     '/:gcid/member/:uid/giveAdmin',
-    getChat(true),
+    getChat,
     getOtherUser(false),
     getGroupChatMemberSelf,
     getGroupChatMemberOther,
@@ -302,7 +347,7 @@ router.post(
  */
 router.post(
     '/:gcid/member/:uid/removeAdmin',
-    getChat(true),
+    getChat,
     getOtherUser(false),
     getGroupChatMemberSelf,
     getGroupChatMemberOther,
@@ -329,7 +374,7 @@ router.post(
  */
 router.post(
     '/:gcid/join',
-    getChat(false),
+    getChat,
     authChatPublic,
     (req:any,res) => {
 
@@ -351,7 +396,7 @@ router.post(
  */
 router.post(
     '/:gcid/joinWithLink',
-    getChat(false),
+    getChat,
     (req,res) => {
         /*
             TODO
@@ -362,7 +407,7 @@ router.post(
  */
 router.post(
     '/:gcid/leave',
-    getChat(true),
+    getChat,
     getGroupChatMemberSelf,
     isAdminLeft,
     (req:any,res) => {
@@ -385,7 +430,7 @@ router.post(
  */
 router.post(
     '/:gcid/removeAdmin',
-    getChat(true),
+    getChat,
     getGroupChatMemberSelf,
     authAdminSelf,
     isAdminLeft,
@@ -406,60 +451,40 @@ router.post(
 });
 /*
     chat with the chatId in params is returned
-        shouldBeLoaded: should the chat already be loaded?
  */
-function getChat(shouldBeLoaded:boolean){
-    return function(req:any,res:any,next:any){
-
-        if(shouldBeLoaded) {
-            try {
-                const gcid = parseInt(req.params.gcid);
-                if(typeof gcid !== 'number')
-                    throw new TypeError('wrong type of gcid!')
-                req.chat = chatData.getChat(chatTypes.groupChat, gcid);
-                next();
-            } catch (err) {
+function getChat(req:any,res:any,next:any){
+    try {
+        const gcid = parseInt(req.params.gcid);
+        if(typeof gcid !== 'number' || isNaN(gcid))
+            throw new TypeError('wrong type of gcid!')
+        chatData.chats.getGroupChat(gcid)
+            .then((chat:Chat) => {
                 /*
-                    400 -> bad request
+                   if chat does not exist
+                       --> 404 (not found)
                 */
+                if (!chat) {
+                    res.status(404);
+                    res.send();
+                } else {
+                    chatData.chats.addChat(chat);
+                    req.chat = chat;
+                    next();
+                }
+            }).catch((err:Error) => {
                 logger.error(err);
-                res.status(400);
+                res.status(500);
                 res.send();
-            }
-        }else{
-            try {
-                const gcid = parseInt(req.params.gcid);
-                if(typeof gcid !== 'number' || isNaN(gcid))
-                    throw new TypeError('wrong type of gcid!')
-                chatData.chats.getGroupChat(gcid)
-                    .then((chat:Chat) => {
-                        /*
-                           if chat does not exist
-                               --> 404 (not found)
-                        */
-                        if (!chat) {
-                            res.status(404);
-                            res.send();
-                        } else {
-                            chatData.chats.addChat(chat);
-                            req.chat = chat;
-                            next();
-                        }
-                    }).catch((err:Error) => {
-                        logger.error(err);
-                        res.status(500);
-                        res.send();
-                });
-            }catch(err){
-                /*
-                    400 -> bad request
-                */
-                logger.error(err);
-                res.status(400);
-                res.send();
-            }
-        }
+        });
+    }catch(err){
+        /*
+            400 -> bad request
+        */
+        logger.error(err);
+        res.status(400);
+        res.send();
     }
+
 }
 /*
     if the chat is not public, status 403 is sent
