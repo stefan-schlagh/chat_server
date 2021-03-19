@@ -1,11 +1,25 @@
 import {instanceOfSimpleUser, SimpleUser} from "./user";
 import {instanceOfMessageDataOut, MessageDataOut, NewestMessage} from "./message";
 
-export interface ChatInfo {
+export interface ChatData {
     type:string,
     id: number,
     chatName: string,
-    members: SimpleUser[],
+    members: SimpleUser[]
+}
+export function instanceOfChatData(object: any): object is ChatInfo {
+    return (
+        typeof object === 'object'
+        && object !== null
+        && 'type' in object && typeof object.type === 'string'
+        && 'id' in object && typeof object.id === 'number'
+        && 'chatName' in object && typeof object.chatName === 'string'
+        && 'members' in object && typeof object.members === 'object'
+        && Array.isArray(object.members) && object.members.length > 0
+        && instanceOfSimpleUser(object.members[0])
+    )
+}
+export interface ChatInfo extends ChatData {
     /*
         if normalChat:
             blockedBySelf: did the requesting user block the other user?
@@ -21,12 +35,8 @@ export interface ChatInfo {
 export function instanceOfChatInfo(object: any): object is ChatInfo {
     if(!(
         typeof object === 'object'
-        && 'type' in object && typeof object.type === 'string'
-        && 'id' in object && typeof object.id === 'number'
-        && 'chatName' in object && typeof object.chatName === 'string'
-        && 'members' in object && typeof object.members === 'object'
-        && Array.isArray(object.members) && object.members.length > 0
-        && instanceOfSimpleUser(object.members[0])
+        && object !== null
+        && instanceOfChatData(object)
         && 'firstMessage' in object && typeof object.firstMessage === 'object'
         && 'unreadMessages' in object && typeof object.unreadMessages === 'number'
     ))
@@ -42,17 +52,14 @@ export interface NewNormalChatData {
 export function instanceOfNewNormalChatData(object: any): object is NewNormalChatData {
     if(!(
         typeof object === 'object'
+        && object !== null
         && 'ncid' in object && typeof object.ncid === 'number'
         && 'mid' in object && typeof object.mid === 'number'
     ))
         throw new TypeError('invalid NewNormalChatData');
     return true;
 }
-export interface GroupChatMemberData {
-    // the id of the suer
-    uid: number,
-    // the username of the user
-    username: string,
+export interface GroupChatMemberData extends SimpleUser {
     // is the member admin?
     isAdmin: boolean
 }
@@ -60,15 +67,15 @@ export interface GroupChatMemberData {
 export function instanceOfGroupChatMemberData(object: any): object is GroupChatMemberData {
     if(!(
         typeof object === 'object'
-        && 'uid' in object && typeof object.uid === 'number'
-        && 'username' in object && typeof object.username === 'string'
+        && object !== null
         && 'isAdmin' in object && typeof object.isAdmin === 'boolean'
+        && instanceOfSimpleUser(object)
     ))
         throw new TypeError('invalid GroupChatMemberData');
     return true;
 }
 // the same with an id
-export interface GroupChatMemberDataAll extends GroupChatMemberData{
+export interface GroupChatMemberDataAll extends GroupChatMemberData {
     // the id of the GroupChatMember
     gcmid: number
 }
@@ -84,11 +91,26 @@ export interface GroupChatData {
 export function instanceOfGroupChatData(object: any): object is GroupChatData {
     if(!(
         typeof object === 'object'
+        && object !== null
         && 'name' in object && typeof object.name === 'string'
         && 'description' in object && typeof object.description === 'string'
         && 'isPublic' in object && typeof object.isPublic === 'boolean'
     ))
         throw new TypeError('invalid GroupChatData');
+    return true;
+}
+export interface GroupChatDataOut extends GroupChatData {
+    // the id of the chat
+    id: number
+}
+export function instanceOfGroupChatDataOut(object: any): object is GroupChatDataOut {
+    if(!(
+        typeof object === 'object'
+        && object !== null
+        && 'id' in object && typeof object.id === 'number'
+        && instanceOfGroupChatData(object)
+    ))
+        throw new TypeError('invalid GroupChatDataOut');
     return true;
 }
 export interface GroupChatInfoWithoutMembers {
@@ -120,26 +142,26 @@ export function instanceOfChangeChatData(object: any): object is ChangeChatData 
         && 'id' in object && typeof object.id === 'number'
     )
 }
-export interface NewChatData {
-    type: string,
-    id: number,
-    chatName: string,
-    members: SimpleUser[],
+export interface NewChatData extends ChatData {
     firstMessage: MessageDataOut
 }
 // type check
 export function instanceOfNewChatData(object: any): object is NewChatData {
     if(!(
         typeof object === 'object'
-        && 'type' in object && typeof object.type === 'string'
-        && 'id' in object && typeof object.id === 'number'
-        && 'chatName' in object && typeof object.chatName === 'string'
-        && 'members' in object && typeof object.members === 'object'
-        && Array.isArray(object.members) && object.members.length >= 0
-        && instanceOfSimpleUser(object.members[0])
+        && object !== null
+        && instanceOfChatData(object)
         && 'firstMessage' in object && typeof object.firstMessage === 'object'
         && instanceOfMessageDataOut(object.firstMessage)
     ))
         throw new TypeError('invalid NewChatData');
     return true;
+}
+export enum groupChatMemberChangeTypes {
+    joined = 0,
+    left = 1
+}
+export interface GroupChatMemberChange {
+    date: Date,
+    type: groupChatMemberChangeTypes
 }

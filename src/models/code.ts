@@ -1,3 +1,5 @@
+import {verificationCodeTypes} from "../verification/code";
+
 export interface SetPassword {
     code: string,
     password: string
@@ -25,4 +27,9 @@ export function instanceOfUsernameEmail(object: any): object is UsernameEmail {
     ))
         throw new TypeError('invalid UsernameEmail');
     return true;
+}
+export interface VerificationCodeDB {
+    vcid:number,
+    type:number,
+    hash:string
 }

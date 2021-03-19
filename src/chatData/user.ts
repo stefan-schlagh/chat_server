@@ -3,25 +3,20 @@ import chatData from "./chatData";
 import ChatStorage from "./chat/chatStorage";
 import {
     generateVerificationCode,
-    Parts,
     VerificationCode,
     verificationCodeTypes,
-    verifyCode
 } from "../verification/code";
-import {pool} from "../app";
-import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
-import {sendEmailVerificationMail} from "../verification/sendMail";
 import {logger} from "../util/logger";
 import {Chat, chatTypes} from "./chat/chat";
 import {MessageDataIn, NewestMessage} from "../models/message";
 import {GroupChat} from "./chat/groupChat";
-import {Socket} from "socket.io";
 import {SimpleUser, UserBlockInfo} from "../models/user";
 import {ChatInfo, NewChatData} from "../models/chat";
 import GroupChatMember from "./chat/groupChatMember";
 import NormalChat from "./chat/normalChat";
-import {getUnreadMessagesOfUser, getUserBlockInfo} from "./database/user";
-import {NotificationTypes} from "../push/push";
+import {getUnreadMessagesOfUser, getUserBlockInfo} from "../database/user/user";
+import {NotificationTypes} from "../database/push/push";
+import {socketServer} from "../socketServer";
 
 class Emitter extends EventEmitter {}
 
@@ -31,7 +26,6 @@ export default class User{
      */
     private _eventEmitter = new Emitter();
     private _chats:ChatStorage = new ChatStorage();
-    private _socket:Socket;
     private _uid:number;
     private _username:string;
     private _online:boolean;
@@ -48,10 +42,9 @@ export default class User{
     /*
         Wenn user nicht online, wird nur uid und username aus DB geladen
      */
-    constructor(uid:number,username:string,socket:Socket = null,online:boolean = false) {
+    constructor(uid:number,username:string,online:boolean = false) {
         this.uid = uid;
         this.username = username;
-        this.socket = socket;
         this.online = online;
         this.currentChat = null;
     }
@@ -362,7 +355,7 @@ export default class User{
                 firstMessage: chat.messageStorage.getNewestMessage().getMessageObject()
             };
 
-            this.socket.emit("new chat", data);
+            socketServer.getSocket(this.uid).emit("new chat", data);
         }
     }
     /*
@@ -376,151 +369,6 @@ export default class User{
     }
     async createPasswordResetCode():Promise<VerificationCode>{
         return await generateVerificationCode(verificationCodeTypes.pwReset,this.uid);
-    }
-    /*
-        set a new password
-            password: the new password
-            code: the code sent by the user
-     */
-    async setPassword(hash:string,code:string):Promise<void> {
-        //is email verified?
-        if(await this.isVerified()) {
-            const parts:Parts = {
-                uid: this.uid,
-                code: code
-            };
-            //verify code
-            if (await verifyCode(parts, verificationCodeTypes.pwReset) !== -1) {
-
-                const query_str =
-                    "UPDATE user " +
-                    "SET password = " + pool.escape(hash) + " " +
-                    "WHERE uid = " + this.uid + ";";
-                logger.verbose('SQL: %s',query_str);
-
-                await new Promise((resolve, reject) => {
-                    pool.query(query_str, (err:Error) => {
-                        if (err)
-                            reject(err);
-                        resolve();
-                    });
-                });
-            } else
-                throw new Error("invalid code")
-        }else
-            throw new Error("Email not verified!");
-    }
-    async isVerified():Promise<boolean> {
-        const result:any = await new Promise((resolve, reject) => {
-            const query_str =
-                "SELECT isVerified " +
-                "FROM user " +
-                "WHERE uid = " + this.uid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any) => {
-                if(err)
-                    reject(err);
-                resolve(result);
-            });
-        });
-        return result[0].isVerified === 1;
-    }
-    //email of the user is set
-    async setEmail(email:string):Promise<void> {
-
-        await this.deleteVerificationCodes();
-
-        const {sCode,vcid} = await generateVerificationCode(verificationCodeTypes.emailVerification,this.uid);
-
-        await new Promise((resolve, reject) => {
-            const query_str =
-                "INSERT " +
-                "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
-                "VALUES (" + this.uid + "," + vcid + "," + pool.escape(email) + ",CURRENT_TIMESTAMP(),0);";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any) => {
-               if(err)
-                   reject(err);
-               if(isResultEmpty(result))
-                   reject(new ResultEmptyError());
-               resolve();
-            });
-        });
-
-        await sendEmailVerificationMail(email,sCode);
-    }
-    //all current verificationCodes are deleted
-    async deleteVerificationCodes():Promise<void> {
-        await new Promise((resolve, reject) => {
-            const query_str =
-                "DELETE " +
-                "FROM verificationcode " +
-                "WHERE uid = " + this.uid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error) => {
-                if(err)
-                    reject(err);
-                resolve();
-            });
-        });
-    }
-
-    async verifyEmail(parts:Parts):Promise<boolean> {
-        //verifyCode
-        const vcid:number = await verifyCode(parts,verificationCodeTypes.emailVerification);
-        if(vcid != -1){
-            //email change is selected from DB
-            const result:any = await new Promise((resolve, reject) => {
-               const query_str =
-                   "SELECT * " +
-                   "FROM emailchange " +
-                   "WHERE vcid = " + vcid + ";";
-                logger.verbose('SQL: %s',query_str);
-
-                pool.query(query_str,(err:Error,result:any) => {
-                   if(err)
-                       reject(err);
-                   else if(isResultEmpty(result))
-                       reject(new ResultEmptyError());
-                   else
-                       resolve(result[0]);
-               });
-            });
-            //emailChange is set to verified
-            await new Promise((resolve, reject) => {
-                const query_str =
-                    "UPDATE emailchange " +
-                    "SET isVerified = 1 " +
-                    "WHERE vcid = " + vcid + ";";
-                logger.verbose('SQL: %s',query_str);
-
-                pool.query(query_str,(err:Error) => {
-                   if(err)
-                       reject(err);
-                   resolve();
-                });
-            });
-            //new email is written to user
-            await new Promise((resolve, reject) => {
-                const query_str =
-                    "UPDATE user " +
-                    "SET email = " + pool.escape(result.newEmail) + ",isVerified = 1 " +
-                    "WHERE uid = " + this.uid + ";";
-                logger.verbose('SQL: %s',query_str);
-
-                pool.query(query_str,(err:Error) => {
-                    if(err)
-                        reject(err);
-                    resolve();
-                });
-            });
-            return true;
-        }else{
-            return false;
-        }
     }
     async getNotificationString(type:NotificationTypes):Promise<string> {
         if(type === NotificationTypes.newMessage)
@@ -561,14 +409,6 @@ export default class User{
 
     set username(value:string) {
         this._username = value;
-    }
-
-    get socket():Socket {
-        return this._socket;
-    }
-
-    set socket(value:Socket) {
-        this._socket = value;
     }
 
     get chats():ChatStorage {

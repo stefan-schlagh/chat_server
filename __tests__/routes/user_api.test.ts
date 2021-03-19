@@ -13,7 +13,7 @@ import {
 } from "../../src/models/user";
 import {instanceOfNewNormalChatData, NewNormalChatData} from "../../src/models/chat";
 import {instanceOfNewMessageReturn, messageTypes, NewMessageReturn} from "../../src/models/message";
-import {getUserBlockInfo} from "../../src/chatData/database/user";
+import {getSimpleUserInfo, getUserBlockInfo} from "../../src/database/user/user";
 
 describe('test API /user',() => {
 
@@ -108,6 +108,11 @@ describe('test API /user',() => {
                 start: 0
             });
         expect(res.status).toEqual(400);
+    });
+    it('get simple user',async () => {
+       const user:SimpleUser = await getSimpleUserInfo(accounts[0].uid)
+        expect(user.uid).toEqual(accounts[0].uid);
+        expect(user.username).toEqual(accounts[0].username);
     });
     it('get userInfo self',async () => {
         const res:Response = await request(app)

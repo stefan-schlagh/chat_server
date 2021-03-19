@@ -147,7 +147,7 @@ describe("Test API /pwReset",() => {
         const res:Response = await request(app)
             .get('/pwReset/isValid/000004efbghjgkjkaghfkjhagkhf')
             .send()
-        expect(res.status).toEqual(400);
+        expect(res.status).toEqual(403);
     });
     it("set new password",async () => {
         const res:Response = await request(app)
@@ -183,6 +183,6 @@ describe("Test API /pwReset",() => {
                 code: '000004efbghjgkjkaghfkjhagkhf',
                 password: newpassword
             })
-        expect(res.status).toEqual(400);
+        expect(res.status).toEqual(403);
     });
 });

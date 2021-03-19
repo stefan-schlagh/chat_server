@@ -67,7 +67,6 @@ router.put('/add',async (req:any,res) => {
         try {
             const chatsLoadedBefore = user.chatsLoaded || user.chatsLoading;
             if(!chatsLoadedBefore) {
-                user.online = true;
                 await user.loadChatsIfNotLoaded();
             }
             chatData.changeChat(user, data.chatType, data.chatId);
@@ -78,7 +77,6 @@ router.put('/add',async (req:any,res) => {
 
             if(!chatsLoadedBefore) {
                 await user.saveAndDeleteChats();
-                user.online = false;
             }
 
             res.send({

@@ -141,6 +141,13 @@ describe('test API /group 1', () => {
                 .send();
             expect(res.status).not.toEqual(200);
         });
+        it('join chat - chat not public',async () => {
+            const res:Response = await request(app)
+                .post('/group/' + chatId + '/join')
+                .set('Authorization',accounts[10].tokens)
+                .send()
+            expect(res.status).toEqual(403)
+        })
         it('add additional members empty data', async () => {
             const res: Response = await request(app)
                 .put('/group/' + chatId + '/members/')
@@ -207,6 +214,15 @@ describe('test API /group 1', () => {
             for (let i = 10; i < 15; i++) {
                 expect(findUserName(accounts[i].uid, groupChatInfo.members)).toEqual(accounts[i].username);
             }
+        });
+        it('add a single member - uid wrong type', async () => {
+
+            const uid = accounts[15].uid;
+            const res: Response = await request(app)
+                .put('/group/' + chatId + '/member/abcdwefg')
+                .set('Authorization', accounts[0].tokens)
+                .send();
+            expect(res.status).toEqual(400);
         });
         it('add a single member', async () => {
 
@@ -279,6 +295,24 @@ describe('test API /group 1', () => {
                 });
             expect(res.status).toEqual(403);
         });
+        it('change chat name - chatId wrong type', async () => {
+            const res: Response = await request(app)
+                .put('/group/abcdefg/chatName/')
+                .set('Authorization', accounts[1].tokens)
+                .send({
+                    chatName: 'abcdefg'
+                });
+            expect(res.status).toEqual(400);
+        });
+        it('change chat name - wrong type', async () => {
+            const res: Response = await request(app)
+                .put('/group/' + chatId + '/chatName/')
+                .set('Authorization', accounts[1].tokens)
+                .send({
+                    chatName: {groupName2: false}
+                });
+            expect(res.status).toEqual(400);
+        });
         it('change chat name', async () => {
             const res: Response = await request(app)
                 .put('/group/' + chatId + '/chatName/')
@@ -288,12 +322,39 @@ describe('test API /group 1', () => {
                 });
             expect(res.status).toEqual(200);
         });
+        it('change chat description - wrong type', async () => {
+            const res: Response = await request(app)
+                .put('/group/' + chatId + '/description/')
+                .set('Authorization', accounts[1].tokens)
+                .send({
+                    description: [1,2,3]
+                });
+            expect(res.status).toEqual(400);
+        });
         it('change chat description', async () => {
             const res: Response = await request(app)
                 .put('/group/' + chatId + '/description/')
                 .set('Authorization', accounts[1].tokens)
                 .send({
                     description: groupDescription2
+                });
+            expect(res.status).toEqual(200);
+        });
+        it('change chat isPublic - wrong type', async () => {
+            const res: Response = await request(app)
+                .put('/group/' + chatId + '/public/')
+                .set('Authorization', accounts[1].tokens)
+                .send({
+                    isPublic: 'false'
+                });
+            expect(res.status).toEqual(400);
+        });
+        it('change chat isPublic', async () => {
+            const res: Response = await request(app)
+                .put('/group/' + chatId + '/public/')
+                .set('Authorization', accounts[1].tokens)
+                .send({
+                    isPublic: true
                 });
             expect(res.status).toEqual(200);
         });
@@ -307,6 +368,7 @@ describe('test API /group 1', () => {
             const groupChatInfo: GroupChatInfo = res.body;
             expect(groupChatInfo.chatName).toEqual(groupName2);
             expect(groupChatInfo.description).toEqual(groupDescription2);
+            expect(groupChatInfo.public).toEqual(true);
         });
         /*
             admins before: 1,2

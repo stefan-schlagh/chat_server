@@ -3,13 +3,12 @@ import {GroupChat} from "./groupChat";
 import GroupChatMember from "./groupChatMember";
 import User from "../user";
 import ChatStorage from "./chatStorage";
-import {pool} from "../../app";
 import {ChatData} from "../chatData";
-import {logger} from "../../util/logger";
 import {Chat, chatTypes} from "./chat";
 import {MessageDataIn} from "../../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
-import {GroupChatDataOfUser, NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../database/chat";
+import {GroupChatDataOfUser, NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../../database/chat/chat";
+import {getGroupChatData} from "../../database/chat/groupChat";
 
 export default class CDataChatStorage extends ChatStorage {
 
@@ -38,35 +37,19 @@ export default class CDataChatStorage extends ChatStorage {
      */
     async loadGroupChat(gcid:number):Promise<GroupChat> {
 
-        const data:any = await new Promise((resolve, reject) => {
 
-            const query_str =
-                "SELECT * " +
-                "FROM groupchat " +
-                "WHERE gcid = " + gcid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                else if(!result || result.length === 0)
-                    resolve();
-                else
-                    resolve(result[0]);
-            });
-        });
+        const data:GroupChatData = await getGroupChatData(gcid);
         /*
             if nothing found, null is returned
          */
-        if(!data)
+        if(data === null)
             return null;
 
-        const isPublic = data.isPublic === 1;
         const chat = new GroupChat(
             gcid,
             data.name,
             data.description,
-            isPublic
+            data.isPublic
         );
         /*
             members of the chat are laoded

@@ -1,6 +1,6 @@
-import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
 import {logger} from "../../util/logger";
+import {pool} from "../pool";
 
 const query_excludeBlockedUsers =
     "AND NOT uid = ANY(SELECT uidFrom AS 'uid' FROM blockedusers WHERE uidFrom = uid) " +

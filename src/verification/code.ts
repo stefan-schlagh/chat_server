@@ -1,8 +1,7 @@
 import crypto from "crypto";
-import {pool} from "../app";
-import {comparePassword,hashPassword} from "../authentication/bcryptWrappers";
-import {isResultEmpty, ResultEmptyError} from "../util/sqlHelpers";
-import {logger} from "../util/logger";
+import {comparePassword, hashPassword} from "../authentication/bcryptWrappers";
+import {deleteOldCodes, getCodes, saveCodeInDB} from "../database/verification/verificationcode";
+import {VerificationCodeDB} from "../models/code";
 
 /*
     the types the verificationCode can be
@@ -55,46 +54,16 @@ export function extractParts(sCode:string):Parts{
     returns the id of the verificationCode, if valid
         else, -1
  */
-export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise<number>{
+export async function verifyCode(parts:Parts,type:verificationCodeTypes):Promise<number> {
     //codes older than 2 days are deleted
-    await new Promise((resolve, reject) => {
-        const query_str =
-            "DELETE " +
-            "FROM verificationcode " +
-            "WHERE uid = " + parts.uid + " AND DATEDIFF(CURRENT_TIMESTAMP(),date) > 2;";
-        logger.verbose('SQL: %s',query_str);
+    await deleteOldCodes(parts.uid);
 
-        pool.query(query_str,(err:Error,result:any) => {
-            if(err)
-                reject(err);
-            resolve(result);
-        });
-    });
+    const codes:VerificationCodeDB[] = await getCodes(parts.uid,type);
 
-    const res:any = await new Promise((resolve, reject) => {
-        const query_str =
-            "SELECT vcid,type,hash " +
-            "FROM verificationcode " +
-            "WHERE uid = " + parts.uid + " " +
-            "AND type = " + type.valueOf() + ";";
-        logger.verbose('SQL: %s',query_str);
-
-        pool.query(query_str,(err:Error,result:any) => {
-            if(err)
-                reject(err);
-            if(result.length === 0)
-                reject(null);
-            resolve(result);
-        });
-    });
-    // if there are no verificationCodes --> not valid
-    if(res === null)
-        return -1
-
-    for(let i=0;i<res.length;i++){
-        if(type === res[i].type)
-            if(await comparePassword(parts.code,res[i].hash)){
-                return res[i].vcid;
+    for(let i = 0;i < codes.length;i ++){
+        if(type.valueOf() === codes[i].type)
+            if(await comparePassword(parts.code,codes[i].hash)){
+                return codes[i].vcid;
             }
     }
     return -1;
@@ -136,37 +105,4 @@ export async function generateCode():Promise<string>{
             resolve(buffer.toString('hex'));
         });
     })
-}
-async function saveCodeInDB(type:verificationCodeTypes,uid:number,hash:string):Promise<number>{
-
-    const query_str =
-        "INSERT " +
-        "INTO verificationcode(type,uid,hash,date) " +
-        "VALUES(" + type.valueOf() + "," + uid + "," + pool.escape(hash) + ",CURRENT_TIMESTAMP());";
-    logger.verbose('SQL: %s',query_str);
-
-    await new Promise((resolve, reject) => {
-        pool.query(query_str,async (err:Error,result:any) => {
-           if(err)
-               reject(err);
-           resolve();
-        });
-    });
-    return await new Promise((resolve, reject) => {
-        const query_str1 =
-            "SELECT max(vcid) " +
-            "AS 'vcid' " +
-            "FROM verificationcode " +
-            "WHERE uid = " + uid + ";";
-        logger.verbose('SQL: %s',query_str1);
-
-        pool.query(query_str1,(err:Error,result:any) => {
-            if(err)
-                reject(err);
-            else if(isResultEmpty(result))
-                reject(new ResultEmptyError());
-            else
-                resolve(result[0].vcid);
-        });
-    });
 }

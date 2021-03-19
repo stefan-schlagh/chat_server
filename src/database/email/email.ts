@@ -1,5 +1,5 @@
-import {pool} from "../../app";
 import {logger} from "../../util/logger";
+import {pool} from "../pool";
 
 /*
     returns if the email is already used

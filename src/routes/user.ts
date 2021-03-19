@@ -3,7 +3,7 @@ import {
     selectAllUsers,
     selectUsersNoChat,
     selectUsersNotInGroup
-} from "../chatData/database/selectUsers";
+} from "../database/user/selectUsers";
 import {chatData} from "../chatData/data";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
@@ -14,32 +14,20 @@ import {NewNormalChatData} from "../models/chat";
 import User from "../chatData/user";
 import {UserBlockInfo, UserInfoSelf} from "../models/user";
 import {validateEmail} from "../util/validateEmail";
-import {isEmailUsed} from "../chatData/database/email";
+import {isEmailUsed} from "../database/email/email";
 import {
     getUserInfo,
     getUserInfoSelf,
     blockUser,
-    unblockUser, getUserBlockInfo,
-} from "../chatData/database/user";
+    unblockUser,
+    getUserBlockInfo,
+    setEmail,
+} from "../database/user/user";
+import {verifyEmail} from "../database/user/verification";
+import {instanceOfSearchData, SearchData} from "../models/search";
 
 const router = express.Router();
 
-export interface SearchUser {
-    search: string,
-    limit: number,
-    start: number
-}
-// type check
-export function instanceOfSearchUser(object: any): object is SearchUser {
-    if(!(
-        typeof object === 'object'
-        && 'search' in object && typeof object.search === 'string'
-        && 'limit' in object && typeof object.limit === 'number'
-        && 'start' in object && typeof object.start === 'number'
-    ))
-        throw new TypeError('invalid SearchUser');
-    return true;
-}
 export interface NewNormalChat {
     uid: number,
     username: string,
@@ -64,8 +52,8 @@ router.post('/',isAuthenticated,setUser,(req:any,res:any) => {
     try {
         const uidFrom = req.user.uid;
 
-        const data:SearchUser = req.body;
-        instanceOfSearchUser(data);
+        const data:SearchData = req.body;
+        instanceOfSearchData(data);
 
         selectAllUsers(uidFrom, data.search, data.limit, data.start)
             .then(data => {
@@ -89,8 +77,8 @@ router.post('/noChat',isAuthenticated,setUser,(req:any,res:any) => {
     try{
         const uidFrom = req.user.uid;
 
-        const data:SearchUser = req.body;
-        instanceOfSearchUser(data);
+        const data:SearchData = req.body;
+        instanceOfSearchData(data);
 
         selectUsersNoChat(uidFrom, data.search, data.limit, data.start)
             .then(data => {
@@ -115,8 +103,8 @@ router.post('/notInGroup/:gcid',isAuthenticated,setUser,(req:any,res:any) => {
             throw new TypeError('gcid is nan!');
         const gcid = parseInt(req.params.gcid);
 
-        const data:SearchUser = req.body;
-        instanceOfSearchUser(data);
+        const data:SearchData = req.body;
+        instanceOfSearchData(data);
 
         selectUsersNotInGroup(gcid, data.search, data.limit, data.start)
             .then(data => {
@@ -175,14 +163,14 @@ router.get('/:uid',isAuthenticated,setUser,(req:any,res:any) => {
 router.put('/chat',isAuthenticated,setUser,async (req:any,res:any) => {
 
     try {
-        const userSelf = req.user;
+        const userSelf:User = req.user;
 
         const data: NewNormalChat = req.body;
         instanceOfNewNormalChat(data);
 
         try {
             // get blockInfo of the user
-            const blockInfo:UserBlockInfo = await getUserBlockInfo(req.user.uid,data.uid);
+            const blockInfo:UserBlockInfo = await getUserBlockInfo(userSelf.uid,data.uid);
             /*
                 if user blocked other user or the other way round, reject with 403
              */
@@ -212,7 +200,7 @@ router.put('/chat',isAuthenticated,setUser,async (req:any,res:any) => {
  */
 router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
     try {
-        const user = req.user;
+        const user:User = req.user;
 
         const email = req.body.email;
         if(typeof email !== "string" || !validateEmail(email))
@@ -223,7 +211,7 @@ router.post('/setEmail',isAuthenticated,setUser,async (req:any, res:any) => {
                 emailTaken: true
             });
         else {
-            await user.setEmail(email);
+            await setEmail(user.uid,email);
 
             res.send({
                 emailTaken: false
@@ -246,7 +234,7 @@ router.get('/verifyEmail/:code',async (req:any,res:any) => {
         //load user
         const user = await chatData.getUser(parts.uid,true);
         //verify code
-        if(await user.verifyEmail(parts)){
+        if(await verifyEmail(user.uid,parts)){
             res.send();
         }else{
             res.status(403);

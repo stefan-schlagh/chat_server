@@ -1,7 +1,7 @@
 import webPush, {WebPushError} from "web-push";
-import {logger} from "../util/logger";
-import {pool} from "../app";
-import {isResultEmpty} from "../util/sqlHelpers";
+import {logger} from "../../util/logger";
+import {isResultEmpty} from "../../util/sqlHelpers";
+import {pool} from "../pool";
 
 interface Subscription {
     psid: number,

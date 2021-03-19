@@ -12,7 +12,8 @@ import {
     StatusMessageContent
 } from "../../models/message";
 import {SimpleUser} from "../../models/user";
-import {NotificationTypes} from "../../push/push";
+import {NotificationTypes} from "../../database/push/push";
+import {logger} from "../../util/logger";
 
 export enum chatTypes {
     normalChat = 0,
@@ -61,7 +62,11 @@ export abstract class Chat{
             includeSender
         );
         // send notification
-        await this.sendNotification(NotificationTypes.newMessage);
+        this.sendNotification(NotificationTypes.newMessage)
+            .then(() => {})
+            .catch(err => {
+                logger.error(err);
+            });
     }
     /*
         a new message is added to the chat

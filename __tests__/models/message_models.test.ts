@@ -4,7 +4,7 @@ import {
     instanceOfMessageDataOut,
     instanceOfNewMessageData,
     instanceOfNewMessageReturn, instanceOfNormalMessageContent, instanceOfStatusMessageContent,
-    LoadedMessages, Media, Mention,
+    LoadedMessages,
     MessageDataIn,
     messageTypes,
     NewMessageData,
@@ -20,8 +20,6 @@ describe('message models test',() => {
           message: {
               type: messageTypes.normalMessage.valueOf(),
               content: {
-                  media: [],
-                  mentions: [],
                   text: 'message'
               }
           }
@@ -51,8 +49,6 @@ describe('message models test',() => {
        const data:MessageDataIn = {
            type: messageTypes.normalMessage.valueOf(),
            content: {
-               media: [],
-               mentions: [],
                text: 'message'
            }
        }
@@ -171,12 +167,8 @@ describe('message models test',() => {
         expect(instanceOfStatusMessageContent(data)).toEqual(false);
     });
     it('(normal) messageContent - success',() => {
-        const mentions:Mention[] = [];
-        const media:Media[] = [];
         const data = {
-            text: "abc",
-            mentions: mentions,
-            media: media
+            text: "abc"
         }
         expect(instanceOfMessageContent(data)).toEqual(true);
         expect(instanceOfNormalMessageContent(data)).toEqual(true);

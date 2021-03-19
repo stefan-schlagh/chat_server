@@ -1,12 +1,11 @@
 import CDataChatStorage from "./chat/cDataChatStorage";
 import User from "./user";
 import {setChatData} from "./data";
-import {pool} from "../app";
-import {logger} from "../util/logger";
 import {LoadedMessages, MessageDataIn} from "../models/message";
 import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../models/chat";
 import {Chat, chatTypes, getChatType} from "./chat/chat";
-import {Socket} from "socket.io";
+import {SimpleUser} from "../models/user";
+import {getSimpleUserInfo, getUserEmail} from "../database/user/user";
 
 export class ChatData{
 
@@ -143,12 +142,12 @@ export class ChatData{
     /*
         the socket of a user is initialized
      */
-    async initUserSocket(uid:number,username:string,socket:Socket):Promise<User> {
+    async initUser(uid:number,username:string):Promise<User> {
         /*
             if user does not exist -> is created new
          */
         if(!this.user.has(uid)) {
-            const user = new User(uid, username,socket,true);
+            const user = new User(uid, username,true);
             /*
                 user is added to array
              */
@@ -165,7 +164,6 @@ export class ChatData{
          */
         else{
             const user = this.user.get(uid);
-            user.socket = socket;
             user.online = true;
             /*
                 chats are loaded
@@ -273,62 +271,39 @@ export class ChatData{
         returns null, if user not found
      */
     async getUserEmail(username:string,email:string):Promise<User> {
-
-        const result:any = await new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT * " +
-                "FROM user WHERE username = " + pool.escape(username) + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any) => {
-                if(err)
-                   reject(err)
-                if(!result || result.length === 0)
-                    resolve(null)
-                resolve(result);
-            });
-        });
-        if(result != null) {
-            /*
-                is email equal with the email in the database?
-             */
-            if (result[0].email !== email)
-                throw new Error("wrong email!")
-            else
-                return await this.getUser(result[0].uid, true);
-        }else
+        /*
+            select user
+         */
+        const userData:SimpleUser = await getUserEmail(username,email);
+        if(userData === null)
             return null;
+        else {
+            let user:User = this.user.get(userData.uid);
+            if (!user) {
+                // create user object, set at map
+                user = new User(userData.uid,userData.username);
+                this.user.set(userData.uid, user);
+                // return new user
+                return user;
+            }
+            return user;
+        }
     }
     /*
         userdata is loaded, user is saved
      */
     async loadUser(uid:number):Promise<User> {
 
-        return new Promise((resolve, reject) => {
-
-            const query_str =
-                "SELECT username " +
-                "FROM user " +
-                "WHERE uid = " + uid + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                /*
-                    user is initialized
-                 */
-                else if(result.length !== 1)
-                    //if not exactly 1 user found, return null --> error
-                    resolve(null);
-                else {
-                    const user = new User(uid, result[0].username);
-                    this.user.set(uid, user);
-                    resolve(user);
-                }
-            });
-        });
+        const userData:SimpleUser = await getSimpleUserInfo(uid);
+        //if not exactly 1 user found, return null --> error
+        if(userData === null)
+            return null
+        else {
+            const user = new User(userData.uid,userData.username);
+            this.user.set(uid, user);
+            // return new user
+            return user;
+        }
     }
 
     get user(): Map<number,User> {
