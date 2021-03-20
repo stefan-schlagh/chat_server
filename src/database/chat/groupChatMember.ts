@@ -40,42 +40,48 @@ export async function selectGroupChatMembers(chatId:number):Promise<GroupChatMem
  */
 export async function saveGroupChatMemberInDB(uid:number,chatId:number,isAdmin:boolean):Promise<number> {
 
-    const isAdminNumber = isAdmin  ? 1 : 0;
     //save groupChatMember
     return await new Promise((resolve, reject) => {
 
-        const query_str1 =
-            "INSERT " +
-            "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
-            "VALUES (" +
+        pool.getConnection(function(err:Error, conn:any) {
+            if (err)
+                reject(err)
+
+            const isAdminNumber = isAdmin  ? 1 : 0;
+            const query_str1 =
+                "INSERT " +
+                "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
+                "VALUES (" +
                 uid + ",'" +
                 chatId + "'," +
                 isAdminNumber +
                 ",1" +
-            ");";
-        logger.verbose('SQL: %s', query_str1);
+                ");";
+            logger.verbose('SQL: %s', query_str1);
 
-        pool.query(query_str1, (err: Error) => {
-            if (err)
-                reject(err);
-            else {
-                /*
-                    the gcmid is selected
-                 */
-                const query_str2 =
-                    "SELECT max(gcmid) " +
-                    "AS 'gcmid' " +
-                    "FROM groupchatmember;";
-                logger.verbose('SQL: %s', query_str2);
+            conn.query(query_str1, (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
+                    reject(err);
+                } else {
+                    /*
+                        the gcmid is selected
+                     */
+                    const query_str2 =
+                        "SELECT LAST_INSERT_ID() " +
+                        "AS 'gcmid';";
+                    logger.verbose('SQL: %s', query_str2);
 
-                pool.query(query_str2, (err: Error, rows: any) => {
-                    if (err)
-                        reject(err);
-                    else {
-                        resolve(rows[0].gcmid)
-                    }
-                })
-            }
+                    conn.query(query_str2, (err: Error, rows: any) => {
+                        pool.releaseConnection(conn);
+                        if (err)
+                            reject(err);
+                        else {
+                            resolve(rows[0].gcmid)
+                        }
+                    })
+                }
+            })
         })
     });
 }

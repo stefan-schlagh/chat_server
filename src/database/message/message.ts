@@ -21,48 +21,53 @@ export async function saveMessageInDB(
 
     return new Promise((resolve, reject) => {
 
-        const isGroupChatNumber = chatType === chatTypes.groupChat ? 1 : 0;
+        pool.getConnection(function(err:Error, conn:any) {
+            if (err)
+                reject(err)
+            const isGroupChatNumber = chatType === chatTypes.groupChat ? 1 : 0;
 
-        const query_str1 =
-            "INSERT " +
-            "INTO message (" +
+            const query_str1 =
+                "INSERT " +
+                "INTO message (" +
                 "date, " +
                 "isGroupChat, " +
                 "messageType," +
                 "cid," +
                 "uid" +
-            ") " +
-            "VALUES (" +
+                ") " +
+                "VALUES (" +
                 "CURRENT_TIMESTAMP(),'" +
                 isGroupChatNumber + "','" +
                 messageType + "','" +
                 chatId + "','" +
                 uid +
-            "');";
-        logger.verbose('SQL: %s',query_str1);
+                "');";
+            logger.verbose('SQL: %s', query_str1);
 
-        pool.query(query_str1,(err:Error) => {
-            if(err){
-                reject(err);
-            }else {
-                /*
-                    message id og the message is selected
-                 */
-                const query_str2 =
-                    "SELECT max(mid) " +
-                    "AS 'mid' " +
-                    "FROM message";
-                logger.verbose('SQL: %s',query_str2);
+            conn.query(query_str1, (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
+                    reject(err);
+                } else {
+                    /*
+                        message id og the message is selected
+                     */
+                    const query_str2 =
+                        "SELECT LAST_INSERT_ID() " +
+                        "AS 'mid';";
+                    logger.verbose('SQL: %s', query_str2);
 
-                pool.query(query_str2, (err:Error, rows:any) => {
-                    if(err){
-                        reject(err);
-                    }else {
-                        resolve(rows[0].mid);
-                    }
-                });
-            }
-        });
+                    conn.query(query_str2, (err: Error, rows: any) => {
+                        pool.releaseConnection(conn);
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(rows[0].mid);
+                        }
+                    });
+                }
+            });
+        })
     });
 }
 /*

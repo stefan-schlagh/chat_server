@@ -1,6 +1,6 @@
-import {createPool, Pool, PoolOptions} from 'mysql2';
+import {createPool, PoolOptions} from 'mysql2';
 
-export let pool:Pool;
+export let pool:any;
 export function startPool() {
     const poolOptions:PoolOptions = {
         host: process.env.DB_HOST,

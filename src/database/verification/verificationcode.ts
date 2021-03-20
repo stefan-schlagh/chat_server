@@ -6,35 +6,40 @@ import {pool} from "../pool";
 
 export async function saveCodeInDB(type: verificationCodeTypes, uid: number, hash: string): Promise<number> {
 
-    const query_str =
-        "INSERT " +
-        "INTO verificationcode(type,uid,hash,date) " +
-        "VALUES(" + type.valueOf() + "," + uid + "," + pool.escape(hash) + ",CURRENT_TIMESTAMP());";
-    logger.verbose('SQL: %s', query_str);
-
-    await new Promise((resolve, reject) => {
-        pool.query(query_str, async (err: Error, result: any) => {
-            if (err)
-                reject(err);
-            resolve();
-        });
-    });
     return await new Promise((resolve, reject) => {
-        const query_str1 =
-            "SELECT max(vcid) " +
-            "AS 'vcid' " +
-            "FROM verificationcode " +
-            "WHERE uid = " + uid + ";";
-        logger.verbose('SQL: %s', query_str1);
 
-        pool.query(query_str1, (err: Error, rows: any) => {
+        pool.getConnection(function(err:Error, conn:any) {
             if (err)
-                reject(err);
-            else if (isResultEmpty(rows))
-                reject(new ResultEmptyError());
-            else
-                resolve(rows[0].vcid);
-        });
+                reject(err)
+
+            const query_str1 =
+                "INSERT " +
+                "INTO verificationcode(type,uid,hash,date) " +
+                "VALUES(" + type.valueOf() + "," + uid + "," + pool.escape(hash) + ",CURRENT_TIMESTAMP());";
+            logger.verbose('SQL: %s', query_str1);
+
+            conn.query(query_str1, async (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
+                    reject(err);
+                } else {
+                    const query_str2 =
+                        "SELECT LAST_INSERT_ID() " +
+                        "AS 'vcid';";
+                    logger.verbose('SQL: %s', query_str2);
+
+                    conn.query(query_str2, (err: Error, rows: any) => {
+                        pool.releaseConnection(conn);
+                        if (err)
+                            reject(err);
+                        else if (isResultEmpty(rows))
+                            reject(new ResultEmptyError());
+                        else
+                            resolve(rows[0].vcid);
+                    });
+                }
+            });
+        })
     });
 }
 export async function deleteOldCodes(uid:number):Promise<void> {
