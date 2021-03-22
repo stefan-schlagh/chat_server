@@ -88,7 +88,6 @@ export function startServer(){
         'public',
         {dotfiles:'allow'}
     ));
-    app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(express.static('public'));
     app.use(cors());
@@ -108,13 +107,13 @@ export function startServer(){
     /*
         Routers for express
      */
-    app.use('/auth',authRouter);
-    app.use('/user',userRouter);
-    app.use('/group',groupRouter);
-    app.use('/chats',chatRouter);
+    app.use('/auth',bodyParser.json(),authRouter);
+    app.use('/user',bodyParser.json(),userRouter);
+    app.use('/group',bodyParser.json(),groupRouter);
+    app.use('/chats',bodyParser.json(),chatRouter);
     app.use('/message',messageRouter);
-    app.use('/pwReset',pwResetRouter);
-    app.use('/push',pushRouter);
+    app.use('/pwReset',bodyParser.json(),pwResetRouter);
+    app.use('/push',bodyParser.json(),pushRouter);
 
     app.get('/', function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });

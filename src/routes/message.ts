@@ -13,6 +13,8 @@ import {
     NewMessageData
 } from "../models/message";
 import User from "../chatData/user";
+import {saveTempMessageFile} from "../files/messageFile";
+import bodyParser from "body-parser";
 
 const router = express.Router();
 
@@ -23,7 +25,7 @@ router.use(setUser);
 /*
     a new message is put on the server
  */
-router.put('/',(req:any,res) => {
+router.put('/',bodyParser.json(),(req:any,res) => {
 
     try {
         const user = req.user;
@@ -57,7 +59,7 @@ router.put('/',(req:any,res) => {
 /*
     a new message is put on the server
  */
-router.put('/add',async (req:any,res) => {
+router.put('/add',bodyParser.json(),async (req:any,res) => {
 
     try {
         const user:User = req.user;
@@ -101,7 +103,7 @@ router.put('/add',async (req:any,res) => {
 /*
     messages are loaded
  */
-router.post('/load',(req:any,res) => {
+router.post('/load',bodyParser.json(),(req:any,res) => {
 
     try{
         const user = req.user;
@@ -133,5 +135,25 @@ router.post('/load',(req:any,res) => {
         res.send();
     }
 });
+/*
+    add a file
+ */
+router.put('/file/:fileName',async (req:any, res) => {
+    const contentType = req.headers['content-type'];
+    const user:User = req.user;
+    const fileName = req.params.fileName;
+    // if type != string, bad request
+    if(typeof fileName !== "string"){
+        res.sendStatus(400)
+    } else {
+        try {
+            const fileId = await saveTempMessageFile(user.uid, contentType, fileName, req)
+            res.send({fid: fileId})
+        } catch (err) {
+            logger.error(err)
+            res.sendStatus(500)
+        }
+    }
+})
 
 export default router;
