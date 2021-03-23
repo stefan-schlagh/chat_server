@@ -3,6 +3,7 @@ import {logger} from "../../util/logger";
 import {MessageDB, messageTypes} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {pool} from "../pool";
+import {Connection} from "mysql2";
 
 /*
     message gets saved in the database
@@ -21,7 +22,7 @@ export async function saveMessageInDB(
 
     return new Promise((resolve, reject) => {
 
-        pool.getConnection(function(err:Error, conn:any) {
+        pool.getConnection(function(err:Error, conn:Connection) {
             if (err)
                 reject(err)
             const isGroupChatNumber = chatType === chatTypes.groupChat ? 1 : 0;

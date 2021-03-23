@@ -35,8 +35,10 @@ describe('files test',() => {
                 mime.getType('txt'),
                 readStream
             );
+            expect(typeof fileId).toEqual("number")
         });
         it('file should exist',async () => {
+            expect(typeof fileId).toEqual("number")
             const file:FileData = await getFileData(fileId)
             const filePath = file.serverFilePath + '/' + file.serverFileName
             expect(await doesFileExist(filePath)).toEqual(true)

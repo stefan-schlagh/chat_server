@@ -5,10 +5,10 @@ import StatusMessage from "../message/statusMessage";
 import User from "../user";
 import {
     LoadedMessages,
-    MessageContent,
+    MessageContentIn,
     MessageDataIn,
     messageTypes,
-    NormalMessageContent,
+    NormalMessageContentIn,
     StatusMessageContent
 } from "../../models/message";
 import {SimpleUser} from "../../models/user";
@@ -58,7 +58,7 @@ export abstract class Chat{
         this.sendToAll(
             author,
             'chat message',
-            message.getMessageObject(),
+            await message.getMessageObject(),
             includeSender
         );
         // send notification
@@ -80,16 +80,16 @@ export abstract class Chat{
         switch(data.type){
 
             case messageTypes.normalMessage: {
-                const content:MessageContent = data.content;
+                const content:MessageContentIn = data.content;
                 message = new NormalMessage(this,author);
                 /*
                     message is saved in DB, mid is saved
                  */
-                await message.initNewMessage(content as NormalMessageContent);
+                await message.initNewMessage(content as NormalMessageContentIn);
                 break;
             }
             case messageTypes.statusMessage: {
-                const content:MessageContent = data.content;
+                const content:MessageContentIn = data.content;
                 message = new StatusMessage(this,author);
                 /*
                     message is saved in DB, mid is saved

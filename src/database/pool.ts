@@ -1,4 +1,6 @@
-import {createPool, PoolOptions} from 'mysql2';
+// @ts-ignore
+import {createPool, Pool, PoolOptions} from 'mysql2';
+import {logger} from "../util/logger";
 
 export let pool:any;
 export function startPool() {
@@ -10,7 +12,9 @@ export function startPool() {
         charset : 'utf8mb4'
     };
     pool = createPool(poolOptions);
+    logger.info('pool created')
 }
 export function endPool(){
     pool.end();
+    logger.info('pool ended')
 }

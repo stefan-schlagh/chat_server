@@ -102,7 +102,7 @@ export default class StatusMessage extends Message {
     /*
         an object containing this message is returned
      */
-    getMessageObject():MessageDataOut {
+    async getMessageObject():Promise<MessageDataOut> {
 
         return {
             uid: this.author.uid,

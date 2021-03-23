@@ -1,4 +1,5 @@
 import {pool} from "../pool";
+// @ts-ignore
 import {Connection} from "mysql2";
 import {logger} from "../../util/logger";
 import {isResultEmpty, ResultEmptyError} from "../../util/sqlHelpers";

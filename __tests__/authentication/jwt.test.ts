@@ -3,7 +3,6 @@ import {
     isAuthenticated,
     verifyToken
 } from "../../src/authentication/jwt";
-import {SimpleUser} from "../../src/models/user";
 
 describe('jwt test',() => {
     describe('generateToken',() => {

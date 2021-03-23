@@ -1,13 +1,15 @@
 import {getFileStorageLocation, mkDirIfNotExists, saveFile} from "./file";
 import {
     deleteTempMessageFileData,
+    deleteTempMessageFilesByUser,
     getTempMessageFileData,
+    getTempMessageFileDataByUser,
     saveMessageFileDataInDB,
     saveTempMessageFileDataInDB
 } from "../database/files/messageFile";
 import {chatTypes} from "../chatData/chat/chat";
 import {TempMessageFileData} from "../models/file";
-import {rename} from "fs/promises";
+import {rename,unlink} from "fs/promises";
 import {setServerFilePath} from "../database/files/file";
 
 /*
@@ -66,7 +68,21 @@ export async function saveMessageFile(
     // delete temp message file
     await deleteTempMessageFileData(fileId)
 }
+export async function deleteTempMessageFiles(uid:number):Promise<void> {
+    // get data of the temp files
+    const tempFilesData:TempMessageFileData[] = await getTempMessageFileDataByUser(uid);
 
+    for(const fileData of tempFilesData){
+        const filePath = fileData.serverFilePath + '/' + fileData.serverFileName;
+        try {
+            await unlink(filePath)
+        }catch (err) {
+            console.error(err)
+        }
+    }
+    // delete in DB
+    await deleteTempMessageFilesByUser(uid)
+}
 export async function readMessageFile(){
     //TODO
 }

@@ -31,6 +31,7 @@ export default class MessageStorage {
         await this.loadMessages(1);
     }
     /*
+        // TODO better version
         messages are returned
             firstMid: the mid of the first message that should not be selected
                 ->all selected messages have lower mid
@@ -53,6 +54,7 @@ export default class MessageStorage {
 
             throw new Error('a message with this mid does not exist in this chat!');
         }else{
+            const mids = new Map()
             /*
                 iMessage --> current index in messageStorage
                 i --> loadedMessages
@@ -86,8 +88,10 @@ export default class MessageStorage {
                 }
                 // add at the end of the array
                 const message:Message = this.messages[iMessage].value;
-                if(await message.authenticateMessage(user))
-                    rMessages.unshift(message.getMessageObject());
+                if(await message.authenticateMessage(user) && !mids.has(message.mid)) {
+                    mids.set(message.mid,{});
+                    rMessages.unshift(await message.getMessageObject());
+                }
                 else
                     // i--, because message does not get added
                     i--;
@@ -237,7 +241,7 @@ export default class MessageStorage {
                 authenticate message if it can be shown
              */
             if(await this.getNewestMessage().authenticateMessage(user)) {
-                const messageObject: MessageDataOut = this.getNewestMessage().getMessageObject();
+                const messageObject: MessageDataOut = await this.getNewestMessage().getMessageObject();
                 return {
                     empty: false,
                     canBeShown: true,

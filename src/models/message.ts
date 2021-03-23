@@ -1,3 +1,5 @@
+import {FileDataOut} from "./file";
+
 export enum messageTypes {
     normalMessage = 0,
     statusMessage = 1
@@ -49,7 +51,7 @@ export function instanceOfNewMessageReturn(object: any): object is NewMessageRet
 }
 export interface MessageDataIn {
     type: messageTypes,
-    content: MessageContent
+    content: MessageContentIn
 }
 // type check
 export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
@@ -57,7 +59,7 @@ export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
         typeof object === 'object'
         && 'type' in object && typeof object.type === 'number'
         && 'content' in object && typeof object.content === 'object'
-        && instanceOfMessageContent(object.content)
+        && instanceOfMessageContentIn(object.content)
     ))
         throw new TypeError('invalid MessageDataIn');
     return true;
@@ -69,7 +71,7 @@ export interface NewestMessage {
     mid?: number,
     date?: string,
     type?: messageTypes,
-    content?: MessageContent
+    content?: MessageContentOut
 }
 export interface MessageDataOut {
     // the id of the user who wrote the message
@@ -77,7 +79,7 @@ export interface MessageDataOut {
     mid: number,
     date: string,
     type: messageTypes,
-    content: MessageContent
+    content: MessageContentOut
 }
 // type check
 export function instanceOfMessageDataOut(object: any): object is MessageDataOut {
@@ -88,25 +90,46 @@ export function instanceOfMessageDataOut(object: any): object is MessageDataOut 
         && 'date' in object && typeof object.date === 'string'
         && 'type' in object && typeof object.type === 'number'
         && 'content' in object && typeof object.content === 'object'
-        && instanceOfMessageContent(object.content)
+        && instanceOfMessageContentOut(object.content)
     ))
         throw new TypeError('invalid MessageDataOut');
     return true;
 }
-export type MessageContent = NormalMessageContent | StatusMessageContent;
+export type MessageContentIn = NormalMessageContentIn | StatusMessageContent;
 // type check
-export function instanceOfMessageContent(object: any): object is MessageContent {
-    return (instanceOfNormalMessageContent(object)
+export function instanceOfMessageContentIn(object: any): object is MessageContentIn {
+    return (instanceOfNormalMessageContentIn(object)
         || instanceOfStatusMessageContent(object))
 }
-export interface NormalMessageContent {
-    text: string
+export interface NormalMessageContentIn {
+    text: string,
+    // all file ids attached
+    files: number[]
 }
 // type check
-export function instanceOfNormalMessageContent(object: any): object is NormalMessageContent {
+export function instanceOfNormalMessageContentIn(object: any): object is NormalMessageContentIn {
     return (
         typeof object === 'object'
         && 'text' in object && typeof object.text === 'string'
+        //TODO && 'files' in object
+    )
+}
+export type MessageContentOut = NormalMessageContentOut | StatusMessageContent;
+// type check
+export function instanceOfMessageContentOut(object: any): object is MessageContentIn {
+    return (instanceOfNormalMessageContentOut(object)
+        || instanceOfStatusMessageContent(object))
+}
+export interface NormalMessageContentOut {
+    text: string,
+    files: FileDataOut[]
+}
+// type check
+export function instanceOfNormalMessageContentOut(object: any): object is NormalMessageContentOut {
+    return (
+        typeof object === 'object'
+        && 'text' in object && typeof object.text === 'string'
+        && 'files' in object && typeof object.files === 'object' && Array.isArray(object.files)
     )
 }
 export interface StatusMessageContent {
