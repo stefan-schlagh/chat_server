@@ -29,8 +29,8 @@ describe('test API /group 1', () => {
             startServer();
             done();
         });
-        afterAll((done) => {
-            closeServer();
+        afterAll(async (done) => {
+            await closeServer();
             done();
         });
         it('init accounts', async () => {

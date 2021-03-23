@@ -138,11 +138,11 @@ export function startServer(){
     logger.info('app created');
 
 }
-export function closeServer(){
+export async function closeServer(){
     socketServer.io.close();
     httpServer.close();
     httpsServer.close();
-    endPool();
+    await endPool();
 
     logger.info('chatServer closed');
 }

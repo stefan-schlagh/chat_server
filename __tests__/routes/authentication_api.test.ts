@@ -11,8 +11,8 @@ describe('test API /authentication', () => {
             startServer();
             done();
         });
-        afterAll((done) => {
-            closeServer();
+        afterAll(async (done) => {
+            await closeServer();
             done();
         });
         it('init account', async () => {

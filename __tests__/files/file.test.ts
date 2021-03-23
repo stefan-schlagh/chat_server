@@ -19,8 +19,8 @@ describe('files test',() => {
         startServer();
         done();
     });
-    afterAll((done) => {
-        closeServer();
+    afterAll(async (done) => {
+        await closeServer();
         done();
     });
     describe('file', () => {

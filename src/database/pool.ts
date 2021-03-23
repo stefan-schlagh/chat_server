@@ -14,7 +14,13 @@ export function startPool() {
     pool = createPool(poolOptions);
     logger.info('pool created')
 }
-export function endPool(){
-    pool.end();
-    logger.info('pool ended')
+export async function endPool(){
+    await new Promise((resolve, reject) => {
+        pool.end((err:Error) => {
+            if (err)
+                reject(err)
+            logger.info('pool ended')
+            resolve()
+        })
+    })
 }
