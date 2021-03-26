@@ -43,18 +43,18 @@ export default class StatusMessage extends Message {
     async loadPassiveUsers(){
 
         const passiveUsersUid = await loadPassiveUsers(this.smid);
-        this.createPassiveUsers(passiveUsersUid);
+        await this.createPassiveUsers(passiveUsersUid);
     }
     /*
         create passive users out of a array with the user ids
      */
-    createPassiveUsers(passiveUsersUid:number[]){
+    async createPassiveUsers(passiveUsersUid:number[]){
         this.passiveUsers = new Array(passiveUsersUid.length);
         for(let i = 0;i < passiveUsersUid.length;i++){
             /*
                 user is searched
              */
-            const user = chatData.user.get(passiveUsersUid[i]);
+            const user = await chatData.getUser(passiveUsersUid[i],true);
             if(user){
                 this.passiveUsers[i] = user;
             }else{

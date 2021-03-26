@@ -479,7 +479,7 @@ export class GroupChat extends Chat{
                 /*
                     if member is not online, send notification
                  */
-                if(!value.user.online)
+                if(!value.user.online && value.isStillMember)
                     await sendNotification(value.user.uid,await value.user.getNotificationString(type));
 
                 callCounter ++;

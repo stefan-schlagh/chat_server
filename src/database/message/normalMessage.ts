@@ -2,6 +2,7 @@ import {logger} from "../../util/logger";
 import {NormalMessageDB} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {pool} from "../pool";
+import {Connection} from "mysql2";
 
 export async function loadNormalMessage(mid:number):Promise<NormalMessageDB> {
 
@@ -31,7 +32,7 @@ export async function saveNormalMessageInDB(mid:number,text:string):Promise<numb
 
     return new Promise((resolve, reject) => {
 
-        pool.getConnection(function(err:Error, conn:any) {
+        pool.getConnection(function(err:Error, conn:Connection) {
             if (err)
                 reject(err)
 

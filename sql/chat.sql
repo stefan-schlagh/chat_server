@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 08. Mrz 2021 um 18:51
+-- Erstellungszeit: 23. Mrz 2021 um 21:38
 -- Server-Version: 10.4.13-MariaDB
 -- PHP-Version: 7.4.8
 
@@ -51,6 +51,21 @@ CREATE TABLE `emailchange` (
 -- --------------------------------------------------------
 
 --
+-- Tabellenstruktur für Tabelle `file`
+--
+
+CREATE TABLE `file` (
+  `fid` int(11) NOT NULL,
+  `mimeType` varchar(255) NOT NULL,
+  `realFileName` varchar(255) NOT NULL,
+  `serverFileName` varchar(255) NOT NULL,
+  `serverFilePath` varchar(255) NOT NULL,
+  `date` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Tabellenstruktur für Tabelle `groupchat`
 --
 
@@ -92,32 +107,6 @@ CREATE TABLE `groupchatmemberchange` (
 -- --------------------------------------------------------
 
 --
--- Tabellenstruktur für Tabelle `media`
---
-
-CREATE TABLE `media` (
-  `meid` int(11) NOT NULL,
-  `nmid` int(11) NOT NULL,
-  `type` int(11) NOT NULL,
-  `pathToFile` varchar(255) COLLATE utf8_german2_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
-
--- --------------------------------------------------------
-
---
--- Tabellenstruktur für Tabelle `mentioneduser`
---
-
-CREATE TABLE `mentioneduser` (
-  `muid` int(11) NOT NULL,
-  `nmid` int(11) NOT NULL,
-  `uid` int(11) NOT NULL,
-  `textColumn` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
-
--- --------------------------------------------------------
-
---
 -- Tabellenstruktur für Tabelle `message`
 --
 
@@ -129,6 +118,18 @@ CREATE TABLE `message` (
   `cid` int(11) NOT NULL,
   `uid` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `messagefile`
+--
+
+CREATE TABLE `messagefile` (
+  `mfid` int(11) NOT NULL,
+  `fid` int(11) NOT NULL,
+  `mid` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -195,6 +196,18 @@ CREATE TABLE `stmsgpassiveu` (
 -- --------------------------------------------------------
 
 --
+-- Tabellenstruktur für Tabelle `tempmessagefile`
+--
+
+CREATE TABLE `tempmessagefile` (
+  `tmfid` int(11) NOT NULL,
+  `fid` int(11) NOT NULL,
+  `uid` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
 -- Tabellenstruktur für Tabelle `user`
 --
 
@@ -238,6 +251,12 @@ ALTER TABLE `emailchange`
   ADD PRIMARY KEY (`ecid`);
 
 --
+-- Indizes für die Tabelle `file`
+--
+ALTER TABLE `file`
+  ADD PRIMARY KEY (`fid`);
+
+--
 -- Indizes für die Tabelle `groupchat`
 --
 ALTER TABLE `groupchat`
@@ -256,22 +275,16 @@ ALTER TABLE `groupchatmemberchange`
   ADD PRIMARY KEY (`gcmcid`);
 
 --
--- Indizes für die Tabelle `media`
---
-ALTER TABLE `media`
-  ADD PRIMARY KEY (`meid`);
-
---
--- Indizes für die Tabelle `mentioneduser`
---
-ALTER TABLE `mentioneduser`
-  ADD PRIMARY KEY (`muid`);
-
---
 -- Indizes für die Tabelle `message`
 --
 ALTER TABLE `message`
   ADD PRIMARY KEY (`mid`);
+
+--
+-- Indizes für die Tabelle `messagefile`
+--
+ALTER TABLE `messagefile`
+  ADD PRIMARY KEY (`mfid`);
 
 --
 -- Indizes für die Tabelle `normalchat`
@@ -304,6 +317,12 @@ ALTER TABLE `stmsgpassiveu`
   ADD PRIMARY KEY (`spuid`);
 
 --
+-- Indizes für die Tabelle `tempmessagefile`
+--
+ALTER TABLE `tempmessagefile`
+  ADD PRIMARY KEY (`tmfid`);
+
+--
 -- Indizes für die Tabelle `user`
 --
 ALTER TABLE `user`
@@ -332,6 +351,12 @@ ALTER TABLE `emailchange`
   MODIFY `ecid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT für Tabelle `file`
+--
+ALTER TABLE `file`
+  MODIFY `fid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT für Tabelle `groupchat`
 --
 ALTER TABLE `groupchat`
@@ -350,22 +375,16 @@ ALTER TABLE `groupchatmemberchange`
   MODIFY `gcmcid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT für Tabelle `media`
---
-ALTER TABLE `media`
-  MODIFY `meid` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT für Tabelle `mentioneduser`
---
-ALTER TABLE `mentioneduser`
-  MODIFY `muid` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT für Tabelle `message`
 --
 ALTER TABLE `message`
   MODIFY `mid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT für Tabelle `messagefile`
+--
+ALTER TABLE `messagefile`
+  MODIFY `mfid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `normalchat`
@@ -396,6 +415,12 @@ ALTER TABLE `statusmessage`
 --
 ALTER TABLE `stmsgpassiveu`
   MODIFY `spuid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT für Tabelle `tempmessagefile`
+--
+ALTER TABLE `tempmessagefile`
+  MODIFY `tmfid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `user`

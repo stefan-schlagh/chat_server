@@ -15,6 +15,10 @@ import {
 import User from "../chatData/user";
 import {saveTempMessageFile} from "../files/messageFile";
 import bodyParser from "body-parser";
+import {MessageFileData} from "../models/file";
+import {getMessageFileData} from "../database/files/messageFile";
+import {readFile} from "../files/file";
+import {authMessage} from "../database/message/message";
 
 const router = express.Router();
 
@@ -28,13 +32,13 @@ router.use(setUser);
 router.put('/',bodyParser.json(),(req:any,res) => {
 
     try {
-        const user = req.user;
+        const user:User = req.user;
         const data: MessageDataIn = req.body;
         instanceOfMessageDataIn(data);
         /*
             message is sent
          */
-        chatData.sendMessage(user, data)
+        user.sendMessage(data)
             .then(mid => {
                 res.send({
                     mid: mid
@@ -75,7 +79,7 @@ router.put('/add',bodyParser.json(),async (req:any,res) => {
             /*
                 message is sent
              */
-            const mid = await chatData.sendMessage(user, data.message);
+            const mid = await user.sendMessage(data.message);
 
             if(!chatsLoadedBefore) {
                 await user.saveAndDeleteChats();
@@ -143,12 +147,44 @@ router.put('/file/:fileName',async (req:any, res) => {
     const user:User = req.user;
     const fileName = req.params.fileName;
     // if type != string, bad request
-    if(typeof fileName !== "string"){
+    if(typeof fileName !== "string")
         res.sendStatus(400)
-    } else {
+    // if bigger than 25mb
+    else if(parseInt(req.headers['content-length']) > 25000000)
+        res.sendStatus(413)
+    else {
         try {
             const fileId = await saveTempMessageFile(user.uid, contentType, fileName, req)
             res.send({fid: fileId})
+        } catch (err) {
+            logger.error(err)
+            res.sendStatus(500)
+        }
+    }
+})
+/*
+    get a file
+ */
+router.get('/file/:fid/:fileName',async (req:any,res) => {
+    const fid = parseInt(req.params.fid)
+    const fileName:string = req.params.fileName
+    const download:boolean = req.query.download === 'true'
+    const user:User = req.user;
+
+    if(isNaN(fid) || typeof fileName !== "string")
+        res.sendStatus(400)
+    else {
+        try {
+            // get file data
+            const fileData: MessageFileData = await getMessageFileData(fid)
+            // is file allowed to be sent?
+            if(await authMessage(fileData.mid,user.uid)) {
+                if (download)
+                    res.set('Content-Disposition', 'attachment; filename="' + fileName + '"')
+
+                await readFile(fileData, res)
+            }else
+                res.sendStatus(403)
         } catch (err) {
             logger.error(err)
             res.sendStatus(500)

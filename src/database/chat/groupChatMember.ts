@@ -1,5 +1,5 @@
 import {logger} from "../../util/logger";
-import {GroupChatMemberChange,groupChatMemberChangeTypes} from "../../models/chat";
+import {GroupChatDataOfUser, GroupChatMemberChange, groupChatMemberChangeTypes} from "../../models/chat";
 import {pool} from "../pool";
 
 export interface GroupChatMemberDB {
@@ -151,6 +151,29 @@ export async function addGroupChatMemberChange(
         });
     });
 }
+// get groupChatMember
+export async function getGroupChatMember(gcid:number,uid:number):Promise<GroupChatDataOfUser> {
+
+    return new Promise<GroupChatDataOfUser>((resolve, reject) => {
+
+        const query_str =
+            "SELECT gc.gcid, gc.name, gc.description, gc.isPublic, gcm.isStillMember, gcm.gcmid " +
+            "FROM groupchatmember gcm " +
+            "INNER JOIN groupchat gc " +
+            "ON gcm.gcid = gc.gcid " +
+            "WHERE gc.gcid = " + gcid + " AND gcm.uid = " + uid + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            else if(rows.length !== 1)
+                reject(new Error('groupchat ' + gcid + ' does not exist'))
+            else
+                resolve(rows[0]);
+        });
+    });
+}
 export async function getLatestGroupChatMemberChange(
     gcmid:number,
     isStillMember:boolean
@@ -172,6 +195,8 @@ export async function getLatestGroupChatMemberChange(
             "WHERE gcmid = " + gcmid + " " +
             "ORDER BY gcmcid DESC " +
             "LIMIT 1;";
+        logger.verbose('SQL: %s',query_str);
+
         pool.query(query_str, (err: Error, result: any) => {
             if (err)
                 reject(err);

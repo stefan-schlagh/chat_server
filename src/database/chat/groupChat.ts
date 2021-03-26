@@ -1,6 +1,6 @@
 import {logger} from "../../util/logger";
 import {SearchPublicGroup} from "../../routes/group";
-import {GroupChatData, GroupChatDataOut} from "../../models/chat";
+import {GroupChatData, GroupChatDataOfUser, GroupChatDataOut} from "../../models/chat";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {pool} from "../pool";
 

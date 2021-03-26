@@ -38,15 +38,6 @@ export class ChatData{
         }
     }
     /*
-        a message is sent
-     */
-    async sendMessage(user:User,data:MessageDataIn):Promise<number>{
-        /*
-            mid is returned
-         */
-        return await user.sendMessage(data);
-    }
-    /*
         messages get loaded
             user: The user where the messages should be loaded
             type: The type of the chat

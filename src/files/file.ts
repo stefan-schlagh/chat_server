@@ -3,7 +3,8 @@ import pump from 'pump';
 import * as zlib from 'zlib';
 import {constants} from 'fs';
 import {access, mkdir} from 'fs/promises';
-import {saveFileDataInDB, setServerFileName} from "../database/files/file";
+import {getFileData, saveFileDataInDB, setServerFileName} from "../database/files/file";
+import {FileData} from "../models/file";
 
 /*
     save a file on the server
@@ -47,8 +48,20 @@ export async function saveFile(
     return fileId;
 }
 
-export async function readFile(fileId:number){
-    //TODO
+export async function readFile(fileData:FileData,stream:any):Promise<void> {
+
+    const unzip = zlib.createUnzip()
+    const read = fs.createReadStream(fileData.serverFilePath + '/' + fileData.serverFileName)
+
+    await new Promise<void>((resolve, reject) => {
+        // read zipped file
+        pump(read,unzip,stream,(err:Error) => {
+            if(err)
+                reject(err)
+            else
+                resolve()
+        })
+    })
 }
 export function getExtension(fileName:string):string {
     return fileName.replace(/^(?:[^/.]+\.)*/,"");
@@ -74,5 +87,5 @@ export async function mkDirIfNotExists(dir:string):Promise<void> {
     }
 }
 export function getFileStorageLocation():string {
-    return process.env.FILE_STORAGE_LOCATION
+    return process.env.APP_FILE_STORAGE_LOCATION
 }

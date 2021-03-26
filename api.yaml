@@ -918,11 +918,11 @@ paths:
       operationId: addFile
       parameters:
         - $ref: '#components/securitySchemes/authorization'
-        - name: code
+        - name: fileName
           in: path
           required: true
           schema:
-            type: number
+            type: string
             description: the fileName of the file
         - name: body
           in: header
@@ -939,6 +939,36 @@ paths:
                   fid:
                     type: number
                     description: the id of the new file
+        '400':
+          description: bad request
+        '403':
+          $ref: '#components/responses/NotAllowed'
+        '413':
+          description: if payload bigger than 5mb --> payload to large
+        '500':
+          description: internal server error
+  /message/file/:fid/:fileName:
+    get:
+      description: get a file
+      summary: getFile
+      operationId: getFile
+      parameters:
+        - $ref: '#components/securitySchemes/authorization'
+        - name: fid
+          in: path
+          required: true
+          schema:
+            type: number
+            description: the id of the file
+        - name: fileName
+          in: path
+          required: true
+          schema:
+            type: string
+            description: the fileName of the file
+      responses:
+        '200':
+          description: successfull, responds with binary data
         '400':
           description: bad request
         '403':

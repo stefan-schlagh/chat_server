@@ -74,6 +74,7 @@ describe('test chat models type guard',() => {
             expect(err.message).toEqual('invalid ChatInfo')
         });
         it('members invalid',() => {
+            const files:any = []
             const data = {
                 type: 'normalChat',
                 id: 1,
@@ -87,7 +88,8 @@ describe('test chat models type guard',() => {
                     empty: false,
                     type: messageTypes.normalMessage,
                     content: {
-                        text: 'abc'
+                        text: 'abc',
+                        files: files
                     }
                 },
                 unreadMessages: 0
@@ -394,6 +396,7 @@ describe('test chat models type guard',() => {
             expect(err.message).toEqual('invalid NewChatData')
         });
         it('members invalid',() => {
+            const files:any = []
             const data = {
                 type: 'normalChat',
                 id: 1,
@@ -405,7 +408,8 @@ describe('test chat models type guard',() => {
                     type: messageTypes.normalMessage,
                     date: 'abc',
                     content: {
-                        text: 'abc'
+                        text: 'abc',
+                        files: files
                     }
                 }
             }

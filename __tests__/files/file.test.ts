@@ -1,7 +1,7 @@
 import {
     doesFileExist,
     getExtension,
-    getFileNameWithoutExtension,
+    getFileNameWithoutExtension, getFileStorageLocation,
     mkDirIfNotExists,
     saveFile
 } from "../../src/files/file";
@@ -27,7 +27,7 @@ describe('files test',() => {
         let fileId:number;
         it('should save file', async () => {
             const readStream = fs.createReadStream(process.env.APP_HOME_PATH + '/test/files/test.txt')
-            const filePath = process.env.FILE_STORAGE_LOCATION + '/testfiles'
+            const filePath = getFileStorageLocation() + '/testfiles'
             await mkDirIfNotExists(filePath)
             fileId = await saveFile(
                 'test.txt',
