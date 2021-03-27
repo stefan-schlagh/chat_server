@@ -1,5 +1,5 @@
 import {logger} from "../../util/logger";
-import {GroupChatMemberChange,groupChatMemberChangeTypes} from "../../models/chat";
+import {GroupChatDataOfUser, GroupChatMemberChange, groupChatMemberChangeTypes} from "../../models/chat";
 import {pool} from "../pool";
 
 export interface GroupChatMemberDB {
@@ -40,42 +40,48 @@ export async function selectGroupChatMembers(chatId:number):Promise<GroupChatMem
  */
 export async function saveGroupChatMemberInDB(uid:number,chatId:number,isAdmin:boolean):Promise<number> {
 
-    const isAdminNumber = isAdmin  ? 1 : 0;
     //save groupChatMember
     return await new Promise((resolve, reject) => {
 
-        const query_str1 =
-            "INSERT " +
-            "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
-            "VALUES (" +
+        pool.getConnection(function(err:Error, conn:any) {
+            if (err)
+                reject(err)
+
+            const isAdminNumber = isAdmin  ? 1 : 0;
+            const query_str1 =
+                "INSERT " +
+                "INTO groupchatmember(uid,gcid,isAdmin,isStillMember) " +
+                "VALUES (" +
                 uid + ",'" +
                 chatId + "'," +
                 isAdminNumber +
                 ",1" +
-            ");";
-        logger.verbose('SQL: %s', query_str1);
+                ");";
+            logger.verbose('SQL: %s', query_str1);
 
-        pool.query(query_str1, (err: Error) => {
-            if (err)
-                reject(err);
-            else {
-                /*
-                    the gcmid is selected
-                 */
-                const query_str2 =
-                    "SELECT max(gcmid) " +
-                    "AS 'gcmid' " +
-                    "FROM groupchatmember;";
-                logger.verbose('SQL: %s', query_str2);
+            conn.query(query_str1, (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
+                    reject(err);
+                } else {
+                    /*
+                        the gcmid is selected
+                     */
+                    const query_str2 =
+                        "SELECT LAST_INSERT_ID() " +
+                        "AS 'gcmid';";
+                    logger.verbose('SQL: %s', query_str2);
 
-                pool.query(query_str2, (err: Error, rows: any) => {
-                    if (err)
-                        reject(err);
-                    else {
-                        resolve(rows[0].gcmid)
-                    }
-                })
-            }
+                    conn.query(query_str2, (err: Error, rows: any) => {
+                        pool.releaseConnection(conn);
+                        if (err)
+                            reject(err);
+                        else {
+                            resolve(rows[0].gcmid)
+                        }
+                    })
+                }
+            })
         })
     });
 }
@@ -145,6 +151,29 @@ export async function addGroupChatMemberChange(
         });
     });
 }
+// get groupChatMember
+export async function getGroupChatMember(gcid:number,uid:number):Promise<GroupChatDataOfUser> {
+
+    return new Promise<GroupChatDataOfUser>((resolve, reject) => {
+
+        const query_str =
+            "SELECT gc.gcid, gc.name, gc.description, gc.isPublic, gcm.isStillMember, gcm.gcmid " +
+            "FROM groupchatmember gcm " +
+            "INNER JOIN groupchat gc " +
+            "ON gcm.gcid = gc.gcid " +
+            "WHERE gc.gcid = " + gcid + " AND gcm.uid = " + uid + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            else if(rows.length !== 1)
+                reject(new Error('groupchat ' + gcid + ' does not exist'))
+            else
+                resolve(rows[0]);
+        });
+    });
+}
 export async function getLatestGroupChatMemberChange(
     gcmid:number,
     isStillMember:boolean
@@ -166,6 +195,8 @@ export async function getLatestGroupChatMemberChange(
             "WHERE gcmid = " + gcmid + " " +
             "ORDER BY gcmcid DESC " +
             "LIMIT 1;";
+        logger.verbose('SQL: %s',query_str);
+
         pool.query(query_str, (err: Error, result: any) => {
             if (err)
                 reject(err);

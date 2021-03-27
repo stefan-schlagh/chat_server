@@ -1,5 +1,6 @@
 import {logger} from "../../util/logger";
 import {pool} from "../pool";
+import {GroupChatDataOfUser} from "../../models/chat";
 
 export interface NormalChatDataDB {
     ncid: number,
@@ -31,18 +32,12 @@ export async function selectNormalChats(uid:number):Promise<NormalChatDataDB[]> 
             "WHERE uid1 = '" + uid + "' OR uid2 = '" + uid + "';";
         logger.verbose('SQL: %s',query_str);
 
-        pool.query(query_str,(err:Error,result:any,fields:any) => {
+        pool.query(query_str,(err:Error,rows:any) => {
             if(err)
                 reject(err);
-            resolve(result);
+            resolve(rows);
         });
     });
-}
-export interface GroupChatDataOfUser {
-    gcid: number,
-    name: string,
-    description: string,
-    isPublic: number
 }
 // all groupChats of the user are selected
 export async function selectGroupChatsOfUser(uid:number):Promise<GroupChatDataOfUser[]> {
@@ -50,17 +45,17 @@ export async function selectGroupChatsOfUser(uid:number):Promise<GroupChatDataOf
     return new Promise<GroupChatDataOfUser[]>((resolve, reject) => {
 
         const query_str =
-            "SELECT gc.gcid, gc.name, gc.description, gc.isPublic " +
+            "SELECT gc.gcid, gc.name, gc.description, gc.isPublic, gcm.isStillMember, gcm.gcmid " +
             "FROM groupchatmember gcm " +
             "INNER JOIN groupchat gc " +
             "ON gcm.gcid = gc.gcid " +
             "WHERE gcm.uid = '" + uid + "';";
         logger.verbose('SQL: %s',query_str);
 
-        pool.query(query_str,(err:Error,result:any,fields:any) => {
+        pool.query(query_str,(err:Error,rows:any) => {
             if(err)
                 reject(err);
-            resolve(result);
+            resolve(rows);
         });
     });
 }

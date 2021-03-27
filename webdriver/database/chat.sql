@@ -48,6 +48,18 @@ CREATE TABLE `emailchange` (
   `isVerified` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Tabellenstruktur für Tabelle `file`
+--
+
+CREATE TABLE `file` (
+    `fid` int(11) NOT NULL,
+    `mimeType` varchar(255) NOT NULL,
+    `realFileName` varchar(255) NOT NULL,
+    `serverFileName` varchar(255) NOT NULL,
+    `serverFilePath` varchar(255) NOT NULL,
+    `date` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- --------------------------------------------------------
 
 --
@@ -471,7 +483,15 @@ INSERT INTO `message` (`mid`, `date`, `isGroupChat`, `messageType`, `cid`, `uid`
 (883, '2020-04-18 14:35:43', 0, 0, 1, 12);
 
 -- --------------------------------------------------------
+--
+-- Tabellenstruktur für Tabelle `messagefile`
+--
 
+CREATE TABLE `messagefile` (
+   `mfid` int(11) NOT NULL,
+   `fid` int(11) NOT NULL,
+   `mid` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 --
 -- Tabellenstruktur für Tabelle `normalchat`
 --
@@ -669,6 +689,15 @@ CREATE TABLE `stmsgpassiveu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_german2_ci;
 
 -- --------------------------------------------------------
+--
+-- Tabellenstruktur für Tabelle `tempmessagefile`
+--
+
+CREATE TABLE `tempmessagefile` (
+   `tmfid` int(11) NOT NULL,
+   `fid` int(11) NOT NULL,
+   `uid` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `user`
@@ -778,6 +807,12 @@ ALTER TABLE `emailchange`
     ADD PRIMARY KEY (`ecid`);
 
 --
+-- Indizes für die Tabelle `file`
+--
+ALTER TABLE `file`
+    ADD PRIMARY KEY (`fid`);
+
+--
 -- Indizes für die Tabelle `groupchat`
 --
 ALTER TABLE `groupchat`
@@ -814,6 +849,12 @@ ALTER TABLE `message`
     ADD PRIMARY KEY (`mid`);
 
 --
+-- Indizes für die Tabelle `messagefile`
+--
+ALTER TABLE `messagefile`
+    ADD PRIMARY KEY (`mfid`);
+
+--
 -- Indizes für die Tabelle `normalchat`
 --
 ALTER TABLE `normalchat`
@@ -845,6 +886,12 @@ ALTER TABLE `stmsgpassiveu`
     ADD PRIMARY KEY (`spuid`);
 
 --
+-- Indizes für die Tabelle `tempmessagefile`
+--
+ALTER TABLE `tempmessagefile`
+    ADD PRIMARY KEY (`tmfid`);
+
+--
 -- Indizes für die Tabelle `user`
 --
 ALTER TABLE `user`
@@ -871,6 +918,12 @@ ALTER TABLE `blockedusers`
 --
 ALTER TABLE `emailchange`
     MODIFY `ecid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=432;
+
+--
+-- AUTO_INCREMENT für Tabelle `file`
+--
+ALTER TABLE `file`
+    MODIFY `fid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `groupchat`
@@ -909,6 +962,12 @@ ALTER TABLE `message`
     MODIFY `mid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=882;
 
 --
+-- AUTO_INCREMENT für Tabelle `messagefile`
+--
+ALTER TABLE `messagefile`
+    MODIFY `mfid` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT für Tabelle `normalchat`
 --
 ALTER TABLE `normalchat`
@@ -938,6 +997,12 @@ ALTER TABLE `statusmessage`
 --
 ALTER TABLE `stmsgpassiveu`
     MODIFY `spuid` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=137;
+
+--
+-- AUTO_INCREMENT für Tabelle `tempmessagefile`
+--
+ALTER TABLE `tempmessagefile`
+    MODIFY `tmfid` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT für Tabelle `user`

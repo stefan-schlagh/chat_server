@@ -55,32 +55,40 @@ export async function saveStatusMessageInDB(mid:number,type:statusMessageTypes):
 
     return new Promise((resolve, reject) => {
 
-        const query_str1 =
-            "INSERT " +
-            "INTO statusmessage(mid,type) " +
-            "VALUES (" + mid + "," + type + ");";
-        logger.verbose('SQL: %s',query_str1);
-
-        pool.query(query_str1,(err:Error) => {
+        pool.getConnection(function(err:Error, conn:any) {
             if (err)
-                reject(err);
-            /*
-                smid of this statusmessage is requested
-             */
-            const query_str2 =
-                "SELECT max(smid) AS 'smid'" +
-                "FROM statusmessage;";
-            logger.verbose('SQL: %s',query_str2);
+                reject(err)
 
-            pool.query(query_str2,(err:Error,rows:any) => {
-                if (err)
+            const query_str1 =
+                "INSERT " +
+                "INTO statusmessage(mid,type) " +
+                "VALUES (" + mid + "," + type + ");";
+            logger.verbose('SQL: %s', query_str1);
+
+            conn.query(query_str1, (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
                     reject(err);
-                if(isResultEmpty(rows))
-                    reject(new Error('result is undefined!'))
-                else
-                    resolve(rows[0].smid);
+                }
+                /*
+                    smid of this statusmessage is requested
+                 */
+                const query_str2 =
+                    "SELECT LAST_INSERT_ID() " +
+                    "AS 'smid';";
+                logger.verbose('SQL: %s', query_str2);
+
+                conn.query(query_str2, (err: Error, rows: any) => {
+                    pool.releaseConnection(conn);
+                    if (err)
+                        reject(err);
+                    if (isResultEmpty(rows))
+                        reject(new Error('result is undefined!'))
+                    else
+                        resolve(rows[0].smid);
+                });
             });
-        });
+        })
     });
 }
 // passive users are saved in the database, uid for each user is saved

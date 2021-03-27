@@ -36,6 +36,9 @@ RUN mkdir cert && \
     openssl genrsa -out jwtPrivate.pem 1024 && \
     openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem -subj "/C=AT/ST=Vienna/L=Vienna/O=/CN="
 
+# create directory for userFiles
+RUN mkdir userFiles
+
 EXPOSE 80
 EXPOSE 443
 

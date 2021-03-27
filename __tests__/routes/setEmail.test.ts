@@ -18,9 +18,9 @@ describe('setEmail Test: API /user', () => {
         startServer();
         done();
     });
-    afterAll((done) => {
+    afterAll(async (done) => {
         mailStorage.clear();
-        closeServer();
+        await closeServer();
         done();
     });
     it('init account', async () => {

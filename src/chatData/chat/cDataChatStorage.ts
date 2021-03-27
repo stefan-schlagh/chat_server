@@ -6,8 +6,8 @@ import ChatStorage from "./chatStorage";
 import {ChatData} from "../chatData";
 import {Chat, chatTypes} from "./chat";
 import {MessageDataIn} from "../../models/message";
-import {GroupChatData, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
-import {GroupChatDataOfUser, NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../../database/chat/chat";
+import {GroupChatData, GroupChatDataOfUser, GroupChatMemberData, NewNormalChatData} from "../../models/chat";
+import {NormalChatDataDB, selectGroupChatsOfUser, selectNormalChats} from "../../database/chat/chat";
 import {getGroupChatData} from "../../database/chat/groupChat";
 
 export default class CDataChatStorage extends ChatStorage {

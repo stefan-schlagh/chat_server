@@ -7,7 +7,7 @@ export interface ChatData {
     chatName: string,
     members: SimpleUser[]
 }
-export function instanceOfChatData(object: any): object is ChatInfo {
+export function instanceOfChatData(object: any): object is ChatData {
     return (
         typeof object === 'object'
         && object !== null
@@ -36,9 +36,9 @@ export function instanceOfChatInfo(object: any): object is ChatInfo {
     if(!(
         typeof object === 'object'
         && object !== null
-        && instanceOfChatData(object)
         && 'firstMessage' in object && typeof object.firstMessage === 'object'
         && 'unreadMessages' in object && typeof object.unreadMessages === 'number'
+        && instanceOfChatData(object)
     ))
         throw new TypeError('invalid ChatInfo');
     return true;
@@ -150,9 +150,9 @@ export function instanceOfNewChatData(object: any): object is NewChatData {
     if(!(
         typeof object === 'object'
         && object !== null
-        && instanceOfChatData(object)
         && 'firstMessage' in object && typeof object.firstMessage === 'object'
         && instanceOfMessageDataOut(object.firstMessage)
+        && instanceOfChatData(object)
     ))
         throw new TypeError('invalid NewChatData');
     return true;
@@ -164,4 +164,12 @@ export enum groupChatMemberChangeTypes {
 export interface GroupChatMemberChange {
     date: Date,
     type: groupChatMemberChangeTypes
+}
+export interface GroupChatDataOfUser {
+    gcid: number,
+    gcmid: number,
+    name: string,
+    description: string,
+    isPublic: number,
+    isStillMember: number
 }

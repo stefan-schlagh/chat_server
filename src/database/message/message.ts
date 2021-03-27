@@ -3,6 +3,10 @@ import {logger} from "../../util/logger";
 import {MessageDB, messageTypes} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {pool} from "../pool";
+import {Connection} from "mysql2";
+import {getGroupChatMember} from "../chat/groupChatMember";
+import {getLatestGroupChatMemberChange} from "../chat/groupChatMember";
+import {groupChatMemberChangeTypes} from "../../models/chat";
 
 /*
     message gets saved in the database
@@ -21,48 +25,52 @@ export async function saveMessageInDB(
 
     return new Promise((resolve, reject) => {
 
-        const isGroupChatNumber = chatType === chatTypes.groupChat ? 1 : 0;
+        pool.getConnection(function(err:Error, conn:Connection) {
+            if (err)
+                reject(err)
+            const isGroupChatNumber = chatType === chatTypes.groupChat ? 1 : 0;
 
-        const query_str1 =
-            "INSERT " +
-            "INTO message (" +
-                "date, " +
-                "isGroupChat, " +
-                "messageType," +
-                "cid," +
-                "uid" +
-            ") " +
-            "VALUES (" +
+            const query_str1 =
+                "INSERT " +
+                "INTO message (" +
+                    "date, " +
+                    "isGroupChat, " +
+                    "messageType," +
+                    "cid," +
+                    "uid" +
+                ") VALUES (" +
                 "CURRENT_TIMESTAMP(),'" +
-                isGroupChatNumber + "','" +
-                messageType + "','" +
-                chatId + "','" +
-                uid +
-            "');";
-        logger.verbose('SQL: %s',query_str1);
+                    isGroupChatNumber + "','" +
+                    messageType + "','" +
+                    chatId + "','" +
+                    uid +
+                "');";
+            logger.verbose('SQL: %s', query_str1);
 
-        pool.query(query_str1,(err:Error) => {
-            if(err){
-                reject(err);
-            }else {
-                /*
-                    message id og the message is selected
-                 */
-                const query_str2 =
-                    "SELECT max(mid) " +
-                    "AS 'mid' " +
-                    "FROM message";
-                logger.verbose('SQL: %s',query_str2);
+            conn.query(query_str1, (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
+                    reject(err);
+                } else {
+                    /*
+                        message id og the message is selected
+                     */
+                    const query_str2 =
+                        "SELECT LAST_INSERT_ID() " +
+                        "AS 'mid';";
+                    logger.verbose('SQL: %s', query_str2);
 
-                pool.query(query_str2, (err:Error, rows:any) => {
-                    if(err){
-                        reject(err);
-                    }else {
-                        resolve(rows[0].mid);
-                    }
-                });
-            }
-        });
+                    conn.query(query_str2, (err: Error, rows: any) => {
+                        pool.releaseConnection(conn);
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(rows[0].mid);
+                        }
+                    });
+                }
+            });
+        })
     });
 }
 /*
@@ -87,6 +95,79 @@ export async function selectMessages(num:number,chatType:chatTypes,chatId:number
                 reject(err);
             else {
                 resolve(rows);
+            }
+        });
+    });
+}
+export async function authMessage(mid:number,uid:number):Promise<boolean> {
+
+    const messageData = await getMessageData(mid)
+
+    if(messageData.isGroupChat !== 1)
+        return true
+    else {
+        const groupChatMemberData = await getGroupChatMember(messageData.cid, uid);
+        if(groupChatMemberData.isStillMember)
+            return true;
+        else {
+            logger.info(groupChatMemberData.gcmid)
+            const latestChange =
+                await getLatestGroupChatMemberChange(
+                    groupChatMemberData.gcmid,
+                    groupChatMemberData.isStillMember === 1
+                );
+
+            if(latestChange.type === groupChatMemberChangeTypes.joined)
+                return true;
+            else // result.type === groupChatMemberChangeTypes.left
+                // if user left before message was sent, return false
+                return !(latestChange.date.getTime() < messageData.date.getTime())
+        }
+    }
+}
+export async function getMessageData(mid:number):Promise<MessageDB> {
+
+    return await new Promise<MessageDB>((resolve, reject) => {
+
+        const query_str =
+            "SELECT * " +
+            "FROM message " +
+            "WHERE mid = " + mid + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err)
+            else if(rows.length !== 1)
+                reject(new Error('message ' + mid + ' does not exist'))
+            else
+                resolve(rows[0])
+        })
+    })
+}
+/*
+    messages are selected
+ */
+export async function getMidBelow(mid:number,cid:number,chatType:chatTypes):Promise<number> {
+
+    return new Promise((resolve,reject) => {
+
+        const isGroupChat = chatType === chatTypes.groupChat ? 1 : 0;
+
+        const query_str =
+            "SELECT mid " +
+            "FROM message " +
+            "WHERE isGroupChat = '" + isGroupChat + "' && cid = '" + cid + "' && mid < " + mid + " " +
+            "ORDER BY mid DESC;";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            else if(isResultEmpty(rows))
+                resolve(-1)
+            else {
+                resolve(rows[0].mid);
             }
         });
     });

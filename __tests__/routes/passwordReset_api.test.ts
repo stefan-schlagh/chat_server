@@ -21,9 +21,9 @@ describe("Test API /pwReset",() => {
         done();
     });
     // stop the server after the tests
-    afterAll((done) => {
+    afterAll(async (done) => {
         mailStorage.clear();
-        closeServer();
+        await closeServer();
         done();
     });
     it('init account', async () => {

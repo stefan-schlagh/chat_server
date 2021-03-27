@@ -1,6 +1,6 @@
 import {logger} from "../../util/logger";
 import {SearchPublicGroup} from "../../routes/group";
-import {GroupChatData, GroupChatDataOut} from "../../models/chat";
+import {GroupChatData, GroupChatDataOfUser, GroupChatDataOut} from "../../models/chat";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {pool} from "../pool";
 
@@ -15,40 +15,45 @@ export async function saveChatInDB(
 
     return await new Promise<number>((resolve,reject) => {
 
-        const isPublicNumber = isPublic ? 1 : 0;
+        pool.getConnection(function(err:Error, conn:any) {
+            if (err)
+                reject(err)
 
-        const query_str1 =
-            "INSERT " +
-            "INTO groupchat (name,description,isPublic) " +
-            "VALUES (" +
-                pool.escape(chatName) + "," +
-                pool.escape(description) + "," +
-                isPublicNumber +
-            ")";
-        logger.verbose('SQL: %s',query_str1);
+            const isPublicNumber = isPublic ? 1 : 0;
+            const query_str1 =
+                "INSERT " +
+                "INTO groupchat (name,description,isPublic) " +
+                "VALUES (" +
+                    pool.escape(chatName) + "," +
+                    pool.escape(description) + "," +
+                    isPublicNumber +
+                ")";
+            logger.verbose('SQL: %s', query_str1);
 
-        pool.query(query_str1,(err:Error) => {
-            /*
-                if no error has occured, the chatID gets requested
-             */
-            if(err) {
-                reject(err);
-            }else{
+            conn.query(query_str1, (err: Error) => {
+                /*
+                    if no error has occured, the chatID gets requested
+                 */
+                if (err) {
+                    pool.releaseConnection(conn);
+                    reject(err);
+                } else {
 
-                const query_str2 =
-                    "SELECT max(gcid) AS 'gcid' " +
-                    "FROM groupchat;";
-                logger.verbose('SQL: %s',query_str2);
+                    const query_str2 =
+                        "SELECT LAST_INSERT_ID() " +
+                        "AS 'gcid';";
+                    logger.verbose('SQL: %s', query_str2);
 
-                pool.query(query_str2,(err:Error,rows:any) => {
-
-                    if(err){
-                        reject(err);
-                    }else{
-                        resolve(rows[0].gcid);
-                    }
-                });
-            }
+                    conn.query(query_str2, (err: Error, rows: any) => {
+                        pool.releaseConnection(conn);
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(rows[0].gcid);
+                        }
+                    });
+                }
+            });
         });
     });
 }

@@ -2,6 +2,7 @@ import {logger} from "../../util/logger";
 import {NormalMessageDB} from "../../models/message";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {pool} from "../pool";
+import {Connection} from "mysql2";
 
 export async function loadNormalMessage(mid:number):Promise<NormalMessageDB> {
 
@@ -31,31 +32,39 @@ export async function saveNormalMessageInDB(mid:number,text:string):Promise<numb
 
     return new Promise((resolve, reject) => {
 
-        const query_str1 =
-            "INSERT " +
-            "INTO normalmessage(mid,text) " +
-            "VALUES (" + mid + "," + pool.escape(text) + ");";
-        logger.verbose('SQL: %s',query_str1);
-
-        pool.query(query_str1,(err:Error) => {
+        pool.getConnection(function(err:Error, conn:Connection) {
             if (err)
-                reject(err);
-            /*
-                nmid is selected
-             */
-            const query_str2 =
-                "SELECT max(nmid) AS 'nmid' " +
-                "FROM normalmessage;";
-            logger.verbose('SQL: %s',query_str2);
+                reject(err)
 
-            pool.query(query_str2,(err:Error,rows:any) => {
-                if (err)
+            const query_str1 =
+                "INSERT " +
+                "INTO normalmessage(mid,text) " +
+                "VALUES (" + mid + "," + pool.escape(text) + ");";
+            logger.verbose('SQL: %s', query_str1);
+
+            conn.query(query_str1, (err: Error) => {
+                if (err) {
+                    pool.releaseConnection(conn);
                     reject(err);
-                if(isResultEmpty(rows))
-                    reject(new Error('result is undefined!'))
-                else
-                    resolve(rows[0].nmid);
+                }
+                /*
+                    nmid is selected
+                 */
+                const query_str2 =
+                    "SELECT LAST_INSERT_ID() " +
+                    "AS 'nmid';";
+                logger.verbose('SQL: %s', query_str2);
+
+                conn.query(query_str2, (err: Error, rows: any) => {
+                    pool.releaseConnection(conn);
+                    if (err)
+                        reject(err);
+                    if (isResultEmpty(rows))
+                        reject(new Error('result is undefined!'))
+                    else
+                        resolve(rows[0].nmid);
+                });
             });
-        });
+        })
     });
 }

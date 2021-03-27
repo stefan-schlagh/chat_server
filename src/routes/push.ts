@@ -15,7 +15,7 @@ if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
 }
 // Set the keys used for encrypting the push messages.
 webPush.setVapidDetails(
-    'https://' + process.env.NODE_DOMAIN + '/',
+    'https://' + process.env.APP_DOMAIN + '/',
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
 );

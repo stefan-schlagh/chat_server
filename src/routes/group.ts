@@ -523,7 +523,7 @@ function getOtherUser(createNew:boolean){
                     /*
                         400 -> bad request
                      */
-                    console.error(err);
+                    logger.error(err);
                     res.status(400);
                     res.send();
                 });

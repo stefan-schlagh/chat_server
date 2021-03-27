@@ -352,7 +352,7 @@ export default class User{
                 chatName: chat.getChatName(this.uid),
                 members: await chat.getMemberObject(this.uid),
                 //if groupChat: statusMessage
-                firstMessage: chat.messageStorage.getNewestMessage().getMessageObject()
+                firstMessage: await chat.messageStorage.getNewestMessage().getMessageObject()
             };
 
             socketServer.getSocket(this.uid).emit("new chat", data);
