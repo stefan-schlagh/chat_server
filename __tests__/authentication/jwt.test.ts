@@ -42,7 +42,7 @@ describe('jwt test',() => {
                 //generate token
                 let token = await generateToken({uid: 1, username: 'test'});
                 req = {headers: {authorization: token}};
-                await new Promise((resolve, reject) => {
+                await new Promise<void>((resolve, reject) => {
                     res.send = () => {resolve()}
                     isAuthenticated(req,res,()=>{resolve()})
                 });
@@ -66,7 +66,7 @@ describe('jwt test',() => {
             let error = null;
             try {
                 req = {headers: {authorization: "hlhjkhlkj"}};
-                await new Promise((resolve, reject) => {
+                await new Promise<void>((resolve, reject) => {
                     res.send = () => {resolve()}
                     res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
@@ -88,7 +88,7 @@ describe('jwt test',() => {
             let error = null;
             try {
                 req = {};
-                await new Promise((resolve, reject) => {
+                await new Promise<void>((resolve, reject) => {
                     res.send = () => {resolve()}
                     res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
@@ -110,7 +110,7 @@ describe('jwt test',() => {
             let error = null;
             try {
                 req = {headers: {}};
-                await new Promise((resolve, reject) => {
+                await new Promise<void>((resolve, reject) => {
                     res.send = () => {resolve()}
                     res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})
@@ -132,7 +132,7 @@ describe('jwt test',() => {
             let error = null;
             try {
                 req = {headers: {authorization: 123}};
-                await new Promise((resolve, reject) => {
+                await new Promise<void>((resolve, reject) => {
                     res.send = () => {resolve()}
                     res.status = (s:any) => {status = s}
                     isAuthenticated(req,res,()=>{resolve()})

@@ -26,9 +26,9 @@ export default abstract class Message{
         this.mid = mid;
     }
     // an object containing this message is returned
-    abstract async getMessageObject():Promise<MessageDataOut>;
+    abstract getMessageObject():Promise<MessageDataOut>;
     //data is type of MessageContent
-    abstract async initNewMessage(data:any):Promise<void>;
+    abstract initNewMessage(data:any):Promise<void>;
     /*
         can the message be shown
             current members can see all messages

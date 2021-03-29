@@ -100,7 +100,7 @@ export async function getUserInfo(uidFrom:number,uid:number):Promise<UserInfo> {
             "WHERE uid = " + uid + ";";
         logger.verbose('SQL: %s',query_str);
 
-        pool.query(query_str, async (err:Error, rows:any, fields:any) => {
+        pool.query(query_str, async (err:Error, rows:any) => {
 
             // Call reject on error states,
             // call resolve with results
@@ -192,7 +192,7 @@ export async function getUserInfoSelf(uid:number):Promise<UserInfoSelf> {
             "WHERE uid = " + uid;
         logger.verbose('SQL: %s',query_str);
 
-        pool.query(query_str,(err:Error,result:any[],fields:any) => {
+        pool.query(query_str,(err:Error,result:any) => {
             if(err)
                 reject(err);
             else if(result.length !== 1)
@@ -378,7 +378,7 @@ export async function setPassword(uid:number,hash:string,code:string):Promise<vo
                 "WHERE uid = " + uid + ";";
             logger.verbose('SQL: %s',query_str);
 
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 pool.query(query_str, (err:Error) => {
                     if (err)
                         reject(err);
@@ -401,7 +401,7 @@ export async function setEmail(uid:number,email:string):Promise<void> {
 
     const {sCode,vcid} = await generateVerificationCode(verificationCodeTypes.emailVerification,uid);
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "INSERT " +
             "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +

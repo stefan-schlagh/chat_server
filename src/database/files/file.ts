@@ -58,7 +58,7 @@ export async function setServerFileName(
     serverFileName:string
 ):Promise<void> {
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
 
         const query_str =
             "UPDATE file " +
@@ -79,7 +79,7 @@ export async function setServerFilePath(
     serverFilePath:string
 ):Promise<void> {
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
 
         const query_str =
             "UPDATE file " +

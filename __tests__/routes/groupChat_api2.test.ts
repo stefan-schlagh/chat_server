@@ -145,7 +145,7 @@ describe('\'test API /group 2',() => {
 
             const user_typing = 2;
 
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
 
                 let started_typing = 0;
 
@@ -164,7 +164,7 @@ describe('\'test API /group 2',() => {
 
             const user_typing = 1;
 
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
 
                 let stopped_typing = 0;
 

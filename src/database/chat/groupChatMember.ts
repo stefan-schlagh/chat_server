@@ -90,7 +90,7 @@ export async function saveGroupChatMemberInDB(uid:number,chatId:number,isAdmin:b
  */
 export async function updateUnreadMessages(gcmid:number,unreadMessages:number):Promise<void>{
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "UPDATE groupchatmember " +
             "SET unreadMessages = " + unreadMessages + " " +
@@ -109,7 +109,7 @@ export async function updateUnreadMessages(gcmid:number,unreadMessages:number):P
      */
 export async function updateGroupChatMember(gcmid:number,isAdmin:boolean,isStillMember:boolean):Promise<void>{
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
 
         const isAdminNumber = isAdmin ? 1 : 0;
         const isStillMemberNumber = isStillMember ? 1 : 0;

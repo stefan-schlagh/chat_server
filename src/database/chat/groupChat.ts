@@ -70,7 +70,7 @@ export async function updateGroupChat(
     isPublic:boolean
 ):Promise<void> {
 
-    await new Promise((resolve,reject) => {
+    await new Promise<void>((resolve,reject) => {
 
         const isPublicNumber = isPublic ? 1 : 0;
 

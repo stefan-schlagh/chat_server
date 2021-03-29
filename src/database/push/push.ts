@@ -27,9 +27,9 @@ export async function saveSubscription(uid:number,subscription:PushSubscription)
             "VALUES (" + uid + ",'" + subscriptionString + "')";
         logger.verbose('SQL: %s', query_str);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
 
-            pool.query(query_str, (err: Error, rows: any) => {
+            pool.query(query_str, (err: Error) => {
                 if (err)
                     reject(err);
                 resolve()
@@ -72,9 +72,9 @@ export async function deleteSubscription(psid:number):Promise<void> {
         "WHERE psid = " + psid + ";";
     logger.verbose('SQL: %s',query_str);
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
 
-        pool.query(query_str,(err:Error,rows:any) => {
+        pool.query(query_str,(err:Error) => {
             if(err)
                 reject(err);
             resolve()
