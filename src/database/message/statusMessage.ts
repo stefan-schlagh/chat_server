@@ -93,7 +93,7 @@ export async function saveStatusMessageInDB(mid:number,type:statusMessageTypes):
 }
 // passive users are saved in the database, uid for each user is saved
 export async function savePassiveUsersInDB(smid:number,passiveUsers:number[]):Promise<void> {
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
 
         let query_str =
             "INSERT " +

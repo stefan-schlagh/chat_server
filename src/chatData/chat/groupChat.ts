@@ -37,7 +37,7 @@ export class GroupChat extends Chat{
         /*
             each users socket joins the roo,
          */
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             let callCounter = 0;
 
             this.members.forEach(((value:GroupChatMember,key:number) => {

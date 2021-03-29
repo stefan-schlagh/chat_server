@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer, {SentMessageInfo} from 'nodemailer';
 import {mailStorage} from "./mailStorage";
 import {logger} from "../util/logger";
 
@@ -59,8 +59,8 @@ export async function sendMail(receiver:string,title:string,content:string):Prom
         text: content
     };
 
-    await new Promise((resolve, reject) => {
-        transporter.sendMail(mailOptions, function(err, info){
+    await new Promise<void>((resolve, reject) => {
+        transporter.sendMail(mailOptions, function(err:Error | null, info:SentMessageInfo){
             if (err) {
                 if(process.env.NODE_ENV === "test"){
                     logger.error(err);

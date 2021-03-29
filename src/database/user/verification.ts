@@ -28,7 +28,7 @@ export async function isVerified(uid:number):Promise<boolean> {
         uid: the id of the user
  */
 export async function deleteVerificationCodes(uid:number):Promise<void> {
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "DELETE " +
             "FROM verificationcode " +
@@ -69,7 +69,7 @@ export async function verifyEmail(uid:number,parts:Parts):Promise<boolean> {
             });
         });
         //emailChange is set to verified
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             const query_str =
                 "UPDATE emailchange " +
                 "SET isVerified = 1 " +
@@ -83,7 +83,7 @@ export async function verifyEmail(uid:number,parts:Parts):Promise<boolean> {
             });
         });
         //new email is written to user
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             const query_str =
                 "UPDATE user " +
                 "SET email = " + pool.escape(result.newEmail) + ",isVerified = 1 " +

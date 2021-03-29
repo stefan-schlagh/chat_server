@@ -44,7 +44,7 @@ export async function saveCodeInDB(type: verificationCodeTypes, uid: number, has
 }
 export async function deleteOldCodes(uid:number):Promise<void> {
     //codes older than 2 days are deleted
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "DELETE " +
             "FROM verificationcode " +

@@ -154,26 +154,26 @@ export abstract class Chat{
     // a message is sent to all members of the chat via a socket
     abstract sendToAll(author:User,socketMessage:string,messageObject:any,includeSender:boolean): void;
     // a push notification is sent to all users who are not online
-    abstract async sendNotification(type:NotificationTypes): Promise<void>;
+    abstract sendNotification(type:NotificationTypes): Promise<void>;
     // increment the unread messages by the number
-    abstract async incrementUnreadMessages(num:number): Promise<void>;
+    abstract incrementUnreadMessages(num:number): Promise<void>;
     // set the unreadMessages of the user with this uid to the specified number
-    abstract async setUnreadMessages(uid:number,unreadMessages:number): Promise<void>;
+    abstract setUnreadMessages(uid:number,unreadMessages:number): Promise<void>;
     // returns if there is someone online in this chat
-    abstract async isAnyoneOnline():Promise<boolean>;
+    abstract isAnyoneOnline():Promise<boolean>;
     /*
         remove all users from the chat, gets called when chat gets unloaded
             uid: the requesting user
      */
-    async abstract removeUsers(uid:number):Promise<void>;
+    abstract removeUsers(uid:number):Promise<void>;
     // all members of the chat get returned
-    async abstract getMemberObject(uidSelf:number):Promise<SimpleUser[]>;
+    abstract getMemberObject(uidSelf:number):Promise<SimpleUser[]>;
     // the name of the chat gets returned
     abstract getChatName(uidSelf:number):string;
     // unread Messages of the user with this uid are returned
     abstract getUnreadMessages(uid:number):number;
     // chat is saved in the database
-    abstract async saveChatInDB():Promise<number>;
+    abstract saveChatInDB():Promise<number>;
 
     get type(): chatTypes {
         return this._type;

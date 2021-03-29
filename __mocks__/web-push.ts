@@ -1,7 +1,7 @@
 const webPush:any = {};
 webPush.sendNotification = jest.fn()
     .mockImplementationOnce(async (subscription:string,payload:string) => {
-        return new Promise(resolve => {
+        return new Promise<void>(resolve => {
             resolve();
         })
     })

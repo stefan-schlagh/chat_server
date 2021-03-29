@@ -163,9 +163,9 @@ export async function getMessageFileData(fileId:number):Promise<MessageFileData>
         })
     })
 }
-export async function deleteTempMessageFileData(fileId:number):Promise<TempMessageFileData> {
+export async function deleteTempMessageFileData(fileId:number):Promise<void> {
 
-    return  await new Promise<TempMessageFileData>((resolve, reject) => {
+    return  await new Promise<void>((resolve, reject) => {
 
         const query_str =
             "DELETE " +
@@ -182,7 +182,7 @@ export async function deleteTempMessageFileData(fileId:number):Promise<TempMessa
 }
 export async function deleteTempMessageFilesByUser(uid:number):Promise<void> {
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "DELETE " +
             "FROM file " +
@@ -194,7 +194,7 @@ export async function deleteTempMessageFilesByUser(uid:number):Promise<void> {
             resolve()
         })
     })
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "DELETE " +
             "FROM tempmessagefile " +

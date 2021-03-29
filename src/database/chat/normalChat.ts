@@ -56,7 +56,7 @@ export async function updateUnreadMessages(
     chatId:number
 ):Promise<void> {
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         const query_str =
             "UPDATE normalchat " +
             "SET unreadMessages1 = " + unreadMessages1 + ", " +
