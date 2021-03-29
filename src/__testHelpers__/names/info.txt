@@ -5,5 +5,6 @@ groupChat_api2: names 21-23
 groupChat_api3: names 21-30
 user_api: names 31-40
 message_api: names 41-50
-chatServer: 51-60
+socketServer: 51-60
 push: names 61
+groupChat public: names 62-70

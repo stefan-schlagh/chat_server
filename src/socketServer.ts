@@ -1,33 +1,27 @@
 import {Server, Socket} from 'socket.io';
 import {chatData} from "./chatData/data";
 import {verifyToken} from "./authentication/jwt";
-import {Express} from "express";
-import {Pool} from "mysql2";
 import {logger} from "./util/logger";
 import User from "./chatData/user";
 import {ChangeChatData, instanceOfChangeChatData} from "./models/chat";
 
-export let chatServer:ChatServer;
-export function createChatServer(server:any,con:any,app:any){
-    chatServer = new ChatServer(server,con,app);
+export let socketServer:SocketServer;
+export function createSocketServer(server:any){
+    socketServer = new SocketServer(server);
 }
 /*
     The socket that is communicating with the server
  */
-class ChatServer{
+class SocketServer{
 
     private _server:any;
-    private _pool:Pool;
-    private _app:Express;
     private _io:Server;
+    private _clients = new Map<number,Socket>();
 
-    constructor(server:any,pool:Pool,app:Express) {
+    constructor(server:any) {
 
         this.server = server;
-        this.pool = pool;
-        this.app = app;
-
-        //@ts-ignore
+        //create socket server
         this.io = new Server(server);
         /*
             gets called when a connection is established
@@ -52,9 +46,13 @@ class ChatServer{
                      */
                     const {uid, username} = await verifyToken(authTokens);
                     /*
+                        add socket to list
+                    */
+                    this.clients.set(uid,socket);
+                    /*
                         socket is initialized
                      */
-                    user = await chatData.initUserSocket(uid, username, socket);
+                    user = await chatData.initUser(uid, username);
 
                     authenticated = true;
                     /*
@@ -118,6 +116,7 @@ class ChatServer{
                      */
                     try {
                         await chatData.unloadUser(user);
+                        this.clients.delete(user.uid);
                     } catch (err) {
                         logger.error(err);
                     }
@@ -137,6 +136,12 @@ class ChatServer{
         return chatData.isUserOnline(uid);
     }
 
+    getSocket(uid:number):Socket {
+        if(!this.clients.has(uid))
+            throw new Error('client does not exist!')
+        return this.clients.get(uid);
+    }
+
     get server(): Server {
         return this._server;
     }
@@ -145,27 +150,19 @@ class ChatServer{
         this._server = value;
     }
 
-    get pool(): Pool {
-        return this._pool;
-    }
-
-    set pool(value: Pool) {
-        this._pool = value;
-    }
-
-    get app(): Express {
-        return this._app;
-    }
-
-    set app(value: Express) {
-        this._app = value;
-    }
-
     get io(): Server {
         return this._io;
     }
 
     set io(value: Server) {
         this._io = value;
+    }
+
+    get clients(): Map<number, Socket> {
+        return this._clients;
+    }
+
+    set clients(value: Map<number, Socket>) {
+        this._clients = value;
     }
 }

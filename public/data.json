@@ -10,7 +10,11 @@
     "usersJoined": 3,
     "usersLeft": 4,
     "usersMadeAdmin": 5,
-    "usersRemovedAdmin": 6
+    "usersRemovedAdmin": 6,
+    "userResignedAdmin": 7,
+    "chatNameChanged": 8,
+    "descriptionChanged": 9,
+    "isPublicChanged": 10
   },
   "groupChatErrors": {
     "noAdminLeft": 0,

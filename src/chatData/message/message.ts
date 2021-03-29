@@ -1,7 +1,5 @@
 import {Chat, chatTypes} from "../chat/chat";
 import User from "../user";
-import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {MessageDataOut, messageTypes} from "../../models/message";
 import GroupChatMember from "../chat/groupChatMember";
 import {GroupChat} from "../chat/groupChat";
@@ -28,60 +26,9 @@ export default abstract class Message{
         this.mid = mid;
     }
     // an object containing this message is returned
-    abstract getMessageObject():MessageDataOut;
+    abstract async getMessageObject():Promise<MessageDataOut>;
     //data is type of MessageContent
     abstract async initNewMessage(data:any):Promise<void>;
-    /*
-        message gets saved in the database
-     */
-    protected async initNewMessageInner():Promise<void> {
-
-        return new Promise((resolve, reject) => {
-
-            const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
-
-            const query_str1 =
-                "INSERT " +
-                "INTO message (" +
-                    "date, " +
-                    "isGroupChat, " +
-                    "messageType," +
-                    "cid," +
-                    "uid" +
-                ") " +
-                "VALUES (" +
-                    "CURRENT_TIMESTAMP(),'" +
-                    isGroupChat + "','" +
-                    this.messageType + "','" +
-                    this.chat.chatId + "','" +
-                    this.author.uid +
-                "');";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                if(err){
-                    reject(err);
-                }else {
-                    /*
-                        message id og the message is selected
-                     */
-                    const query_str2 =
-                        "SELECT max(mid) " +
-                        "AS 'mid' FROM message";
-                    logger.verbose('SQL: %s',query_str2);
-
-                    pool.query(query_str2, (err:Error, result:any, fields:any) => {
-                        if(err){
-                            reject(err);
-                        }else {
-                            this.mid = result[0].mid;
-                            resolve();
-                        }
-                    });
-                }
-            });
-        });
-    }
     /*
         can the message be shown
             current members can see all messages

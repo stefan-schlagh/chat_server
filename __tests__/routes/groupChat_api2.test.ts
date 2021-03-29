@@ -24,12 +24,12 @@ describe('\'test API /group 2',() => {
             startServer();
             done();
         });
-        afterAll((done) => {
+        afterAll(async (done) => {
             //close sockets
             for (let i = 0; i < sockets.length; i++) {
                 sockets[i].close();
             }
-            closeServer();
+            await closeServer();
             done();
         });
         it('init accounts', async () => {

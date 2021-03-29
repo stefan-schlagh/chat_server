@@ -14,8 +14,7 @@ const cert = fs.readFileSync(process.env.CERT_PATH);
 import http, {Server} from 'http';
 import express_enforces_ssl from 'express-enforces-ssl';
 import https, {Server as sServer} from 'https';
-import express, {Express} from 'express';
-import { Request, Response } from "express";
+import express, {Express, Request, Response} from 'express';
 // @ts-ignore
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
@@ -37,9 +36,9 @@ import messageRouter from './routes/message';
 import pwResetRouter from './routes/passwordReset';
 import pushRouter from './routes/push';
 
-import {Pool, createPool} from 'mysql2';
-import {chatServer, createChatServer} from './chatServer';
+import {socketServer, createSocketServer} from './socketServer';
 import {logger} from "./util/logger";
+import {startPool,endPool} from "./database/pool";
 /*
     express-server is initialized
  */
@@ -47,7 +46,6 @@ const httpPort = process.env.NODE_HTTP_PORT;
 const httpsPort = process.env.NODE_HTTPS_PORT;
 
 export let app:Express;
-export let pool:any;
 let httpServer:Server;
 let httpsServer:sServer;
 
@@ -90,40 +88,32 @@ export function startServer(){
         'public',
         {dotfiles:'allow'}
     ));
-    app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(express.static('public'));
     app.use(cors());
     app.use(cookieParser());
     app.use(compression());
 
-    const poolOptions:any = {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE,
-        charset : 'utf8mb4'
-    };
-    pool = createPool(poolOptions);
+    startPool();
     /*
         chatServer is created
      */
     if(process.env.NODE_ENV !== "test") {
-        createChatServer(httpsServer, pool, app);
+        createSocketServer(httpsServer);
     }else{
-        createChatServer(httpServer, pool, app);
+        createSocketServer(httpServer);
     }
 
     /*
         Routers for express
      */
-    app.use('/auth',authRouter);
-    app.use('/user',userRouter);
-    app.use('/group',groupRouter);
-    app.use('/chats',chatRouter);
+    app.use('/auth',bodyParser.json(),authRouter);
+    app.use('/user',bodyParser.json(),userRouter);
+    app.use('/group',bodyParser.json(),groupRouter);
+    app.use('/chats',bodyParser.json(),chatRouter);
     app.use('/message',messageRouter);
-    app.use('/pwReset',pwResetRouter);
-    app.use('/push',pushRouter);
+    app.use('/pwReset',bodyParser.json(),pwResetRouter);
+    app.use('/push',bodyParser.json(),pushRouter);
 
     app.get('/', function (req: Request, res: Response) {
         res.sendFile('build/index.html',{ root: '.' });
@@ -148,11 +138,11 @@ export function startServer(){
     logger.info('app created');
 
 }
-export function closeServer(){
-    chatServer.io.close();
+export async function closeServer(){
+    socketServer.io.close();
     httpServer.close();
     httpsServer.close();
-    pool.end();
+    await endPool();
 
     logger.info('chatServer closed');
 }

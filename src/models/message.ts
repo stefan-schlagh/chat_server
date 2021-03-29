@@ -1,3 +1,5 @@
+import {FileDataOut} from "./file";
+
 export enum messageTypes {
     normalMessage = 0,
     statusMessage = 1
@@ -13,7 +15,10 @@ export enum statusMessageTypes {
     /*
         when user resigns from admin status
      */
-    userResignedAdmin
+    userResignedAdmin,
+    chatNameChanged,
+    descriptionChanged,
+    isPublicChanged
 }
 export interface NewMessageData {
     chatType: string,
@@ -46,7 +51,7 @@ export function instanceOfNewMessageReturn(object: any): object is NewMessageRet
 }
 export interface MessageDataIn {
     type: messageTypes,
-    content: MessageContent
+    content: MessageContentIn
 }
 // type check
 export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
@@ -54,7 +59,7 @@ export function instanceOfMessageDataIn(object: any): object is MessageDataIn {
         typeof object === 'object'
         && 'type' in object && typeof object.type === 'number'
         && 'content' in object && typeof object.content === 'object'
-        && instanceOfMessageContent(object.content)
+        && instanceOfMessageContentIn(object.content)
     ))
         throw new TypeError('invalid MessageDataIn');
     return true;
@@ -66,7 +71,7 @@ export interface NewestMessage {
     mid?: number,
     date?: string,
     type?: messageTypes,
-    content?: MessageContent
+    content?: MessageContentOut
 }
 export interface MessageDataOut {
     // the id of the user who wrote the message
@@ -74,7 +79,7 @@ export interface MessageDataOut {
     mid: number,
     date: string,
     type: messageTypes,
-    content: MessageContent
+    content: MessageContentOut
 }
 // type check
 export function instanceOfMessageDataOut(object: any): object is MessageDataOut {
@@ -85,29 +90,46 @@ export function instanceOfMessageDataOut(object: any): object is MessageDataOut 
         && 'date' in object && typeof object.date === 'string'
         && 'type' in object && typeof object.type === 'number'
         && 'content' in object && typeof object.content === 'object'
-        && instanceOfMessageContent(object.content)
+        && instanceOfMessageContentOut(object.content)
     ))
         throw new TypeError('invalid MessageDataOut');
     return true;
 }
-export type MessageContent = NormalMessageContent | StatusMessageContent;
+export type MessageContentIn = NormalMessageContentIn | StatusMessageContent;
 // type check
-export function instanceOfMessageContent(object: any): object is MessageContent {
-    return (instanceOfNormalMessageContent(object)
+export function instanceOfMessageContentIn(object: any): object is MessageContentIn {
+    return (instanceOfNormalMessageContentIn(object)
         || instanceOfStatusMessageContent(object))
 }
-export interface NormalMessageContent {
-    text: string
-    mentions: Mention[],
-    media: Media[]
+export interface NormalMessageContentIn {
+    text: string,
+    // all file ids attached
+    files: number[]
 }
 // type check
-export function instanceOfNormalMessageContent(object: any): object is NormalMessageContent {
+export function instanceOfNormalMessageContentIn(object: any): object is NormalMessageContentIn {
     return (
         typeof object === 'object'
         && 'text' in object && typeof object.text === 'string'
-        && 'mentions' in object && typeof object.mentions === 'object'
-        && 'media' in object && typeof object.media === 'object'
+        //TODO && 'files' in object
+    )
+}
+export type MessageContentOut = NormalMessageContentOut | StatusMessageContent;
+// type check
+export function instanceOfMessageContentOut(object: any): object is MessageContentIn {
+    return (instanceOfNormalMessageContentOut(object)
+        || instanceOfStatusMessageContent(object))
+}
+export interface NormalMessageContentOut {
+    text: string,
+    files: FileDataOut[]
+}
+// type check
+export function instanceOfNormalMessageContentOut(object: any): object is NormalMessageContentOut {
+    return (
+        typeof object === 'object'
+        && 'text' in object && typeof object.text === 'string'
+        && 'files' in object && typeof object.files === 'object' && Array.isArray(object.files)
     )
 }
 export interface StatusMessageContent {
@@ -122,16 +144,6 @@ export function instanceOfStatusMessageContent(object: any): object is StatusMes
         && 'type' in object && typeof object.type === 'number'
         && 'passiveUsers' in object && typeof object.passiveUsers === 'object'
     )
-}
-// TODO
-export interface Mention {
-    // the user id of the mentioned user
-    uid: number,
-    textColumn: number
-}
-export interface Media {
-    type: number,
-    pathToFile: string
 }
 export interface LoadMessages {
     chatType: string,
@@ -171,4 +183,22 @@ export function instanceOfLoadedMessages(object: any): object is LoadedMessages 
     ))
         throw new TypeError('invalid LoadedMessages');
     return true;
+}
+export interface StatusMessageDB {
+    // the id of the statusMessage
+    smid: number,
+    // the type of the message
+    type: statusMessageTypes
+}
+export interface NormalMessageDB {
+    nmid: number,
+    text: string
+}
+export interface MessageDB {
+    mid: number,
+    date: Date,
+    messageType: number,
+    isGroupChat: number,
+    cid: number,
+    uid: number
 }

@@ -13,7 +13,7 @@ import {
     NewMessageReturn
 } from "../../src/models/message";
 import {findMessage} from "../../src/__testHelpers__/messageHelpers";
-import {getUserBlockInfo} from "../../src/chatData/database/user";
+import {getUserBlockInfo} from "../../src/database/user/user";
 import {findChatChatName} from "../../src/__testHelpers__/chatHelpers";
 
 describe('test API /message',() => {
@@ -36,8 +36,8 @@ describe('test API /message',() => {
         startServer();
         done();
     });
-    afterAll((done) => {
-        closeServer();
+    afterAll(async (done) => {
+        await closeServer();
         done();
     });
     it('init accounts', async () => {

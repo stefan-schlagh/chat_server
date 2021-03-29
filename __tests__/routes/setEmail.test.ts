@@ -3,7 +3,7 @@ import {app, closeServer, startServer} from "../../src/app";
 import {mailStorage} from "../../src/verification/mailStorage";
 import {instanceOfUserInfoSelf, UserInfoSelf} from "../../src/models/user";
 import {AccountInfo, initAccount} from "../../src/__testHelpers__/userHelpers";
-import {isEmailUsed} from "../../src/chatData/database/email";
+import {isEmailUsed} from "../../src/database/email/email";
 
 const test_username = "test123456";
 let account:AccountInfo;
@@ -18,9 +18,9 @@ describe('setEmail Test: API /user', () => {
         startServer();
         done();
     });
-    afterAll((done) => {
+    afterAll(async (done) => {
         mailStorage.clear();
-        closeServer();
+        await closeServer();
         done();
     });
     it('init account', async () => {

@@ -1,17 +1,18 @@
 import {Chat, chatTypes} from "./chat";
 import chatData from "../chatData";
 import {randomString} from "../../util/random";
-import {chatServer} from "../../chatServer";
+import {socketServer} from "../../socketServer";
 import User from "../user";
 import GroupChatMember from "./groupChatMember";
 import StatusMessage from "../message/statusMessage";
 import {logger} from "../../util/logger";
-import {pool} from "../../app";
 import {SimpleUser} from "../../models/user";
 import {GroupChatInfo, GroupChatMemberDataAll} from "../../models/chat";
 import {statusMessageTypes} from "../../models/message";
-import {selectGroupChatMembers,GroupChatMemberDB} from "../database/groupChatMember";
-import {NotificationTypes, sendNotification} from "../../push/push";
+import {selectGroupChatMembers,GroupChatMemberDB} from "../../database/chat/groupChatMember";
+import {NotificationTypes, sendNotification} from "../../database/push/push";
+import {saveChatInDB, updateGroupChat} from "../../database/chat/groupChat";
+import user from "../../routes/user";
 
 export class GroupChat extends Chat{
 
@@ -39,10 +40,9 @@ export class GroupChat extends Chat{
         await new Promise((resolve, reject) => {
             let callCounter = 0;
 
-            this.members.forEach(((value:GroupChatMember, key:number) => {
-                if(value.user.online && value.user.socket !== null && value.isStillMember){
-                    value.user.socket.join(this.socketRoomName);
-                }
+            this.members.forEach(((value:GroupChatMember,key:number) => {
+                if(socketServer.clients.has(value.user.uid) && value.isStillMember)
+                    socketServer.getSocket(value.user.uid).join(this.socketRoomName);
                 callCounter ++;
                 if(callCounter === this.members.size)
                     resolve();
@@ -54,47 +54,12 @@ export class GroupChat extends Chat{
      */
     async saveChatInDB():Promise<number> {
 
-        const id:number =  await new Promise<number>((resolve,reject) => {
-
-            const isPublic = this.isPublic ? 1 : 0;
-
-            const query_str1 =
-                "INSERT " +
-                "INTO groupchat (name,description,isPublic) " +
-                "VALUES (" +
-                    pool.escape(this.chatName) + "," +
-                    pool.escape(this.description) + "," +
-                    isPublic +
-                ")";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                /*
-                    if no error has occured, the chatID gets requested
-                 */
-                if(err) {
-                    reject(err);
-                }else{
-
-                    const query_str2 =
-                        "SELECT max(gcid) AS 'gcid' " +
-                        "FROM groupchat;";
-                    logger.verbose('SQL: %s',query_str2);
-
-                    pool.query(query_str2,(err:Error,result:any,fields:any) => {
-
-                        if(err){
-                            reject(err);
-                        }else{
-                            this.chatId = result[0].gcid;
-                            resolve(this.chatId);
-                        }
-                    });
-                }
-            });
-        });
-        this.chatId = id;
-        return id;
+        this.chatId = await saveChatInDB(
+            this.chatName,
+            this.description,
+            this.isPublic
+        );
+        return this.chatId;
     }
     /*
         member is added to chat
@@ -154,21 +119,13 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersAdded,
             memberFrom.user,
             [otherUser.uid]
         );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            memberFrom.user,
-            message,
-            true
-        );
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         multiple members are added to the chat
@@ -195,21 +152,13 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersAdded,
             memberFrom.user,
             uids
         );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            memberFrom.user,
-            message,
-            true
-        );
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         member is removed from groupChat by admin
@@ -225,25 +174,17 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersRemoved,
             memberFrom.user,
             [memberOther.user.uid]
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            memberFrom.user,
-            message,
-            true
         );
         /*
             socket room is left
          */
         this.leaveRoom(memberOther.user);
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         member joins chat --> only when public
@@ -254,20 +195,13 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersJoined,
             user,
             []
         );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            user,
-            message
-        );
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         chat is left by the user
@@ -280,25 +214,17 @@ export class GroupChat extends Chat{
         /*
             statusMessage is added
          */
-        const message = await this.addStatusMessage(
+        await this.addStatusMessage(
             statusMessageTypes.usersLeft,
             member.user,
             []
-        );
-        /*
-            message is sent
-         */
-        await this.sendMessage(
-            member.user,
-            message,
-            true
         );
         /*
             socket room is left
          */
         this.leaveRoom(member.user);
 
-        this.emitChatUpdated();
+        await this.emitChatUpdated();
     }
     /*
         statusMessage is addedd
@@ -308,7 +234,7 @@ export class GroupChat extends Chat{
         type:statusMessageTypes,
         userFrom:User,
         passiveUsers:number[]
-    ):Promise<StatusMessage> {
+    ):Promise<void> {
 
         const message = new StatusMessage(this,userFrom);
 
@@ -321,18 +247,29 @@ export class GroupChat extends Chat{
          */
         this.messageStorage.addNewMessage(message);
 
-        return message;
+        /*
+            message is sent
+         */
+        await this.sendMessage(
+            userFrom,
+            message,
+            true
+        );
     }
     /*
         requested member is returned
      */
-    getMember(uid:number):GroupChatMember {
+    getMember(uid:number,ignoreNotFound:boolean = false):GroupChatMember {
         const member = this.members.get(uid);
-        if(!member)
-            /*
-                member is not in this chat
-             */
-            throw new Error('member does not exist');
+        if(!member) {
+            if (ignoreNotFound)
+                return null;
+            else
+                /*
+                    member is not in this chat
+                 */
+                throw new Error('member does not exist');
+        }
         return member;
     }
     /*
@@ -520,9 +457,11 @@ export class GroupChat extends Chat{
             ...messageObject
         };
         if(includeSender)
-            chatServer.io.to(this.socketRoomName).emit(socketMessage,data);
-        else if(sentBy.socket !== null)
-            sentBy.socket.to(this.socketRoomName).emit(socketMessage,data);
+            socketServer.io.to(this.socketRoomName).emit(socketMessage,data);
+        else if(socketServer.clients.has(sentBy.uid))
+            socketServer.getSocket(sentBy.uid).to(this.socketRoomName).emit(socketMessage,data);
+        else
+            socketServer.io.to(this.socketRoomName).emit(socketMessage,data);
         logger.info({
             info: 'send socket message to all users',
             message: socketMessage,
@@ -540,7 +479,7 @@ export class GroupChat extends Chat{
                 /*
                     if member is not online, send notification
                  */
-                if(!value.user.online)
+                if(!value.user.online && value.isStillMember)
                     await sendNotification(value.user.uid,await value.user.getNotificationString(type));
 
                 callCounter ++;
@@ -555,13 +494,13 @@ export class GroupChat extends Chat{
      */
     subscribeToRoom(user:User):void {
         const member:GroupChatMember = this.getMember(user.uid);
-        if(user.socket !== null && member.isStillMember)
-            user.socket.join(this.socketRoomName);
+        if(socketServer.clients.has(user.uid) && member.isStillMember)
+            socketServer.getSocket(user.uid).join(this.socketRoomName);
     }
 
     leaveRoom(user:User):void {
-        if(user.socket !== null)
-            user.socket.leave(this.socketRoomName);
+        if(socketServer.clients.has(user.uid))
+            socketServer.getSocket(user.uid).leave(this.socketRoomName);
     }
     /*
         returns if there is someone online in this chat
@@ -666,18 +605,28 @@ export class GroupChat extends Chat{
     }
     /*
         groupChatInfo is returned
+            memberSelf: can be null
      */
     async getGroupChatInfo(memberSelf:GroupChatMember):Promise<GroupChatInfo> {
+        let memberSelfObject:any;
+        if(memberSelf === null){
+            memberSelfObject = {
+                isAdmin: false,
+                isStillMember: true
+            }
+        }else{
+            memberSelfObject =  {
+                isAdmin: memberSelf.isAdmin,
+                isStillMember: memberSelf.isStillMember
+            }
+        }
         return({
             type: this.getChatTypeString(),
             id: this.chatId,
             chatName: this.chatName,
             description: this.description,
             public: this.isPublic,
-            memberSelf: {
-                isAdmin: memberSelf.isAdmin,
-                isStillMember: memberSelf.isStillMember
-            },
+            memberSelf: memberSelfObject,
             members: await this.getMemberObjectAll(),
         });
     }
@@ -710,39 +659,18 @@ export class GroupChat extends Chat{
      */
     async update():Promise<void> {
 
-        await new Promise((resolve,reject) => {
+        await updateGroupChat(this.chatId,this.chatName,this.description,this.isPublic);
 
-            const isPublic = this.isPublic ? 1 : 0;
-
-            const query_str1 =
-                "UPDATE groupchat " +
-                "SET name = " + pool.escape(this.chatName) + ", " +
-                "description = " + pool.escape(this.description) + ", " +
-                "isPublic = " + isPublic + " " +
-                "WHERE gcid = " + this.chatId;
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error) => {
-                /*
-                    if no error has occured, the chatID gets requested
-                 */
-                if(err)
-                    reject(err);
-                else
-                    resolve();
-            });
-        });
-
-        this.emitChatUpdated()
+        await this.emitChatUpdated()
     }
     /*
         emit updated groupChat info
      */
-    emitChatUpdated():void {
+    async emitChatUpdated():Promise<void> {
         this.sendToAll(
             null,
             "groupChat updated",
-            null,
+            await this.getGroupChatInfo(null),
             true
         );
     }

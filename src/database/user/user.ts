@@ -1,9 +1,90 @@
-import {pool} from "../../app";
-import {instanceOfUserInfoSelf, UserBlockInfo, UserInfo, UserInfoSelf} from "../../models/user";
+import {
+    instanceOfSimpleUser,
+    instanceOfUserInfoSelf,
+    SimpleUser,
+    UserBlockInfo,
+    UserExistsInfo,
+    UserInfo,
+    UserInfoSelf
+} from "../../models/user";
 import {isResultEmpty} from "../../util/sqlHelpers";
 import {logger} from "../../util/logger";
 import {GroupChatInfoWithoutMembers} from "../../models/chat";
+import {generateVerificationCode, Parts, verificationCodeTypes, verifyCode} from "../../verification/code";
+import {deleteVerificationCodes, isVerified} from "./verification";
+import {sendEmailVerificationMail} from "../../verification/sendMail";
+import {pool} from "../pool";
 
+/*
+    a user gets requested --> only username and id are returned
+ */
+export async function getSimpleUserInfo(uid:number):Promise<SimpleUser> {
+
+    return new Promise((resolve, reject) => {
+        const query_str =
+            "SELECT uid, username " +
+            "FROM user " +
+            "WHERE uid = " + uid + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,rows:any) => {
+            if(err)
+                reject(err);
+            /*
+                user is initialized
+             */
+            else if(rows.length !== 1)
+                //if not exactly 1 user found, return null --> error
+                resolve(null);
+            else {
+                resolve(rows[0]);
+            }
+        });
+    });
+}
+/*
+    checks if the user exists in the database
+    params:
+        string:username --> the username of the user
+        object:con --> the connection to the database, uses library mysql
+    returns
+        {
+            boolean:exists: does the requested user exist?,
+            number:uid: the user id of the user
+        }
+    throws
+        error if the query fails
+        if there is more than one entry with the username
+ */
+export async function getUserExistsInfo(username:string):Promise<UserExistsInfo>{
+
+    return await new Promise(function(resolve, reject){
+
+        const query_str =
+            "SELECT uid " +
+            "FROM user " +
+            "WHERE username = " + pool.escape(username) + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,function(err:Error,rows:any){
+
+            if (err)
+                reject(err);
+            else if(isResultEmpty(rows))
+                resolve({
+                    exists: false,
+                    uid: -1
+                });
+            else if(rows.length > 1)
+                reject(new Error('There are two entries in the database with username: ' + username))
+            else
+                resolve({
+                    exists: true,
+                    uid: rows[0].uid
+                });
+        });
+    });
+}
 /*
     A user gets requested
         uidFrom --> uid of the requesting user
@@ -274,4 +355,95 @@ export async function getUnreadMessagesOfUser(uid:number):Promise<UserUnreadMess
         })
     })
     return unreadMessages;
+}
+/*
+    set a new password for the user
+        uid: the id of the user
+        password: the new password
+        code: the code sent by the user
+ */
+export async function setPassword(uid:number,hash:string,code:string):Promise<void> {
+    //is email verified?
+    if(await isVerified(uid)) {
+        const parts:Parts = {
+            uid: uid,
+            code: code
+        };
+        //verify code
+        if (await verifyCode(parts, verificationCodeTypes.pwReset) !== -1) {
+
+            const query_str =
+                "UPDATE user " +
+                "SET password = " + pool.escape(hash) + " " +
+                "WHERE uid = " + uid + ";";
+            logger.verbose('SQL: %s',query_str);
+
+            await new Promise((resolve, reject) => {
+                pool.query(query_str, (err:Error) => {
+                    if (err)
+                        reject(err);
+                    resolve();
+                });
+            });
+        } else
+            throw new Error("invalid code")
+    }else
+        throw new Error("Email not verified!");
+}
+/*
+    email of the user is set
+        uid: the id of the user
+        email: the new email address
+ */
+export async function setEmail(uid:number,email:string):Promise<void> {
+
+    await deleteVerificationCodes(uid);
+
+    const {sCode,vcid} = await generateVerificationCode(verificationCodeTypes.emailVerification,uid);
+
+    await new Promise((resolve, reject) => {
+        const query_str =
+            "INSERT " +
+            "INTO emailchange (uid,vcid,newEmail,date,isVerified) " +
+            "VALUES (" + uid + "," + vcid + "," + pool.escape(email) + ",CURRENT_TIMESTAMP(),0);";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error) => {
+            if(err)
+                reject(err);
+            resolve();
+        });
+    });
+
+    await sendEmailVerificationMail(email,sCode);
+}
+/*
+    get a user by the username and the email address
+    returns null, if user not found
+ */
+export async function getUserEmail(username:string,email:string):Promise<SimpleUser> {
+
+    return await new Promise((resolve, reject) => {
+
+        const query_str =
+            "SELECT uid,username " +
+            "FROM user " +
+            "WHERE username = " + pool.escape(username) + " " +
+            "AND email = " + pool.escape(email) + ";";
+        logger.verbose('SQL: %s',query_str);
+
+        pool.query(query_str,(err:Error,result:any) => {
+            if(err)
+                reject(err)
+            if(!result || result.length === 0)
+                resolve(null)
+            try {
+                const user: SimpleUser = result[0];
+                instanceOfSimpleUser(user);
+                resolve(user);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
 }

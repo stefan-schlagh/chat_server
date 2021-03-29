@@ -3,7 +3,7 @@ import request, {Response} from "supertest";
 // @ts-ignore
 import names from "../../src/__testHelpers__/names/names.json";
 import {app, closeServer, startServer} from "../../src/app";
-import {getSubscriptions,sendNotification} from "../../src/push/push";
+import {getSubscriptions,sendNotification} from "../../src/database/push/push";
 
 describe('test API /push',() => {
 
@@ -13,8 +13,8 @@ describe('test API /push',() => {
         startServer();
         done();
     });
-    afterAll((done) => {
-        closeServer();
+    afterAll(async (done) => {
+        await closeServer();
         done();
     });
     it('init account',async () => {

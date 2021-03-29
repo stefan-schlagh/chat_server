@@ -4,11 +4,10 @@ import StatusMessage from "./statusMessage";
 import NormalMessage from "./normalMessage";
 import Message from "./message";
 import {Chat, chatTypes} from "../chat/chat";
-import {logger} from "../../util/logger";
-import {pool} from "../../app";
-import {MessageDataOut, messageTypes, NewestMessage} from "../../models/message";
+import {MessageDataOut, MessageDB, messageTypes, NewestMessage} from "../../models/message";
 import User from "../user";
 import {GroupChat} from "../chat/groupChat";
+import {selectMessages, getMaxMid, getMidBelow} from "../../database/message/message";
 
 export default class MessageStorage {
     /*
@@ -32,6 +31,8 @@ export default class MessageStorage {
         await this.loadMessages(1);
     }
     /*
+        TODO better version
+            problem: all messages get loaded till message found
         messages are returned
             firstMid: the mid of the first message that should not be selected
                 ->all selected messages have lower mid
@@ -51,53 +52,63 @@ export default class MessageStorage {
         let rMessages:MessageDataOut[] = [];
 
         if(iMessage === -1){
-
-            throw new Error('a message with this mid does not exist in this chat!');
-        }else{
-            /*
-                iMessage --> current index in messageStorage
-                i --> loadedMessages
-             */
-            for(
-                let i = 0;
-                i < num;
-                iMessage--,i++
-            ){
-                /*
-                    if there are no more messages --> load
-                 */
-                if(iMessage < 0){
-                    /*
-                        the mid of the earliest message now is selected
-                     */
-                    const emid = this.getEarliestMessage().mid;
-                    /*
-                        num-i+1 --> number of the messages already loaded
-                     */
-                    const numLoaded = await this.loadMessages(num-i+1);
-                    /*
-                        if there are no more messages --> return
-                     */
-                    if(numLoaded === 0)
-                        return rMessages;
-                    /*
-                        new index of iMessage is selected
-                     */
-                    iMessage = this.messages.getIndex(emid);
-                }
-                // add at the end of the array
-                const message:Message = this.messages[iMessage].value;
-                if(await message.authenticateMessage(user))
-                    rMessages.unshift(message.getMessageObject());
-                else
-                    // i--, because message does not get added
-                    i--;
-            }
-            /*
-                messages are returned
-             */
-            return rMessages;
+            if(firstMid < this.getEarliestMessage().mid) {
+                let numLoaded: number = -1;
+                do {
+                    if(numLoaded === 0 || firstMid > this.getEarliestMessage().mid)
+                        throw new Error('a message with mid ' + firstMid + 'does not exist in this chat!');
+                    numLoaded = await this.loadMessages(10);
+                } while (this.messages.getIndex(firstMid) === -1)
+                iMessage = this.messages.getIndex(firstMid)
+            } else
+                throw new Error('a message with mid ' + firstMid + 'does not exist in this chat!');
         }
+        const mids = new Map()
+        /*
+            iMessage --> current index in messageStorage
+            i --> loadedMessages
+         */
+        for(
+            let i = 0;
+            i < num;
+            iMessage--,i++
+        ){
+            /*
+                if there are no more messages --> load
+             */
+            if(iMessage < 0){
+                /*
+                    the mid of the earliest message now is selected
+                 */
+                const emid = this.getEarliestMessage().mid;
+                /*
+                    num-i+1 --> number of the messages already loaded
+                 */
+                const numLoaded = await this.loadMessages(num-i+1);
+                /*
+                    if there are no more messages --> return
+                 */
+                if(numLoaded === 0)
+                    return rMessages;
+                /*
+                    new index of iMessage is selected
+                 */
+                iMessage = this.messages.getIndex(emid);
+            }
+            // add at the end of the array
+            const message:Message = this.messages[iMessage].value;
+            if(await message.authenticateMessage(user) && !mids.has(message.mid)) {
+                mids.set(message.mid,{});
+                rMessages.unshift(await message.getMessageObject());
+            }
+            else
+                // i--, because message does not get added
+                i--;
+        }
+        /*
+            messages are returned
+         */
+        return rMessages;
     }
     /*
             messages are returned
@@ -128,11 +139,12 @@ export default class MessageStorage {
     async loadMessages(num:number):Promise<number> {
 
         if(this.minMid === -1) {
-            await this.getMaxMid();
+            // get max mid
+            this.maxMid = await getMaxMid(this.chat.type,this.chat.chatId);
             this.minMid = this.maxMid + 1;
         }
 
-        const result:any = await this.selectMessages(num);
+        const result:MessageDB[] = await selectMessages(num,this.chat.type,this.chat.chatId,this.minMid);
 
         /*
             if results of SQL-query are less than num
@@ -203,105 +215,25 @@ export default class MessageStorage {
         }
     }
     /*
-        messages are selected
-     */
-    async selectMessages(num:number){
-
-        return new Promise((resolve,reject) => {
-
-            const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
-
-            const query_str =
-                "SELECT * " +
-                "FROM message " +
-                "WHERE isGroupChat = '" + isGroupChat + "' && cid = '" + this.chat.chatId + "' && mid < " + this.minMid + " " +
-                "ORDER BY mid DESC " +
-                "LIMIT " + num + ";";
-            logger.verbose('SQL: %s',query_str);
-
-            pool.query(query_str,(err:Error,result:any,fields:any) => {
-                if(err)
-                    reject(err);
-                else {
-                    resolve(result);
-                }
-            });
-        });
-    }
-    /*
         a new message is added, should be initialized already
      */
-    addNewMessage(message:Message): void{
+    addNewMessage(message:Message): void {
 
-        this.messages.add(message.mid,message);
+        this.messages.add(message.mid, message);
         this.maxMid = message.mid;
         /*
             if this is the only message, minMid is set
          */
-        if(this.messages.length === 1){
+        if (this.messages.length === 1) {
             this.minMid = message.mid;
         }
-    }
-    /*
-        the message in this chat with the highest messageId gets searched
-     */
-    async getMaxMid(): Promise<number>{
-
-        return new Promise((resolve,reject) => {
-
-            const isGroupChat = this.chat.type === chatTypes.groupChat ? 1 : 0;
-
-            const query_str1 =
-                "SELECT max(mid) " +
-                "AS 'mid' " +
-                "FROM message " +
-                "WHERE isGroupChat = '" + isGroupChat + "' && cid = '" + this.chat.chatId + "';";
-            logger.verbose('SQL: %s',query_str1);
-
-            pool.query(query_str1,(err:Error,result:any) => {
-                if(err)
-                    reject(err);
-                /*
-                    is mid defined?
-                 */
-                else if(result[0].mid !== null) {
-                    this.maxMid = result[0].mid;
-                    resolve();
-                }
-                /*
-                    no messages found in this chat
-                        --> highest mid in all chats is searched
-                 */
-                else {
-
-                    const query_str2 =
-                        "SELECT max(mid) " +
-                        "AS 'mid' " +
-                        "FROM message;";
-                    logger.verbose('SQL: %s',query_str2);
-
-                    pool.query(query_str2,(err:Error,result:any) => {
-                        if(err)
-                            reject(err);
-                        /*
-                            is mid defined?
-                         */
-                        else if(result[0].mid !== null) {
-                            this.maxMid = result[0].mid;
-                            resolve();
-                        }else{
-                            this.maxMid = 0;
-                            resolve();
-                        }
-                    });
-                }
-            });
-        });
     }
     /*
         the earliest loaded message is returned
      */
     getEarliestMessage():Message {
+        if(!this.messages[0].value)
+            throw new Error('invalid earliest message')
         return this.messages[0].value;
     }
     getNewestMessage():Message {
@@ -319,7 +251,7 @@ export default class MessageStorage {
                 authenticate message if it can be shown
              */
             if(await this.getNewestMessage().authenticateMessage(user)) {
-                const messageObject: MessageDataOut = this.getNewestMessage().getMessageObject();
+                const messageObject: MessageDataOut = await this.getNewestMessage().getMessageObject();
                 return {
                     empty: false,
                     canBeShown: true,
@@ -347,7 +279,7 @@ export default class MessageStorage {
         }
     }
     /*
-        the mid below the given is returned
+        the mid of the message below the message with the given mid is returned
      */
     async getMidBelow(mid:number):Promise<number> {
 
@@ -356,7 +288,7 @@ export default class MessageStorage {
             if message not found --> error
          */
         if(index === -1)
-            throw new Error('mid does not exist');
+            return await getMidBelow(mid,this.chat.chatId,this.chat.type)
         else{
             /*
                 is there no message below --> 1 message is loaded

@@ -2,7 +2,7 @@ import express, {Router} from "express";
 import webPush, {WebPushError} from "web-push";
 import {isAuthenticated} from "../authentication/jwt";
 import {setUser} from "../chatData/setUser";
-import {saveSubscription} from "../push/push";
+import {saveSubscription} from "../database/push/push";
 import {logger} from "../util/logger";
 
 const router:Router = express.Router();
@@ -15,7 +15,7 @@ if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
 }
 // Set the keys used for encrypting the push messages.
 webPush.setVapidDetails(
-    'https://' + process.env.NODE_DOMAIN + '/',
+    'https://' + process.env.APP_DOMAIN + '/',
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
 );
