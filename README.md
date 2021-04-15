@@ -1,4 +1,4 @@
-# socketServer
+# chat_server
 
 ### .env
 
