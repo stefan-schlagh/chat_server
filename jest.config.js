@@ -1,5 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
+// add sourcemap support
+require('source-map-support').install();
 
 module.exports = {
   transform: {
