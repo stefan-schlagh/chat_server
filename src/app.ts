@@ -3,6 +3,9 @@
  */
 import dotEnv from 'dotenv';
 dotEnv.config();
+// add sourcemap support
+import sourceMapSupport from 'source-map-support';
+sourceMapSupport.install();
 /*
     SSL-cert
  */
