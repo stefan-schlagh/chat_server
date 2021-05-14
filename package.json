@@ -29,7 +29,7 @@
     "express": "^4.17.1",
     "express-enforces-ssl": "^1.1.0",
     "express-winston": "^4.1.0",
-    "helmet": "^4.5.0",
+    "helmet": "^4.6.0",
     "jsonwebtoken": "^8.5.1",
     "mime": "^2.5.2",
     "mysql2": "^2.2.5",
