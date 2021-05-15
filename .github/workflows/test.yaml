@@ -1,7 +1,7 @@
 name: Test
 
 on:
-  pull_request:
+  pull_request_target:
   
   workflow_dispatch:
     inputs:
@@ -26,7 +26,7 @@ jobs:
           path: chat_server
       - name: Create .env file
         env:
-          DOCKER_ENV: ${{ secrets.DOCKER_ENV}}
+          DOCKER_ENV: ${{ secrets.DOCKER_ENV }}
         run: |
           cd ./chat_server/test_templates
           touch docker.env
@@ -48,7 +48,7 @@ jobs:
           path: chat_server
       - name: Create .env file
         env:
-          DOCKER_ENV: ${{ secrets.DOCKER_ENV}}
+          DOCKER_ENV: ${{ secrets.DOCKER_ENV }}
         run: |
           cd ./chat_server/test_templates
           touch docker.env
