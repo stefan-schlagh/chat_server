@@ -36,27 +36,3 @@ jobs:
           cd ./chat_server/test
           docker-compose run -T chat-server npm test
           docker-compose down
-  selenium:
-    name: selenium
-    runs-on: ubuntu-latest
-    environment: test
-    steps:
-      # chat server repository is checked out
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          path: chat_server
-      - name: Create .env file
-        env:
-          DOCKER_ENV: ${{ secrets.DOCKER_ENV }}
-        run: |
-          cd ./chat_server/test_templates
-          touch docker.env
-          printenv DOCKER_ENV > docker.env
-      - name: run tests
-        run: |
-          cd ./chat_server/webdriver
-          docker-compose up -d --build
-          sleep 10s
-          docker-compose exec -T chat-server npm run webdriver
-          docker-compose down
