@@ -33,7 +33,7 @@ describe('test chatServer', () => {
         it('establish socket connection',async() => {
 
             const res = await new Promise((resolve, reject) => {
-                socket = io.connect(
+                socket = io(
                     'http://localhost:' + process.env.NODE_HTTP_PORT,
                     {
                         transports: ['websocket']
@@ -93,7 +93,7 @@ describe('test chatServer', () => {
         beforeEach(async () => {
             // a new socket is needed
             const res = await new Promise((resolve, reject) => {
-                socket = io.connect(
+                socket = io(
                     'http://localhost:' + process.env.NODE_HTTP_PORT,
                     {
                         transports: ['websocket']
