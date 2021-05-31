@@ -46,7 +46,7 @@ describe('\'test API /group 2',() => {
 
                 let socket: any;
                 const res = await new Promise((resolve, reject) => {
-                    socket = io.connect(
+                    socket = io(
                         'http://localhost:' + process.env.NODE_HTTP_PORT,
                         {
                             transports: ['websocket']
