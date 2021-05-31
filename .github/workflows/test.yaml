@@ -24,6 +24,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: chat_server
+      - name: print branch
+        run: |
+          git branch
       - name: Create .env file
         env:
           DOCKER_ENV: ${{ secrets.DOCKER_ENV }}
